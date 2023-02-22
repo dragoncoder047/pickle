@@ -40,8 +40,6 @@ classDiagram
         object __equal__()
     }
     object <|-- number
-    object <|-- undefined_type
-    object <|-- unimplemented_type
     class int {
         int64_t number
     }
@@ -132,6 +130,7 @@ classDiagram
     }
     statement <|-- dollarexpr
     statement <|-- implicit_concat
+    object <|-- NIL
 ```
 
 | `__less__` | `__equal__` || `<` | `>` | `<=` | `>=` | `==` | `!=` |
@@ -140,3 +139,35 @@ classDiagram
 | F | True || F | F | True | True | True | F |
 | True | F || True | F | True | F | F | True |
 | True | True || True | F | True | True | True | F | 
+
+Special vars
+
+* `$?` == result of last expression
+* `$@` == args
+* `$#` == self
+* `$^` == target var in `|>` expression
+* `$0`... = lambda args
+
+Syntax
+
+* `{...}` == literal string (could be code)
+* `[...]` == list
+* `(...)` == parens
+* Newline or `;` == end of command
+
+
+Literal for NULL is `null` or `pass`
+
+
+* each item on the line is literalized at compile time to either number or string 
+* the args of each line are evaluated in an expresssion, recursively merging (thing op thing) to result of op
+* first object is called with second object, unless in list syntax, where it is just returned as a new list
+
+Example:
+
+```tcl
+print 3 + 4 ;#>> print 7
+print foo bar + baz ;#>> print foo barbaz
+print foo + bar bax * 3 ;#>> print foobar baxbaxbax
+print * 3 ;#>> syntax error
+```
