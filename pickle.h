@@ -124,6 +124,12 @@ typedef struct pickle_typemgr {
     pickle_type_t type_for;
     const char* type_string;
 } pickle_typemgr;
+    
+typedef struct pickle_operator {
+    const char* symbol;
+    const char* method;
+    int precedence;
+} pickle_operator;
 
 struct pickle_parser {
     pickle_parser_t parent;
@@ -144,6 +150,11 @@ struct pickle_vm {
         size_t len;
         size_t cap;
     } type_managers;
+    struct {
+        pickle_operator* ops;
+        size_t len;
+        size_t cap;
+    } operators;
     pickle_parser_t parser;
     pickle_object_t global_scope;
     pickle_object_t dollar_function;
