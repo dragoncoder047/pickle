@@ -73,47 +73,48 @@ struct pickle_object {
         size_t len;
     } proto;
     pickle_hashmap_t properties;
-    union {
-        int64_t as_int;
-        double as_double;
-        bool as_bool;
-        struct {
-            float real;
-            float imag;
-        } as_complex;
-        struct {
-            pickle_object_t* items;
-            size_t len;
-            size_t cap;
-        } as_list;
-        pickle_hashmap_t as_hashmap;
-        union {
-            pickle_builtin_function_t c_func;
-            struct {
-                const char** argnames;
-                size_t argc;
-                pickle_object_t closure;
-            } user;
-        } as_func;
-        const char* as_string;
-        struct {
-            const char* message;
-            // Leave room for tracebacks, if I ever implement that
-        } as_error;
-        struct {
-            pickle_object_t result;
-            pickle_resultcode_t resultcode;
-        } as_scope;
-        struct {
-            pickle_object_t* code;
-            size_t len;
-            size_t cap;
-        } as_code;
-        struct {
-            pickle_object_t car;
-            pickle_object_t cdr;
-        } as_cons;
-    } payload;
+    void* payload;
+//     union {
+//         int64_t as_int;
+//         double as_double;
+//         bool as_bool;
+//         struct {
+//             float real;
+//             float imag;
+//         } as_complex;
+//         struct {
+//             pickle_object_t* items;
+//             size_t len;
+//             size_t cap;
+//         } as_list;
+//         pickle_hashmap_t as_hashmap;
+//         union {
+//             pickle_builtin_function_t c_func;
+//             struct {
+//                 const char** argnames;
+//                 size_t argc;
+//                 pickle_object_t closure;
+//             } user;
+//         } as_func;
+//         const char* as_string;
+//         struct {
+//             const char* message;
+//             // Leave room for tracebacks, if I ever implement that
+//         } as_error;
+//         struct {
+//             pickle_object_t result;
+//             pickle_resultcode_t resultcode;
+//         } as_scope;
+//         struct {
+//             pickle_object_t* code;
+//             size_t len;
+//             size_t cap;
+//         } as_code;
+//         struct {
+//             pickle_object_t car;
+//             pickle_object_t cdr;
+//         } as_cons;
+//     } payload;
 };
 
 typedef struct pickle_typemgr {
@@ -121,6 +122,7 @@ typedef struct pickle_typemgr {
     pickle_init_function_t initialize;
     pickle_mark_function_t mark;
     pickle_type_t type_for;
+    const char* type_string;
 } pickle_typemgr;
 
 struct pickle_parser {
@@ -144,6 +146,7 @@ struct pickle_vm {
     } type_managers;
     pickle_parser_t parser;
     pickle_object_t global_scope;
+    pickle_object_t dollar_function;
     struct {
         pickle_exit_callback_t exit;
         pickle_write_callback_t write;
@@ -185,7 +188,7 @@ pickle_object_t pickle_alloc_object(pickle_vm_t vm, pickle_type_t type) {
         vm->gc.first = object;
     } else {
         object = vm->gc.tombstones;
-        vm->gc.tombstones = object->payload.as_cons.cdr;
+        vm->gc.tombstones = (pickle_object_t)object->payload;
     }
     object->type = type;
     object->gc.refcnt = 1;
@@ -223,7 +226,7 @@ void pickle_decref(pickle_vm_t vm, pickle_object_t object) {
         // Free it now, no other references
         pickle_finalize(vm, object);
         // Put it in the tombstone list
-        object->payload.as_cons.cdr = vm->gc.tombstones;
+        object->payload = (void*)vm->gc.tombstones;
         vm->gc.tombstones = object;
     }
 }
