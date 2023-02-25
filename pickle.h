@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include <assert.h>
 
 #define DEBUG
@@ -25,9 +26,13 @@ typedef struct pickle_parser* pickle_parser_t;
 typedef struct pickle_hashmap* pickle_hashmap_t;
 
 typedef pickle_object_t (*pickle_builtin_function_t)(pickle_vm_t, pickle_object_t, size_t, pickle_object_t*);
-typedef void (*pickle_init_function_t)(pickle_vm_t, pickle_object_t);
-typedef void (*pickle_finalize_function_t)(pickle_vm_t, pickle_object_t);
-typedef void (*pickle_mark_function_t)(pickle_vm_t, pickle_object_t);
+
+// These function only operate on the void* payload of the object, everything else is handles automatically
+typedef void (*pickle_type_function_t)(pickle_vm_t, pickle_object_t);
+#define PICKLE_NUMTYPEFUNS 3
+#define PICKLE_INITFUN 0
+#define PICKLE_MARKFUN 1
+#define PICKLE_FINALFUN 2
 
 typedef void (*pickle_exit_callback_t)(pickle_vm_t, pickle_object_t);
 typedef void (*pickle_write_callback_t)(pickle_vm_t, const char*);
@@ -37,6 +42,8 @@ typedef void (*pickle_store_callback_t)(pickle_vm_t, const char*, const char*);
 typedef void (*pickle_error_callback_t)(pickle_vm_t, size_t, const char*);
 typedef const char* (*pickle_embeddedfilter_callback_t)(pickle_vm_t, const char*);
 typedef const char* (*pickle_checkinterrupt_callback_t)(pickle_vm_t);
+    
+#define streq(a, b) (!strcmp(a, b))
 
 #define PICKLE_TYPE_TOMBSTONE UINT16_MAX
 #define PICKLE_TYPE_NONE 0
@@ -46,15 +53,16 @@ typedef const char* (*pickle_checkinterrupt_callback_t)(pickle_vm_t);
 typedef struct pickle_hashentry {
     char* key;
     pickle_object_t value;
+    bool readonly;
 } pickle_hashentry;
 
 typedef struct pickle_hashbucket {
     pickle_hashentry* entries;
-    size_t capacity;
+    size_t cap;
 } pickle_hashbucket;
 
 struct pickle_hashmap {
-    pickle_hashbucket cells[PICKLE_HASHMAP_BUCKETS];
+    pickle_hashbucket buckets[PICKLE_HASHMAP_BUCKETS];
 };
 
 struct pickle_object {
@@ -118,9 +126,7 @@ struct pickle_object {
 };
 
 typedef struct pickle_typemgr {
-    pickle_finalize_function_t finalize;
-    pickle_init_function_t initialize;
-    pickle_mark_function_t mark;
+    pickle_type_function_t funs[PICKLE_NUMTYPEFUNS];
     pickle_type_t type_for;
     const char* type_string;
 } pickle_typemgr;
@@ -146,7 +152,7 @@ struct pickle_vm {
         pickle_object_t tombstones;
     } gc;
     struct {
-        pickle_typemgr* funs;
+        pickle_typemgr* mgrs;
         size_t len;
         size_t cap;
     } type_managers;
@@ -171,16 +177,8 @@ struct pickle_vm {
 };
 
 #define PICKLE_DOCALLBACK(vm, name, ...) \
-if (vm->callbacks.name) { \
+if (vm->callbacks.name != NULL) { \
     vm->callbacks.name(__VA_ARGS__);\
-}
-
-#define PICKLE_DOTYPEMGR(vm, type, object, name) \
-for (size_t i = 0; i < vm->type_managers.len; i++) { \
-    if (vm->type_managers.funs[i].type_for == type && vm->type_managers.funs[i].name != NULL) { \
-        vm->type_managers.funs[i].name(vm, object); \
-        break; \
-    } \
 }
 
 // Forward references
@@ -188,8 +186,16 @@ void pickle_register_globals(pickle_vm_t);
 void pickle_hashmap_destroy(pickle_vm_t, pickle_hashmap_t);
 void pickle_decref(pickle_vm_t, pickle_object_t);
 
-
 // ------------------- Alloc/dealloc objects -------------------------
+    
+void pickle_run_typefun(pickle_vm_t vm, pickle_type_t type, pickle_object_t object, int name) {
+    for (size_t i = 0; i < vm->type_managers.len; i++) { 
+        if (vm->type_managers.mgrs[i].type_for == type && vm->type_managers.mgrs[i].funs[name] != NULL) { 
+            vm->type_managers.mgrs[i].funs[name](vm, object); 
+            return; 
+        } 
+    }
+}
 
 pickle_object_t pickle_alloc_object(pickle_vm_t vm, pickle_type_t type) {
     pickle_object_t object;
@@ -203,7 +209,7 @@ pickle_object_t pickle_alloc_object(pickle_vm_t vm, pickle_type_t type) {
     }
     object->type = type;
     object->gc.refcnt = 1;
-    PICKLE_DOTYPEMGR(vm, type, object, initialize);
+    pickle_run_typefun(vm, type, object, PICKLE_INITFUN);
     return object;
 }
     
@@ -212,7 +218,7 @@ void pickle_finalize(pickle_vm_t vm, pickle_object_t object) {
     pickle_type_t type = object->type;
     object->type = PICKLE_TYPE_TOMBSTONE;
     // Free object-specific stuff
-    PICKLE_DOTYPEMGR(vm, type, object, finalize);
+    pickle_run_typefun(vm, type, object, PICKLE_FINALFUN);
     // Free everything else
     object->flags.global = 0;
     object->flags.obj = 0;
@@ -223,13 +229,11 @@ void pickle_finalize(pickle_vm_t vm, pickle_object_t object) {
     object->proto.bases = NULL;
     object->proto.len = 0;
     object->proto.cap = 0;
-    // pickle_hashmap_destroy(vm, object->properties);
-    // object->properties = NULL;
+    pickle_hashmap_destroy(vm, object->properties);
+    object->properties = NULL;
 }
 
-inline void pickle_incref(pickle_object_t object) {
-    object->gc.refcnt++;
-}
+#define pickle_incref(object) ((object)->gc.refcnt++)
 
 void pickle_decref(pickle_vm_t vm, pickle_object_t object) {
     object->gc.refcnt--;
@@ -263,7 +267,30 @@ unsigned int pickle_hashmap_hash(const char* value) {
 }
     
 void pickle_hashmap_destroy(pickle_vm_t vm, pickle_hashmap_t map) {
-    //for (
+    for (size_t b = 0; b < PICKLE_HASHMAP_BUCKETS; b++) {
+        pickle_hashbucket bucket = map->buckets[b];
+        for (size_t e = 0; e < bucket.cap; e++) {
+            free(bucket.entries[e].key);
+            pickle_decref(vm, bucket.entries[e].value);
+        }
+    }
+    free(map);
+}
+    
+void pickle_hashmap_put(pickle_vm_t vm, pickle_hashmap_t map, const char* key, pickle_object_t value, bool readonly) {
+    pickle_incref(value);
+    pickle_hashbucket b = map->buckets[pickle_hashmap_hash(key)];
+    for (size_t i = 0; i < b.cap; i++) {
+        if (streq(b.entries[i].key, key)) {
+            b.entries[i].value = value;
+            b.entries[i].readonly = readonly;
+            return;
+        }
+    }
+    b.entries = (pickle_hashentry*)realloc(b.entries, sizeof(struct pickle_hashentry) * (b.cap + 1));
+    b.entries[b.cap].key = strdup(key);
+    b.entries[b.cap].value = value;
+    b.cap++;
 }
 
 #ifdef DEBUG
