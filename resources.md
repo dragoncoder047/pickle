@@ -116,6 +116,8 @@ classDiagram
     class scope {
         object result_value
         resultcode_t code;
+        (parent scope is prototype of object)
+        (upeval scope is __upeval__ property)
     }
     object <|-- block
     class block {
@@ -150,7 +152,7 @@ Special vars
 
 ```js
 /\$([?@#^]|[0-9]+|[A-Za-z_][A-Za-z0-9]*)/ // Variable
-/~([A-Za-z_][A-Za-z0-9]*)/ // Property
+/\.([A-Za-z_][A-Za-z0-9]*)/ // Property
 /\[expr\]/ // Getitem after a variable -- ONLY valid immediatley after a variable with NO whitespace
 // These are processed by the `set` command not the main Pickle parser
 ```
@@ -162,9 +164,9 @@ Syntax
 * `(...)` == parens
 * Newline or `;` == end of command
 
+`foo bar baz` is the same as `foo.bar baz` if `foo` can't be called; `foo.bar.baz` if `foo.bar` can't be called; and a type error any other way (if some property in the chain doesn't exist, for example)
 
 Literal for NULL is `null` or `pass`
-
 
 * each item on the line is literalized at compile time to either number or string 
 * the args of each line are evaluated in an expresssion, recursively merging (thing op thing) to result of op
