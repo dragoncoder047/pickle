@@ -148,6 +148,13 @@ Special vars
 * `$^` == target var in `|>` expression
 * `$0`... = lambda args
 
+```js
+/\$([?@#^]|[0-9]+|[A-Za-z_][A-Za-z0-9]*)/ // Variable
+/~([A-Za-z_][A-Za-z0-9]*)/ // Property
+/\[expr\]/ // Getitem after a variable -- ONLY valid immediatley after a variable with NO whitespace
+// These are processed by the `set` command not the main Pickle parser
+```
+
 Syntax
 
 * `{...}` == literal string (could be code)
