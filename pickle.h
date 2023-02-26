@@ -4,7 +4,7 @@
 #include <string.h>
 #include <assert.h>
 
-#define DEBUG
+#define PK_DEBUG
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +27,7 @@ typedef struct pk_vm pk_vm;
 typedef pk_object* (*pk_builtin_function)(pk_vm*, pk_object*, size_t, pk_object**);
 
 // These function only operate on the void* payload of the object, everything else is handles automatically
-typedef void (*pk_type_function_t)(pk_vm*, pk_object*);
+typedef void (*pk_type_function)(pk_vm*, pk_object*);
 #define PK_NUMTYPEFUNS 3
 #define PK_INITFUN 0
 #define PK_MARKFUN 1
@@ -81,6 +81,7 @@ struct pk_object {
     } proto;
     pk_hashmap* properties;
     union {
+        void* as_pointer;
         struct {
             void* car;
             void* cdr;
@@ -95,7 +96,7 @@ struct pk_object {
 };
 
 typedef struct pk_typemgr {
-    pk_type_function_t funs[PK_NUMTYPEFUNS];
+    pk_type_function funs[PK_NUMTYPEFUNS];
     pk_type type_for;
     const char* type_string;
 } pk_typemgr;
@@ -156,6 +157,7 @@ if (vm->callbacks.name != NULL) { \
 void pk_register_globals(pk_vm*);
 void pk_hashmap_destroy(pk_vm*, pk_hashmap*);
 void pk_decref(pk_vm*, pk_object*);
+inline pk_hashmap* pk_hashmap_new(void);
 
 // ------------------- Alloc/dealloc objects -------------------------
     
@@ -177,14 +179,14 @@ pk_object* pk_alloc_object(pk_vm* vm, pk_type type) {
         vm->gc.num_objects++;
     } else {
         object = vm->gc.tombstones;
-        vm->gc.tombstones = (pk_object*)object->payload.as_cons.car;
+        vm->gc.tombstones = (pk_object*)object->payload.as_pointer;
     }
     object->type = type;
     object->gc.refcnt = 1;
+    object->properties = pk_hashmap_new();
     pk_run_typefun(vm, type, object, PK_INITFUN);
     return object;
 }
-    
 
 void pk_finalize(pk_vm* vm, pk_object* object) {
     pk_type type = object->type;
@@ -208,12 +210,13 @@ void pk_finalize(pk_vm* vm, pk_object* object) {
 #define pk_incref(object) ((object)->gc.refcnt++)
 
 void pk_decref(pk_vm* vm, pk_object* object) {
+    if (object == NULL) return;
     object->gc.refcnt--;
     if (object->gc.refcnt == 0) {
         // Free it now, no other references
         pk_finalize(vm, object);
         // Put it in the tombstone list
-        object->payload.as_cons.car = (void*)vm->gc.tombstones;
+        object->payload.as_pointer = (void*)vm->gc.tombstones;
         vm->gc.tombstones = object;
     }
 }
@@ -239,6 +242,7 @@ unsigned int pk_hashmap_hash(const char* value) {
 }
     
 void pk_hashmap_destroy(pk_vm* vm, pk_hashmap* map) {
+    if (map == NULL) return;
     for (size_t b = 0; b < PK_HASHMAP_BUCKETS; b++) {
         pk_hashbucket bucket = map->buckets[b];
         for (size_t e = 0; e < bucket.cap; e++) {
@@ -265,7 +269,7 @@ void pk_hashmap_put(pk_hashmap* map, const char* key, pk_object* value, bool rea
     b.cap++;
 }
 
-#ifdef DEBUG
+#ifdef PK_DEBUG
 int main(void) {
     printf("%lu %lu %lu\nfoobarbaz", sizeof(struct pk_object), sizeof(struct pk_vm), sizeof(struct pk_hashmap));
     return 0;
