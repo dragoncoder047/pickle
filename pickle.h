@@ -80,48 +80,18 @@ struct pk_object {
         size_t len;
     } proto;
     pk_hashmap* properties;
-    void* payload;
-//     union {
-//         int64_t as_int;
-//         double as_double;
-//         bool as_bool;
-//         struct {
-//             float real;
-//             float imag;
-//         } as_complex;
-//         struct {
-//             pk_object** items;
-//             size_t len;
-//             size_t cap;
-//         } as_list;
-//         pk_hashmap* as_hashmap;
-//         union {
-//             pk_builtin_function c_func;
-//             struct {
-//                 const char** argnames;
-//                 size_t argc;
-//                 pk_object* closure;
-//             } user;
-//         } as_func;
-//         const char* as_string;
-//         struct {
-//             const char* message;
-//             // Leave room for tracebacks, if I ever implement that
-//         } as_error;
-//         struct {
-//             pk_object* result;
-//             pk_resultcode resultcode;
-//         } as_scope;
-//         struct {
-//             pk_object** code;
-//             size_t len;
-//             size_t cap;
-//         } as_code;
-//         struct {
-//             pk_object* car;
-//             pk_object* cdr;
-//         } as_cons;
-//     } payload;
+    union {
+        struct {
+            void* car;
+            void* cdr;
+        } as_cons;
+        int64_t as_int;
+        double as_double;
+        struct {
+            float real;
+            float imag;
+        } as_complex;
+    } payload;
 };
 
 typedef struct pk_typemgr {
@@ -150,6 +120,7 @@ struct pk_vm {
     struct {
         pk_object* first;
         pk_object* tombstones;
+        size_t num_objects;
     } gc;
     struct {
         pk_typemgr* mgrs;
@@ -203,9 +174,10 @@ pk_object* pk_alloc_object(pk_vm* vm, pk_type type) {
         object = (pk_object*)calloc(1, sizeof(struct pk_object));
         object->gc.next = vm->gc.first;
         vm->gc.first = object;
+        vm->gc.num_objects++;
     } else {
         object = vm->gc.tombstones;
-        vm->gc.tombstones = (pk_object*)object->payload;
+        vm->gc.tombstones = (pk_object*)object->payload.as_cons.car;
     }
     object->type = type;
     object->gc.refcnt = 1;
@@ -241,7 +213,7 @@ void pk_decref(pk_vm* vm, pk_object* object) {
         // Free it now, no other references
         pk_finalize(vm, object);
         // Put it in the tombstone list
-        object->payload = (void*)vm->gc.tombstones;
+        object->payload.as_cons.car = (void*)vm->gc.tombstones;
         vm->gc.tombstones = object;
     }
 }
@@ -277,7 +249,7 @@ void pk_hashmap_destroy(pk_vm* vm, pk_hashmap* map) {
     free(map);
 }
     
-void pk_hashmap_put(pk_vm* vm, pk_hashmap* map, const char* key, pk_object* value, bool readonly) {
+void pk_hashmap_put(pk_hashmap* map, const char* key, pk_object* value, bool readonly) {
     pk_incref(value);
     pk_hashbucket b = map->buckets[pk_hashmap_hash(key)];
     for (size_t i = 0; i < b.cap; i++) {
