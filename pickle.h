@@ -289,14 +289,13 @@ void pik_mark_object(pik_vm* vm, pik_object* object) {
 
 size_t pik_dogc(pik_vm* vm) {
     if (vm == NULL) return 0;
-    size_t freed = 0;
+    size_t loops = 0;
     // Sweep the tombstones first, they form a linked list we don't want broken
     while (vm->gc.tombstones != NULL) {
         pik_object* tombstone = vm->gc.tombstones;
         vm->gc.tombstones = (pik_object*)tombstone->payload.as_pointer;
         // No need to finalize; it has already been done
         free(tombstone);
-        freed++;
     }
     // Mark everything else reachable 
     pik_mark_object(vm, vm->global_scope);
@@ -308,17 +307,17 @@ size_t pik_dogc(pik_vm* vm) {
             // Sweep the object
             pik_object* unreached = *object;
             *object = unreached->gc.next;
+            if (unreached->gc.refcnt > 0) loops++;
             pik_finalize(vm, unreached);
             free(unreached);
             vm->gc.num_objects--;
-            freed++;
         } else {
             // Keep the object
             (*object)->flags.global &= ~PIK_MARKED;
             object = &(*object)->gc.next;
         }
     }
-    return freed;
+    return loops;
 }
 
 pik_vm* pik_new(void) {
