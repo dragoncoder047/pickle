@@ -362,6 +362,11 @@ void pik_destroy(pik_vm* vm) {
     assert(vm->gc.first == NULL);
     free(vm->type_managers.mgrs);
     free(vm->operators.ops);
+    while (vm->parser != NULL) {
+        pik_parser* p = vm->parser;
+        vm->parser = p->parent;
+        free(p);
+    }
     free(vm);
 }
 
