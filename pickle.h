@@ -87,7 +87,6 @@ typedef const char* (*pik_checkinterrupt_callback)(pik_vm*);
 #define PIK_CODE_GETVAR 2
 #define PIK_CODE_CONCAT 3
 #define PIK_CODE_LIST 4
-#define PIK_CODE_DICT 5
 
 #define PIK_HASHMAP_BUCKETS 256
 #define PIK_HASHMAP_BUCKETMASK 0xFF
@@ -629,7 +628,6 @@ void pik_tf_init_code(pik_vm* vm, pik_object* object, void* arg) {
         case PIK_CODE_CONCAT:
         case PIK_CODE_LINE:
         case PIK_CODE_LIST:
-        case PIK_CODE_DICT:
             break;
     }
 }
@@ -644,7 +642,6 @@ void pik_tf_mark_code(pik_vm* vm, pik_object* object, void* arg) {
         case PIK_CODE_CONCAT:
         case PIK_CODE_LINE:
         case PIK_CODE_LIST:
-        case PIK_CODE_DICT:
             pik_tf_MARK_ITEMS(vm, object, NULL);
     }
 }
@@ -662,7 +659,6 @@ void pik_tf_free_code(pik_vm* vm, pik_object* object, void* arg) {
         case PIK_CODE_CONCAT:
         case PIK_CODE_LINE:
         case PIK_CODE_LIST:
-        case PIK_CODE_DICT:
             pik_tf_FREE_ITEMS(vm, object, NULL);
             break;
     }
