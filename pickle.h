@@ -18,6 +18,12 @@ typedef uint8_t bool;
 #define false 0
 #endif
 
+#ifdef PIK_DEBUG
+#define PIK_DEBUG_PRINTF printf
+#else
+#define PIK_DEBUG_PRINTF(...)
+#endif
+
 typedef uint16_t pik_type;
 typedef uint16_t pik_flags;
 typedef uint16_t pik_resultcode;
@@ -26,8 +32,8 @@ typedef struct pik_vm pik_vm;
 
 typedef pik_object* (*pik_builtin_function)(pik_vm*, pik_object*, size_t, pik_object**);
 
-// These function only operate on the void* payload of the object, everything else is handles automatically
-typedef void (*pik_type_function)(pik_vm*, pik_object*);
+// These function only operate on the void* payload of the object, everything else is handled automatically
+typedef void (*pik_type_function)(pik_vm*, pik_object*, void*);
 #define PIK_NUMTYPEFUNS 3
 #define PIK_INITFUN 0
 #define PIK_MARKFUN 1
@@ -44,8 +50,12 @@ typedef const char* (*pik_checkinterrupt_callback)(pik_vm*);
 
 #define streq(a, b) (!strcmp(a, b))
 
+// Types
 #define PIK_TYPE_TOMBSTONE UINT16_MAX
 #define PIK_TYPE_NONE 0
+
+// Flags
+#define PIK_MARKED 1
 
 #define PIK_HASHMAP_BUCKETS 256
 #define PIK_HASHMAP_BUCKETMASK 0xFF
@@ -150,27 +160,39 @@ struct pik_vm {
 
 #define PIK_DOCALLBACK(vm, name, ...) \
 if (vm->callbacks.name != NULL) { \
-    vm->callbacks.name(__VA_ARGS__);\
+    vm->callbacks.name(vm, __VA_ARGS__);\
 }
 
 // Forward references
 void pik_register_globals(pik_vm*);
-void pik_hashmap_destroy(pik_vm*, pik_hashmap*);
+inline void pik_incref(pik_object*);
 void pik_decref(pik_vm*, pik_object*);
 inline pik_hashmap* pik_hashmap_new(void);
+void pik_hashmap_destroy(pik_vm*, pik_hashmap*);
 
 // ------------------- Alloc/dealloc objects -------------------------
-    
-void pik_run_typefun(pik_vm* vm, pik_type type, pik_object* object, int name) {
+
+const char* pik_typeof(pik_vm* vm, pik_object* object) {
+    if (object == NULL) return "null";
+    pik_type type = object->type;
+    for (size_t i = 0; i < vm->type_managers.len; i++) { 
+        if (vm->type_managers.mgrs[i].type_for == type) { 
+            return vm->type_managers.mgrs[i].type_string;
+        }
+    }
+    return "object";
+}
+
+void pik_run_typefun(pik_vm* vm, pik_type type, pik_object* object, void* arg, int name) {
     for (size_t i = 0; i < vm->type_managers.len; i++) { 
         if (vm->type_managers.mgrs[i].type_for == type && vm->type_managers.mgrs[i].funs[name] != NULL) { 
-            vm->type_managers.mgrs[i].funs[name](vm, object); 
+            vm->type_managers.mgrs[i].funs[name](vm, object, arg); 
             return; 
         } 
     }
 }
 
-pik_object* pik_alloc_object(pik_vm* vm, pik_type type) {
+pik_object* pik_alloc_object(pik_vm* vm, pik_type type, void* arg) {
     pik_object* object;
     if (vm->gc.tombstones == NULL) {
         object = (pik_object*)calloc(1, sizeof(struct pik_object));
@@ -184,15 +206,42 @@ pik_object* pik_alloc_object(pik_vm* vm, pik_type type) {
     object->type = type;
     object->gc.refcnt = 1;
     object->properties = pik_hashmap_new();
-    pik_run_typefun(vm, type, object, PIK_INITFUN);
+    pik_run_typefun(vm, type, object, arg, PIK_INITFUN);
     return object;
+}
+
+void pik_add_prototype(pik_object* object, pik_object* proto) {
+    if (object == NULL) return;
+    if (proto == NULL) return;
+    for (size_t i = 0; i < object->proto.len; i++) {
+        if (object->proto.bases[i] == proto) return; // Don't add the same prototype twice
+    }
+    if (object->proto.cap < object->proto.len + 1) {
+        object->proto.bases = (pik_object**)realloc(object->proto.bases, (object->proto.len + 1) * sizeof(struct pik_object));
+        object->proto.cap = object->proto.len + 1;
+    }
+    object->proto.bases[object->proto.len] = proto;
+    pik_incref(proto);
+    object->proto.len++;
+}
+
+pik_object* pik_create_fromproto(pik_vm* vm, pik_type type, pik_object* proto, void* arg) {
+    pik_object* object = pik_alloc_object(vm, type, arg);
+    pik_add_prototype(object, proto);
+    return object;
+}
+
+inline void pik_incref(pik_object* object) {
+    if (object == NULL) return;
+    object->gc.refcnt++;
 }
 
 void pik_finalize(pik_vm* vm, pik_object* object) {
     pik_type type = object->type;
     object->type = PIK_TYPE_TOMBSTONE;
     // Free object-specific stuff
-    pik_run_typefun(vm, type, object, PIK_FINALFUN);
+    pik_run_typefun(vm, type, object, NULL, PIK_FINALFUN);
+    object->payload.as_int = 0; // Quick way to clear the payload
     // Free everything else
     object->flags.global = 0;
     object->flags.obj = 0;
@@ -207,8 +256,6 @@ void pik_finalize(pik_vm* vm, pik_object* object) {
     object->properties = NULL;
 }
 
-#define pik_incref(object) ((object)->gc.refcnt++)
-
 void pik_decref(pik_vm* vm, pik_object* object) {
     if (object == NULL) return;
     object->gc.refcnt--;
@@ -218,12 +265,72 @@ void pik_decref(pik_vm* vm, pik_object* object) {
         // Put it in the tombstone list
         object->payload.as_pointer = (void*)vm->gc.tombstones;
         vm->gc.tombstones = object;
+        // Unmark it so it will be collected if a GC is ongoing
+        object->flags.global &= ~PIK_MARKED;
     }
+}
+
+void pik_mark_object(pik_vm* vm, pik_object* object) {
+    mark:
+    if (object == NULL || object->flags.global & PIK_MARKED) return;
+    object.flags.global |= PIK_MARKED;
+    // Mark payload
+    pik_run_typefun(vm, object->type, object, NULL, PIK_MARKFUN);
+    size_t i, j;
+    // Mark properties
+    for (i = 0; i < PIK_HASHMAP_BUCKETS; i++) {
+        pik_hashbucket b = object->properties->buckets[i];
+        for (j = 0; j < b.len; j++) {
+            pik_markobject(vm, b.entries[i].value);
+        }
+    }
+    // Mark prototypes
+    // - 1 for tail-call optimization
+    for (i = 0; i < object->proto.len - 1; i++) {
+        pik_mark_object(vm, object->proto.bases[i]);
+    }
+    // Tail-call optimize
+    object = object->proto.bases[i]; // i is now == object->proto.len - 1
+    goto mark;
+}
+
+size_t pik_dogc(pik_vm* vm) {
+    if (vm == NULL) return;
+    size_t freed = 0;
+    // Sweep the tombstones first, they form a linked list we don't want broken
+    while (vm->gc.tombstones != NULL) {
+        pik_object* tombstone = vm->gc.tombstones;
+        vm->gc.tombstones = (pik_object*)tombstone->payload.as_pointer;
+        // No need to finalize; it has already been done
+        free(tombstone);
+        freed++;
+    }
+    // Mark everything else reachable 
+    pik_mark_object(vm, vm->global_scope);
+    pik_mark_object(vm, vm->dollar_function);
+    // Sweep 
+    pik_object** object = &vm->gc.first;
+    while (*object != NULL) {
+        if ((*object)->flags.global & PIK_MARKED) {
+            // Sweep the object
+            pik_object* unreached = *object;
+            *object = unreached->gc.next;
+            pik_finalize(vm, unreached);
+            free(unreached);
+            vm->num_objects--;
+            freed++;
+        } else {
+            // Keep the object
+            (*object)->flags.global &= ~PIK_MARKED;
+            object = &(*object)->gc.next;
+        }
+    }
+    return freed;
 }
 
 pik_vm* pik_new(void) {
     pik_vm* vm = (pik_vm*)calloc(1, sizeof(struct pik_vm));
-    vm->global_scope = pik_alloc_object(vm, PIK_TYPE_NONE);
+    vm->global_scope = pik_alloc_object(vm, PIK_TYPE_NONE, NULL);
     return vm;
 }
 
