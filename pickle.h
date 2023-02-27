@@ -352,12 +352,12 @@ void pik_hashmap_destroy(pik_vm* vm, pik_hashmap* map) {
     free(map);
 }
     
-void pik_hashmap_put(pik_hashmap* map, const char* key, pik_object* value, bool readonly) {
+void pik_hashmap_put(pik_vm* vm, pik_hashmap* map, const char* key, pik_object* value, bool readonly) {
     pik_incref(value);
     pik_hashbucket b = map->buckets[pik_hashmap_hash(key)];
     for (size_t i = 0; i < b.sz; i++) {
         if (streq(b.entries[i].key, key)) {
-            pik_decref(b.entries[i].value);
+            pik_decref(vm, b.entries[i].value);
             b.entries[i].value = value;
             b.entries[i].readonly = readonly;
             return;
