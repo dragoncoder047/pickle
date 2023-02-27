@@ -19,10 +19,11 @@ typedef uint8_t bool;
 
 #ifdef PIK_DEBUG
 #define PIK_DEBUG_PRINTF printf
-#define assert(cond) __assert(cond, #cond, __FILE__, __LINE__)
-void __assert(bool cond, const char* condstr, const char* filename, size_t line) {
+#define xstr(x) #x
+#define assert(cond) __assert(cond, #cond, xstr(cond), __FILE__, __LINE__)
+void __assert(bool cond, const char* condstr, const char* xcond, const char* filename, size_t line) {
     if (cond) return;
-    printf("\n[%s:%zu] Assertion failed: %s\nAborting", filename, line, condstr);
+    printf("\n[%s:%zu] Assertion failed: %s\n(expanded: %s)\nAborting", filename, line, condstr, xcond);
     exit(512);
 }
 #else
@@ -57,7 +58,6 @@ typedef const char* (*pik_checkinterrupt_callback)(pik_vm*);
 #define streq(a, b) (!strcmp(a, b))
 
 // Types
-#define PIK_TYPE_TOMBSTONE UINT16_MAX
 #define PIK_TYPE_NONE 0
 
 // Flags
@@ -135,7 +135,6 @@ struct pik_parser {
 struct pik_vm {
     struct {
         pik_object* first;
-        pik_object* tombstones;
         size_t num_objects;
     } gc;
     struct {
@@ -185,11 +184,12 @@ const char* pik_typename(pik_vm* vm, pik_type type) {
 }
 
 const char* pik_typeof(pik_vm* vm, pik_object* object) {
-    if (object == NULL) return "null";
+    if (object == NULL) return "__nullptr";
     return pik_typename(vm, object->type);
 }
 
-void pik_run_typefun(pik_vm* vm, pik_type type, pik_object* object, void* arg, int name) {
+void pik_run_typefun(pik_vm* vm, pik_object* object, void* arg, int name) {
+    pik_type type = object->type;
     for (size_t i = 0; i < vm->type_managers.sz; i++) { 
         if (vm->type_managers.mgrs[i].type_for == type && vm->type_managers.mgrs[i].funs[name] != NULL) { 
             vm->type_managers.mgrs[i].funs[name](vm, object, arg); 
@@ -199,24 +199,25 @@ void pik_run_typefun(pik_vm* vm, pik_type type, pik_object* object, void* arg, i
 }
 
 pik_object* pik_alloc_object(pik_vm* vm, pik_type type, void* arg) {
-    pik_object* object;
-    PIK_DEBUG_PRINTF("Allocating object %s: ", pik_typename(vm, type));
-    if (vm->gc.tombstones == NULL) {
-        PIK_DEBUG_PRINTF("fresh alloc\n");
-        object = (pik_object*)calloc(1, sizeof(struct pik_object));
-        object->gc.next = vm->gc.first;
-        vm->gc.first = object;
-        vm->gc.num_objects++;
-    } else {
-        PIK_DEBUG_PRINTF("using a tombstone");
-        object = vm->gc.tombstones;
-        vm->gc.tombstones = (pik_object*)object->payload.as_pointer;
-        PIK_DEBUG_PRINTF("%s\n", vm->gc.tombstones == NULL ? " (no more left)" : "");
+    PIK_DEBUG_PRINTF("Allocating %s: ", pik_typename(vm, type));
+    pik_object* object = vm->gc.first;
+    while (object != NULL) {
+        if (object->gc.refcnt == 0) {
+            PIK_DEBUG_PRINTF("Found one with 0 references\n");
+            goto got_unused;
+        }
+        object = object->gc.next;
     }
+    PIK_DEBUG_PRINTF("All have references, allocating new\n");
+    object = (pik_object*)calloc(1, sizeof(struct pik_object));
+    object->gc.next = vm->gc.first;
+    vm->gc.first = object;
+    vm->gc.num_objects++;
+    got_unused:
     object->type = type;
     object->gc.refcnt = 1;
     object->properties = pik_hashmap_new();
-    pik_run_typefun(vm, type, object, arg, PIK_INITFUN);
+    pik_run_typefun(vm, object, arg, PIK_INITFUN);
     return object;
 }
 
@@ -246,15 +247,9 @@ inline void pik_incref(pik_object* object) {
 
 void pik_finalize(pik_vm* vm, pik_object* object) {
     if (object == NULL) return;
-    if (object->type == PIK_TYPE_TOMBSTONE) {
-        PIK_DEBUG_PRINTF("Finalize tombstone at %p (noop)\n", (void*)object);
-        return;
-    }
-    PIK_DEBUG_PRINTF("Finalizing %s object at %p\n", pik_typeof(vm, object), (void*)object);
-    pik_type type = object->type;
-    object->type = PIK_TYPE_TOMBSTONE;
+    PIK_DEBUG_PRINTF("Finalizing %s at %p\n", pik_typeof(vm, object), (void*)object);
     // Free object-specific stuff
-    pik_run_typefun(vm, type, object, NULL, PIK_FINALFUN);
+    pik_run_typefun(vm, object, NULL, PIK_FINALFUN);
     assert(object->payload.as_int == 0);
     // Free everything else
     object->flags.global = 0;
@@ -273,17 +268,14 @@ void pik_decref(pik_vm* vm, pik_object* object) {
     if (object == NULL) return;
     object->gc.refcnt--;
     if (object->gc.refcnt == 0) {
-        PIK_DEBUG_PRINTF("object %s at %p lost all references, making a tombstone\n", pik_typeof(vm, object), (void*)object);
+        PIK_DEBUG_PRINTF("%s at %p lost all references, finalizing\n", pik_typeof(vm, object), (void*)object);
         // Free it now, no other references
         pik_finalize(vm, object);
-        // Put it in the tombstone list
-        object->payload.as_pointer = (void*)vm->gc.tombstones;
-        vm->gc.tombstones = object;
         // Unmark it so it will be collected if a GC is ongoing
         object->flags.global &= ~PIK_MARKED;
     }
     else {
-        PIK_DEBUG_PRINTF("object %s at %p lost a reference (now have %zu)\n", pik_typeof(vm, object), (void*)object, object->gc.refcnt);
+        PIK_DEBUG_PRINTF("%s at %p lost a reference (now have %zu)\n", pik_typeof(vm, object), (void*)object, object->gc.refcnt);
     }
 }
 
@@ -294,7 +286,7 @@ void pik_mark_object(pik_vm* vm, pik_object* object) {
     object->flags.global |= PIK_MARKED;
     // Mark payload
     PIK_DEBUG_PRINTF("%p->payload\n", (void*)object);
-    pik_run_typefun(vm, object->type, object, NULL, PIK_MARKFUN);
+    pik_run_typefun(vm, object, NULL, PIK_MARKFUN);
     size_t i, j;
     // Mark properties
     PIK_DEBUG_PRINTF("%p->properties\n", (void*)object);
@@ -326,23 +318,19 @@ size_t pik_dogc(pik_vm* vm) {
     if (vm == NULL) return 0;
     PIK_DEBUG_PRINTF("Entering garbage colletion\n");
     size_t freed = 0;
-    // Sweep the tombstones first, they form a linked list we don't want broken
-    while (vm->gc.tombstones != NULL) {
-        PIK_DEBUG_PRINTF("Freeing tombstone at %p\n", (void*)vm->gc.tombstones);
-        pik_object* tombstone = vm->gc.tombstones;
-        vm->gc.tombstones = (pik_object*)tombstone->payload.as_pointer;
-        // No need to finalize; it has already been done
-        free(tombstone);
-        freed++;
-    }
     // Mark everything else reachable 
     pik_mark_object(vm, vm->global_scope);
     pik_mark_object(vm, vm->dollar_function);
     // Sweep 
     pik_object** object = &vm->gc.first;
     while (*object != NULL) {
-        PIK_DEBUG_PRINTF("Looking at object %s at %p: ", pik_typeof(vm, *object), (void*)(*object));
+        PIK_DEBUG_PRINTF("Looking at %s at %p: flags=%#x, ", pik_typeof(vm, *object), (void*)(*object), (*object)->flags.global);
         if ((*object)->flags.global & PIK_MARKED) {
+            PIK_DEBUG_PRINTF("marked\n");
+            // Keep the object
+            (*object)->flags.global &= ~PIK_MARKED;
+            object = &(*object)->gc.next;
+        } else {
             PIK_DEBUG_PRINTF("unmarked\n");
             // Sweep the object
             pik_object* unreached = *object;
@@ -351,12 +339,6 @@ size_t pik_dogc(pik_vm* vm) {
             free(unreached);
             vm->gc.num_objects--;
             freed++;
-        } else {
-            PIK_DEBUG_PRINTF("marked\n");
-            // Keep the object
-            (*object)->flags.global &= ~PIK_MARKED;
-            assert(((*object)->flags.global & PIK_MARKED) == 0);
-            object = &(*object)->gc.next;
         }
     }
     PIK_DEBUG_PRINTF("%zu freed, %zu objects remaining after gc\n", freed, vm->gc.num_objects);
@@ -377,12 +359,7 @@ void pik_destroy(pik_vm* vm) {
     vm->global_scope = NULL;
     vm->dollar_function = NULL;
     pik_dogc(vm);
-    while (vm->gc.first != NULL) {
-        pik_object* object = vm->gc.first;
-        vm->gc.first = (pik_object*)object->gc.next;
-        pik_finalize(vm, object);
-        free(object);
-    }
+    assert(vm->gc.first == NULL);
     free(vm->type_managers.mgrs);
     free(vm->operators.ops);
     free(vm);
@@ -423,7 +400,7 @@ void pik_hashmap_destroy(pik_vm* vm, pik_hashmap* map) {
 }
 
 void pik_hashmap_put(pik_vm* vm, pik_hashmap* map, const char* key, pik_object* value, bool readonly) {
-    PIK_DEBUG_PRINTF("Adding object %s at %p to hashmap at key \"%s\"%s\n", pik_typeof(vm, value), (void*)value, key, readonly ? " (readonly)" : "");
+    PIK_DEBUG_PRINTF("Adding %s at %p to hashmap at key \"%s\"%s\n", pik_typeof(vm, value), (void*)value, key, readonly ? " (readonly)" : "");
     unsigned int hash = pik_hashmap_hash(key);
     pik_hashbucket* b = &map->buckets[hash];
     pik_incref(value);
@@ -454,12 +431,18 @@ int main(void) {
     object = pik_alloc_object(vm, PIK_TYPE_NONE, NULL);
     puts("\nCreate garbage");
     for (size_t i = 0; i < 10; i++) {
-        pik_alloc_object(vm, PIK_TYPE_NONE, NULL);
+        pik_decref(vm, pik_alloc_object(vm, PIK_TYPE_NONE, NULL));
     }
     puts("\nCreate non garbage");
+    char* buf;
     for (size_t i = 0; i < 10; i++) {
+        unsigned int h = pik_hashmap_hash(buf);
+        free(buf);
+        buf = NULL;
+        asprintf(&buf, "MyProp%u", h + 1);
         pik_object* obj = pik_alloc_object(vm, PIK_TYPE_NONE, NULL);
-        pik_hashmap_put(vm, object->properties, "MyProperty", obj, true);
+        pik_hashmap_put(vm, object->properties, buf, obj, true);
+        pik_decref(vm, obj);
     }
     puts("\ntriggering tombstoning of all");
     pik_decref(vm, object);
