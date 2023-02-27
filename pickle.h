@@ -67,7 +67,7 @@ typedef struct pik_hashentry {
 
 typedef struct pik_hashbucket {
     pik_hashentry* entries;
-    size_t cap;
+    size_t sz;
 } pik_hashbucket;
 
 typedef struct pik_hashmap {
@@ -86,8 +86,7 @@ struct pik_object {
     } flags;
     struct {
         pik_object** bases;
-        size_t cap;
-        size_t len;
+        size_t sz;
     } proto;
     pik_hashmap* properties;
     union {
@@ -135,13 +134,11 @@ struct pik_vm {
     } gc;
     struct {
         pik_typemgr* mgrs;
-        size_t len;
-        size_t cap;
+        size_t sz;
     } type_managers;
     struct {
         pik_operator* ops;
-        size_t len;
-        size_t cap;
+        size_t sz;
     } operators;
     pik_parser* parser;
     pik_object* global_scope;
@@ -175,7 +172,7 @@ void pik_hashmap_destroy(pik_vm*, pik_hashmap*);
 const char* pik_typeof(pik_vm* vm, pik_object* object) {
     if (object == NULL) return "null";
     pik_type type = object->type;
-    for (size_t i = 0; i < vm->type_managers.len; i++) { 
+    for (size_t i = 0; i < vm->type_managers.sz; i++) { 
         if (vm->type_managers.mgrs[i].type_for == type) { 
             return vm->type_managers.mgrs[i].type_string;
         }
@@ -184,7 +181,7 @@ const char* pik_typeof(pik_vm* vm, pik_object* object) {
 }
 
 void pik_run_typefun(pik_vm* vm, pik_type type, pik_object* object, void* arg, int name) {
-    for (size_t i = 0; i < vm->type_managers.len; i++) { 
+    for (size_t i = 0; i < vm->type_managers.sz; i++) { 
         if (vm->type_managers.mgrs[i].type_for == type && vm->type_managers.mgrs[i].funs[name] != NULL) { 
             vm->type_managers.mgrs[i].funs[name](vm, object, arg); 
             return; 
@@ -213,16 +210,13 @@ pik_object* pik_alloc_object(pik_vm* vm, pik_type type, void* arg) {
 void pik_add_prototype(pik_object* object, pik_object* proto) {
     if (object == NULL) return;
     if (proto == NULL) return;
-    for (size_t i = 0; i < object->proto.len; i++) {
+    for (size_t i = 0; i < object->proto.sz; i++) {
         if (object->proto.bases[i] == proto) return; // Don't add the same prototype twice
     }
-    if (object->proto.cap < object->proto.len + 1) {
-        object->proto.bases = (pik_object**)realloc(object->proto.bases, (object->proto.len + 1) * sizeof(struct pik_object));
-        object->proto.cap = object->proto.len + 1;
-    }
-    object->proto.bases[object->proto.len] = proto;
+    object->proto.bases = (pik_object**)realloc(object->proto.bases, (object->proto.sz + 1) * sizeof(struct pik_object));
+    object->proto.bases[object->proto.sz] = proto;
+    object->proto.sz++;
     pik_incref(proto);
-    object->proto.len++;
 }
 
 pik_object* pik_create_fromproto(pik_vm* vm, pik_type type, pik_object* proto, void* arg) {
@@ -245,13 +239,12 @@ void pik_finalize(pik_vm* vm, pik_object* object) {
     // Free everything else
     object->flags.global = 0;
     object->flags.obj = 0;
-    for (size_t i = 0; i < object->proto.len; i++) {
+    for (size_t i = 0; i < object->proto.sz; i++) {
         pik_decref(vm, object->proto.bases[i]);
     }
     free(object->proto.bases);
     object->proto.bases = NULL;
-    object->proto.len = 0;
-    object->proto.cap = 0;
+    object->proto.sz = 0;
     pik_hashmap_destroy(vm, object->properties);
     object->properties = NULL;
 }
@@ -273,29 +266,29 @@ void pik_decref(pik_vm* vm, pik_object* object) {
 void pik_mark_object(pik_vm* vm, pik_object* object) {
     mark:
     if (object == NULL || object->flags.global & PIK_MARKED) return;
-    object.flags.global |= PIK_MARKED;
+    object->flags.global |= PIK_MARKED;
     // Mark payload
     pik_run_typefun(vm, object->type, object, NULL, PIK_MARKFUN);
     size_t i, j;
     // Mark properties
     for (i = 0; i < PIK_HASHMAP_BUCKETS; i++) {
         pik_hashbucket b = object->properties->buckets[i];
-        for (j = 0; j < b.len; j++) {
-            pik_markobject(vm, b.entries[i].value);
+        for (j = 0; j < b.sz; j++) {
+            pik_mark_object(vm, b.entries[i].value);
         }
     }
     // Mark prototypes
     // - 1 for tail-call optimization
-    for (i = 0; i < object->proto.len - 1; i++) {
+    for (i = 0; i < object->proto.sz - 1; i++) {
         pik_mark_object(vm, object->proto.bases[i]);
     }
     // Tail-call optimize
-    object = object->proto.bases[i]; // i is now == object->proto.len - 1
+    object = object->proto.bases[i]; // i is now == object->proto.sz - 1
     goto mark;
 }
 
 size_t pik_dogc(pik_vm* vm) {
-    if (vm == NULL) return;
+    if (vm == NULL) return 0;
     size_t freed = 0;
     // Sweep the tombstones first, they form a linked list we don't want broken
     while (vm->gc.tombstones != NULL) {
@@ -317,7 +310,7 @@ size_t pik_dogc(pik_vm* vm) {
             *object = unreached->gc.next;
             pik_finalize(vm, unreached);
             free(unreached);
-            vm->num_objects--;
+            vm->gc.num_objects--;
             freed++;
         } else {
             // Keep the object
@@ -352,7 +345,7 @@ void pik_hashmap_destroy(pik_vm* vm, pik_hashmap* map) {
     if (map == NULL) return;
     for (size_t b = 0; b < PIK_HASHMAP_BUCKETS; b++) {
         pik_hashbucket bucket = map->buckets[b];
-        for (size_t e = 0; e < bucket.cap; e++) {
+        for (size_t e = 0; e < bucket.sz; e++) {
             free(bucket.entries[e].key);
             pik_decref(vm, bucket.entries[e].value);
         }
@@ -363,17 +356,17 @@ void pik_hashmap_destroy(pik_vm* vm, pik_hashmap* map) {
 void pik_hashmap_put(pik_hashmap* map, const char* key, pik_object* value, bool readonly) {
     pik_incref(value);
     pik_hashbucket b = map->buckets[pik_hashmap_hash(key)];
-    for (size_t i = 0; i < b.cap; i++) {
+    for (size_t i = 0; i < b.sz; i++) {
         if (streq(b.entries[i].key, key)) {
             b.entries[i].value = value;
             b.entries[i].readonly = readonly;
             return;
         }
     }
-    b.entries = (pik_hashentry*)realloc(b.entries, sizeof(struct pik_hashentry) * (b.cap + 1));
-    b.entries[b.cap].key = strdup(key);
-    b.entries[b.cap].value = value;
-    b.cap++;
+    b.entries = (pik_hashentry*)realloc(b.entries, sizeof(struct pik_hashentry) * (b.sz + 1));
+    b.entries[b.sz].key = strdup(key);
+    b.entries[b.sz].value = value;
+    b.sz++;
 }
 
 #ifdef PIK_DEBUG
