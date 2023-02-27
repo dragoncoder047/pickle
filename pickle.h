@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <assert.h>
 
 #define PIK_DEBUG
 
@@ -20,8 +19,15 @@ typedef uint8_t bool;
 
 #ifdef PIK_DEBUG
 #define PIK_DEBUG_PRINTF printf
+#define assert(cond) __assert(cond, #cond, __FILE__, __LINE__)
+void __assert(bool cond, const char* condstr, const char* filename, size_t line) {
+    if (cond) return;
+    printf("\n[%s:%zu] Assertion failed: %s\nAborting", filename, line, condstr);
+    exit(512);
+}
 #else
 #define PIK_DEBUG_PRINTF(...)
+#define assert(...)
 #endif
 
 typedef uint16_t pik_type;
@@ -188,7 +194,7 @@ void pik_run_typefun(pik_vm* vm, pik_type type, pik_object* object, void* arg, i
         if (vm->type_managers.mgrs[i].type_for == type && vm->type_managers.mgrs[i].funs[name] != NULL) { 
             vm->type_managers.mgrs[i].funs[name](vm, object, arg); 
             return; 
-        } 
+        }
     }
 }
 
@@ -196,7 +202,7 @@ pik_object* pik_alloc_object(pik_vm* vm, pik_type type, void* arg) {
     pik_object* object;
     PIK_DEBUG_PRINTF("Allocating object %s: ", pik_typename(vm, type));
     if (vm->gc.tombstones == NULL) {
-        PIK_DEBUG_PRINTF("fresh calloc()\n");
+        PIK_DEBUG_PRINTF("fresh alloc\n");
         object = (pik_object*)calloc(1, sizeof(struct pik_object));
         object->gc.next = vm->gc.first;
         vm->gc.first = object;
@@ -349,7 +355,7 @@ size_t pik_dogc(pik_vm* vm) {
             PIK_DEBUG_PRINTF("marked\n");
             // Keep the object
             (*object)->flags.global &= ~PIK_MARKED;
-            assert(!((*object)->flags.global & PIK_MARKED));
+            assert(((*object)->flags.global & PIK_MARKED) == 0);
             object = &(*object)->gc.next;
         }
     }
@@ -359,6 +365,7 @@ size_t pik_dogc(pik_vm* vm) {
 
 pik_vm* pik_new(void) {
     pik_vm* vm = (pik_vm*)calloc(1, sizeof(struct pik_vm));
+    PIK_DEBUG_PRINTF("For global scope: ");
     vm->global_scope = pik_alloc_object(vm, PIK_TYPE_NONE, NULL);
     // TODO: register global functions
     return vm;
@@ -440,19 +447,21 @@ void pik_hashmap_put(pik_vm* vm, pik_hashmap* map, const char* key, pik_object* 
 #ifdef PIK_DEBUG
 int main(void) {
     pik_vm* vm = pik_new();
+    puts("\nback in main");
     pik_object* object = pik_alloc_object(vm, PIK_TYPE_NONE, NULL);
     pik_decref(vm, object);
+    puts("\nGarbage test");
     object = pik_alloc_object(vm, PIK_TYPE_NONE, NULL);
-    printf("Create garbage\n");
+    puts("\nCreate garbage");
     for (size_t i = 0; i < 10; i++) {
         pik_alloc_object(vm, PIK_TYPE_NONE, NULL);
     }
-    printf("Create non garbage\n");
+    puts("\nCreate non garbage");
     for (size_t i = 0; i < 10; i++) {
         pik_object* obj = pik_alloc_object(vm, PIK_TYPE_NONE, NULL);
         pik_hashmap_put(vm, object->properties, "MyProperty", obj, true);
     }
-    puts("triggering tombstoning of all\n");
+    puts("\ntriggering tombstoning of all");
     pik_decref(vm, object);
     pik_dogc(vm);
     pik_destroy(vm);
