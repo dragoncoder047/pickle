@@ -26,7 +26,7 @@ typedef uint8_t bool;
 #define assert(cond) __assert(cond, #cond, __FILE__, __LINE__)
 void __assert(bool cond, const char* condstr, const char* filename, size_t line) {
     if (cond) return;
-    printf("[%s:%zu] assert(%s) failed!\nAborting\n", filename, line, condstr);
+    printf("[%s:%zu] Assertion failed: assert(%s)\nAbort.\n", filename, line, condstr);
     exit(70);
 }
 #else
@@ -62,10 +62,32 @@ typedef const char* (*pik_checkinterrupt_callback)(pik_vm*);
 
 // Types
 #define PIK_TYPE_NONE 0
-#define PIK_TYPE_ERROR 1
+#define PIK_TYPE_INT 1
+#define PIK_TYPE_FLOAT 2
+#define PIK_TYPE_COMPLEX 3
+#define PIK_TYPE_BOOL 4
+#define PIK_TYPE_ERROR 5
+#define PIK_TYPE_STRING 6
+#define PIK_TYPE_LIST 7
+#define PIK_TYPE_DICT 8
+#define PIK_TYPE_FUNCTION 9
+#define PIK_TYPE_CLASS 10
+#define PIK_TYPE_CODE 11
+// TODO: scope
 
-// Flags
+// Global Flags
 #define PIK_MARKED 1
+
+// Object Flags
+#define PIK_FUNCTION_FLAG_IS_USER 1
+
+// Code Types
+#define PIK_CODE_LINE 0
+#define PIK_CODE_WORD 1
+#define PIK_CODE_GETVAR 2
+#define PIK_CODE_CONCAT 3
+#define PIK_CODE_LIST 4
+#define PIK_CODE_DICT 5
 
 #define PIK_HASHMAP_BUCKETS 256
 #define PIK_HASHMAP_BUCKETMASK 0xFF
@@ -83,6 +105,11 @@ typedef struct pik_hashbucket {
 typedef struct pik_hashmap {
     pik_hashbucket buckets[PIK_HASHMAP_BUCKETS];
 } pik_hashmap;
+
+typedef struct pik_complex {
+    float real;
+    float imag;
+} pik_complex;
 
 struct pik_object {
     pik_type type;
@@ -107,10 +134,13 @@ struct pik_object {
         } as_cons;
         int64_t as_int;
         double as_double;
+        pik_complex as_complex;
+        pik_object* as_object;
         struct {
-            float real;
-            float imag;
-        } as_complex;
+            pik_object** items;
+            size_t sz;
+        } as_array;
+        pik_hashmap* as_hashmap;
     } payload;
 };
 
@@ -118,6 +148,7 @@ typedef struct pik_typemgr {
     pik_type_function funs[PIK_NUMTYPEFUNS];
     pik_type type_for;
     const char* type_string;
+    const pik_object* prototype;
 } pik_typemgr;
 
 typedef struct pik_operator {
@@ -175,11 +206,12 @@ void pik_register_globals(pik_vm*);
 void pik_register_builtin_types(pik_vm*);
 inline void pik_incref(pik_object*);
 void pik_decref(pik_vm*, pik_object*);
+void pik_mark_object(pik_vm*, pik_object*);
 inline pik_hashmap* pik_hashmap_new(void);
 void pik_hashmap_destroy(pik_vm*, pik_hashmap*);
-void pik_t_STRDUP_ARG(pik_vm*, pik_object*, void*);
-void pik_t_FREE_ARG(pik_vm*, pik_object*, void*);
-void pik_t_NOOP(pik_vm*, pik_object*, void*);
+void pik_tf_STRDUP_ARG(pik_vm*, pik_object*, void*);
+void pik_tf_FREE_ARG(pik_vm*, pik_object*, void*);
+void pik_tf_NOOP(pik_vm*, pik_object*, void*);
 
 // ------------------- Basic objects -------------------------
 
@@ -193,7 +225,7 @@ const char* pik_typename(pik_vm* vm, pik_type type) {
 }
 
 const char* pik_typeof(pik_vm* vm, pik_object* object) {
-    if (object == NULL) return "__nullptr";
+    if (object == NULL) return "null";
     return pik_typename(vm, object->type);
 }
 
@@ -283,8 +315,22 @@ void pik_decref(pik_vm* vm, pik_object* object) {
         // Unmark it so it will be collected if a GC is ongoing
         object->flags.global &= ~PIK_MARKED;
     }
+    #ifdef PIK_DEBUG
     else {
-        PIK_DEBUG_PRINTF("%s at %p lost a reference (now have %zu)\n", pik_typeof(vm, object), (void*)object, object->gc.refcnt);
+        printf("%s at %p lost a reference (now have %zu)\n", pik_typeof(vm, object), (void*)object, object->gc.refcnt);
+    }
+    #endif
+}
+
+void pik_mark_hashmap(pik_vm* vm, pik_hashmap* map) {
+    for (size_t i = 0; i < PIK_HASHMAP_BUCKETS; i++) {
+        pik_hashbucket b = map->buckets[i];
+        #ifdef PIK_DEBUG
+        if (b.sz > 0) printf("map->buckets[%zu]\n", i);
+        #endif
+        for (size_t j = 0; j < b.sz; j++) {
+            pik_mark_object(vm, b.entries[i].value);
+        }
     }
 }
 
@@ -296,25 +342,17 @@ void pik_mark_object(pik_vm* vm, pik_object* object) {
     // Mark payload
     PIK_DEBUG_PRINTF("%p->payload\n", (void*)object);
     pik_run_typefun(vm, object, NULL, PIK_MARKFUN);
-    size_t i, j;
     // Mark properties
     PIK_DEBUG_PRINTF("%p->properties\n", (void*)object);
-    for (i = 0; i < PIK_HASHMAP_BUCKETS; i++) {
-        pik_hashbucket b = object->properties->buckets[i];
-        #ifdef PIK_DEBUG
-        if (b.sz > 0) printf("%p->properties->buckets[%zu]\n", (void*)object, i);
-        #endif
-        for (j = 0; j < b.sz; j++) {
-            pik_mark_object(vm, b.entries[i].value);
-        }
-    }
+    pik_mark_hashmap(vm, object->properties);
+    // Mark prototypes
     if (object->proto.sz == 0) {
         PIK_DEBUG_PRINTF("%p->prototype == null\n", (void*)object);
         return;
     }
-    // Mark prototypes
     // - 1 for tail-call optimization
     PIK_DEBUG_PRINTF("%p->prototype (%zu bases)\n", (void*)object, object->proto.sz);
+    size_t i;
     for (i = 0; i < object->proto.sz - 1; i++) {
         pik_mark_object(vm, object->proto.bases[i]);
     }
@@ -372,13 +410,17 @@ void pik_destroy(pik_vm* vm) {
     vm->error = NULL;
     pik_dogc(vm);
     assert(vm->gc.first == NULL);
+    PIK_DEBUG_PRINTF("Freeing %zu type managers\n", vm->type_managers.sz);
     free(vm->type_managers.mgrs);
+    PIK_DEBUG_PRINTF("Freeing %zu operators\n", vm->operators.sz);
     free(vm->operators.ops);
     while (vm->parser != NULL) {
         pik_parser* p = vm->parser;
         vm->parser = p->parent;
+        PIK_DEBUG_PRINTF("Freeing a parser with code \"%.*s%s\"\n", (int)(p->len < 15 ? p->len : 15), p->code, p->len < 15 ? "" : "...");
         free(p);
     }
+    PIK_DEBUG_PRINTF("Freeing VM\n");
     free(vm);
 }
 
@@ -391,6 +433,17 @@ void pik_register_type(pik_vm* vm, pik_type type, const char* name, pik_type_fun
     vm->type_managers.mgrs[vm->type_managers.sz].funs[PIK_FINALFUN] = finalize;
     vm->type_managers.sz++;
     PIK_DEBUG_PRINTF("Registered type #%hu: %s\n", type, name);
+}
+
+void pik_set_default_prototype(pik_vm* vm, pik_type type, pik_object* prototype) {
+    for (size_t i = 0; i < vm->type_managers.sz; i++) {
+        if (vm->type_managers.mgrs[i].type_for == type) {
+            vm->type_managers.mgrs[i].prototype = prototype;
+            PIK_DEBUG_PRINTF("object at %p is now the default prototype for type %s\n", (void*)prototype, pik_typename(vm, type));
+            pik_incref(prototype);
+            return; 
+        }
+    }
 }
 
 void pik_set_error(pik_vm* vm, const char* message) {
@@ -495,27 +548,139 @@ bool pik_hashmap_has(pik_hashmap* map, const char* key) {
 
 // ------------------------------------- Builtin primitive types ----------------------------------
 
-void pik_t_STRDUP_ARG(pik_vm* vm, pik_object* object, void* arg) {
+void pik_tf_STRDUP_ARG(pik_vm* vm, pik_object* object, void* arg) {
     (void)vm;
     object->payload.as_pointer = (void*)strdup((char*)arg);
 }
 
-void pik_t_FREE_ARG(pik_vm* vm, pik_object* object, void* arg) {
+void pik_tf_FREE_PAYLOAD(pik_vm* vm, pik_object* object, void* arg) {
     (void)vm;
     (void)arg;
     free(object->payload.as_pointer);
 }
 
-void pik_t_NOOP(pik_vm* vm, pik_object* object, void* arg) {
+void pik_tf_NOOP(pik_vm* vm, pik_object* object, void* arg) {
     (void)vm;
     (void)object;
     (void)arg;
 }
 
+void pik_tf_COPY_PTR(pik_vm* vm, pik_object* object, void* arg) {
+    (void)vm;
+    object->payload.as_pointer = arg;
+}
+
+void pik_tf_COPY_ARG_BITS(pik_vm* vm, pik_object* object, void* arg) {
+    (void)vm;
+    object->payload.as_int = *(int64_t*)arg;
+}
+
+void pik_tf_DECREF_IF_USER_CODE(pik_vm* vm, pik_object* object, void* arg) {
+    (void)arg;
+    if (object->flags.obj & PIK_FUNCTION_FLAG_IS_USER) {
+        pik_decref(vm, object->payload.as_object);
+    }
+}
+
+void pik_tf_MARK_ITEMS(pik_vm* vm, pik_object* object, void* arg) {
+    (void)arg;
+    if (object->payload.as_array.items == NULL) return;
+    for (size_t i = 0; i < object->payload.as_array.sz; i++) {
+        pik_mark_object(vm, object->payload.as_array.items[i]);
+    }
+}
+
+void pik_tf_FREE_ITEMS(pik_vm* vm, pik_object* object, void* arg) {
+    (void)arg;
+    if (object->payload.as_array.items == NULL) return;
+    for (size_t i = 0; i < object->payload.as_array.sz; i++) {
+        pik_decref(vm, object->payload.as_array.items[i]);
+    }
+    free(object->payload.as_array.items);
+    object->payload.as_array.items = NULL;
+    object->payload.as_array.sz = 0;
+}
+
+void pik_tf_init_hashmap(pik_vm* vm, pik_object* object, void* arg) {
+    (void)vm;
+    (void)arg;
+    object->payload.as_hashmap = pik_hashmap_new();
+}
+
+void pik_tf_mark_hashmap(pik_vm* vm, pik_object* object, void* arg) {
+    (void)arg;
+    pik_mark_hashmap(vm, object->payload.as_hashmap);
+}
+
+void pik_tf_free_hashmap(pik_vm* vm, pik_object* object, void* arg) {
+    (void)arg;
+    pik_hashmap_destroy(vm, object->payload.as_hashmap);
+}
+
+void pik_tf_init_code(pik_vm* vm, pik_object* object, void* arg) {
+    (void)vm;
+    pik_flags ct = *(pik_flags*)arg;
+    object->flags.obj = ct;
+    switch (ct) {
+        case PIK_CODE_WORD:
+        case PIK_CODE_GETVAR:
+            pik_tf_STRDUP_ARG(vm, object, arg);
+            break;
+        case PIK_CODE_CONCAT:
+        case PIK_CODE_LINE:
+        case PIK_CODE_LIST:
+        case PIK_CODE_DICT:
+            break;
+    }
+}
+
+void pik_tf_mark_code(pik_vm* vm, pik_object* object, void* arg) {
+    (void)arg;
+    pik_flags ct = object->flags.obj;
+    switch (ct) {
+        case PIK_CODE_WORD:
+        case PIK_CODE_GETVAR:
+            break;
+        case PIK_CODE_CONCAT:
+        case PIK_CODE_LINE:
+        case PIK_CODE_LIST:
+        case PIK_CODE_DICT:
+            pik_tf_MARK_ITEMS(vm, object, NULL);
+    }
+}
+
+void pik_tf_free_code(pik_vm* vm, pik_object* object, void* arg) {
+    (void)arg;
+    pik_flags ct = object->flags.obj;
+    object->flags.obj = 0;
+    switch (ct) {
+        case PIK_CODE_WORD:
+        case PIK_CODE_GETVAR:
+            free(object->payload.as_pointer);
+            object->payload.as_pointer = NULL;
+            break;
+        case PIK_CODE_CONCAT:
+        case PIK_CODE_LINE:
+        case PIK_CODE_LIST:
+        case PIK_CODE_DICT:
+            pik_tf_FREE_ITEMS(vm, object, NULL);
+            break;
+    }
+}
+
 void pik_register_builtin_types(pik_vm* vm) {
     PIK_DEBUG_PRINTF("Registering builtin types\n");
-    pik_register_type(vm, PIK_TYPE_ERROR, "Error", pik_t_STRDUP_ARG, pik_t_NOOP, pik_t_FREE_ARG);
-
+    pik_register_type(vm, PIK_TYPE_INT, "int", pik_tf_COPY_ARG_BITS, pik_tf_NOOP, pik_tf_NOOP);
+    pik_register_type(vm, PIK_TYPE_FLOAT, "float", pik_tf_COPY_ARG_BITS, pik_tf_NOOP, pik_tf_NOOP);
+    pik_register_type(vm, PIK_TYPE_BOOL, "bool", pik_tf_COPY_ARG_BITS, pik_tf_NOOP, pik_tf_NOOP);
+    pik_register_type(vm, PIK_TYPE_COMPLEX, "complex", pik_tf_COPY_ARG_BITS, pik_tf_NOOP, pik_tf_NOOP);
+    pik_register_type(vm, PIK_TYPE_ERROR, "error", pik_tf_STRDUP_ARG, pik_tf_NOOP, pik_tf_FREE_PAYLOAD);
+    pik_register_type(vm, PIK_TYPE_STRING, "str", pik_tf_STRDUP_ARG, pik_tf_NOOP, pik_tf_FREE_PAYLOAD);
+    pik_register_type(vm, PIK_TYPE_LIST, "list", pik_tf_NOOP, pik_tf_MARK_ITEMS, pik_tf_FREE_ITEMS);
+    pik_register_type(vm, PIK_TYPE_DICT, "dict", pik_tf_init_hashmap, pik_tf_mark_hashmap, pik_tf_free_hashmap);
+    pik_register_type(vm, PIK_TYPE_FUNCTION, "function", pik_tf_COPY_PTR, pik_tf_NOOP, pik_tf_DECREF_IF_USER_CODE);
+    pik_register_type(vm, PIK_TYPE_CLASS, "class", pik_tf_COPY_PTR, pik_tf_NOOP, pik_tf_DECREF_IF_USER_CODE);
+    pik_register_type(vm, PIK_TYPE_CODE, "_internal_code_object", pik_tf_init_code, pik_tf_mark_code, pik_tf_free_code);
 }
 
 // ------------------------------- Parser ------------------------------
@@ -534,7 +699,7 @@ void pik_push_parser(pik_vm* vm, const char* str, size_t len) {
     pik_parser* next = (pik_parser*)calloc(1, sizeof(pik_parser));
     next->parent = vm->parser;
     next->code = str;
-    next->len = len;
+    next->len = len > 0 ? len : strlen(str);
     if (vm->parser) next->depth = vm->parser->depth + 1;
     vm->parser = next;
 }
@@ -551,13 +716,22 @@ char pik_parser_eat(pik_parser* p) {
     return c;
 }
 
+void pik_parser_backup(pik_parser* p) {
+    if (p == NULL) return;
+    if (p->head == 0) return;
+    p->head--;
+}
+
 #ifdef PIK_DEBUG
 void pik_debug_dump_parser(pik_parser* p) {
     size_t old_head = p->head;
+    p->head = 0;
     while (!pik_parser_iseof(p)) putchar(pik_parser_eat(p));
     p->head = old_head;
 }
 #endif
+
+// TODO: getting stuff off the parser
 
 #ifdef PIK_DEBUG
 int main(void) {
@@ -565,6 +739,7 @@ int main(void) {
     puts("\nback in main");
     pik_object* object = pik_alloc_object(vm, PIK_TYPE_NONE, NULL);
     pik_decref(vm, object);
+
     puts("\nGarbage test");
     object = pik_alloc_object(vm, PIK_TYPE_NONE, NULL);
     puts("\nCreate garbage");
@@ -588,6 +763,12 @@ int main(void) {
     puts("\ntriggering tombstoning of all");
     pik_decref(vm, object);
     pik_dogc(vm);
+
+    puts("\nParser test");
+    pik_push_parser(vm, "foobar barbaz", 0);
+    assert(vm->parser != NULL);
+    assert(vm->parser->depth == 0);
+
     pik_destroy(vm);
     return 0;
 }
