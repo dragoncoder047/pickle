@@ -781,7 +781,7 @@ static void skip_whitespace(pik_parser* p) {
                 // Line comment
                 while (!p_endline(p)) next(p);
             }
-        } else if (c == '\\' && eolchar(p->code[p->head + 1])) {
+        } else if (c == '\\' && eolchar(peek(p, 1))) {
             // Escaped EOL
             next(p);
             while (!p_endline(p)) next(p);
