@@ -836,7 +836,7 @@ static pik_object* next_item(pik_vm* vm) {
             return get_getvar(vm);
         case '"':
         case '\'':
-            return get_string(vm, at(vm));
+            return get_string(vm, at(p));
         case '{':
             return get_brace_string(vm);
         case '(':
