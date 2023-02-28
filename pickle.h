@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <ctype.h>
 
 #define PIK_DEBUG
 
@@ -23,15 +24,16 @@ typedef uint8_t bool;
 
 #ifdef PIK_DEBUG
 #define PIK_DEBUG_PRINTF printf
-#define assert(cond) __assert(cond, #cond, __FILE__, __LINE__)
-void __assert(bool cond, const char* condstr, const char* filename, size_t line) {
+#define PIK_DEBUG_ASSERT(cond, should) __PIK_DEBUG_ASSERT_INNER(cond, should, #cond, __FILE__, __LINE__)
+void __PIK_DEBUG_ASSERT_INNER(bool cond, const char* should, const char* condstr, const char* filename, size_t line) {
+    printf("[%s:%zu] Assertion %s: %s\n", filename, line, cond ? "succeeded" : "failed", condstr);
     if (cond) return;
-    printf("[%s:%zu] Assertion failed: assert(%s)\nAbort.\n", filename, line, condstr);
+    printf("%s\nAbort.", should);
     exit(70);
 }
 #else
 #define PIK_DEBUG_PRINTF(...)
-#define assert(...)
+#define PIK_DEBUG_ASSERT(...)
 #endif
 
 typedef uint16_t pik_type;
@@ -290,7 +292,7 @@ void pik_finalize(pik_vm* vm, pik_object* object) {
     PIK_DEBUG_PRINTF("Finalizing %s at %p\n", pik_typeof(vm, object), (void*)object);
     // Free object-specific stuff
     pik_run_typefun(vm, object, NULL, PIK_FINALFUN);
-    assert(object->payload.as_int == 0);
+    PIK_DEBUG_ASSERT(object->payload.as_int == 0, "Finalizer did not clear object payload");
     // Free everything else
     object->flags.global = 0;
     object->flags.obj = 0;
@@ -408,7 +410,7 @@ void pik_destroy(pik_vm* vm) {
     vm->dollar_function = NULL;
     vm->error = NULL;
     pik_dogc(vm);
-    assert(vm->gc.first == NULL);
+    PIK_DEBUG_ASSERT(vm->gc.first == NULL, "Garbage collection failed to free all objects");
     PIK_DEBUG_PRINTF("Freeing %zu type managers\n", vm->type_managers.sz);
     free(vm->type_managers.mgrs);
     PIK_DEBUG_PRINTF("Freeing %zu operators\n", vm->operators.sz);
@@ -679,11 +681,34 @@ void pik_register_builtin_types(pik_vm* vm) {
     pik_register_type(vm, PIK_TYPE_CODE, "_internal_code_object", pik_tf_init_code, pik_tf_mark_code, pik_tf_free_code);
 }
 
+void pik_APPEND_INPLACE(pik_object* a, pik_object* item) {
+    if (a == NULL) return;
+    PIK_DEBUG_ASSERT(a->payload.as_array.items != NULL, "Not an array");
+    a->payload.as_array.items = (pik_object**)realloc(a->payload.as_array.items, (a->payload.as_array.sz + 1) * sizeof(pik_object));
+    a->payload.as_array.items[a->payload.as_array.sz] = item;
+    a->payload.as_array.sz++;
+    pik_incref(item);
+}
+
 // ------------------------------- Parser ------------------------------
 
 inline bool pik_parser_iseof(pik_parser* p) {
-    if (p == NULL) return false;
+    if (p == NULL) return true;
     return p->head >= p->len || p->code[p->head] == '\0';
+}
+
+inline bool pik_eolchar(char c) {
+    return strchr(";\n\r", c) != NULL;
+}
+
+inline bool pik_parser_iseol(pik_parser* p) {
+    if (p == NULL) return true;
+    if (pik_parser_iseof(p)) return true;
+    return pik_eolchar(p->code[p->head]);
+}
+
+inline bool pik_parser_startswith(pik_parser* p, const char* str) {
+    return strncmp(&p->code[p->head], str, strlen(str)) == 0;
 }
 
 void pik_push_parser(pik_vm* vm, const char* str, size_t len) {
@@ -719,52 +744,96 @@ void pik_parser_backup(pik_parser* p) {
 }
 
 #ifdef PIK_DEBUG
-void pik_debug_dump_parser(pik_parser* p) {
-    size_t old_head = p->head;
-    p->head = 0;
-    while (!pik_parser_iseof(p)) putchar(pik_parser_eat(p));
-    p->head = old_head;
+void PIK_DEBUG_DUMP_PARSER(pik_parser* p) {
+    if (p == NULL) return;
+    printf("\"%.*s\"\n", (int)(p->len - p->head), &p->code[p->head]);
 }
 #endif
 
-// TODO: getting stuff off the parser
+void pik_parser_skip_whitespace_and_comments(pik_parser* p) {
+    if (p == NULL) return;
+    again:
+    size_t start = p->head;
+    while (!pik_parser_iseof(p)) {
+        char c = p->code[p->head];
+        if (c == '#') {
+            if (pik_parser_startswith(p, "###")) {
+                // Block comment
+                p->head += 2;
+                while (!pik_parser_iseof(p) && !pik_parser_startswith(p, "###")) p->head++;
+                p->head += 3;
+            } else {
+                // Line comment
+                while (!pik_parser_iseol(p)) p->head++;
+            }
+        } else if (c == '\\' && pik_eolchar(p->code[p->head + 1])) {
+            // Escaped EOL
+            p->head++;
+            while (!pik_parser_iseol(p)) p->head++;
+        } else if (pik_eolchar(c)) {
+            // Not escaped EOL
+            p->head++;
+            if (p->ignore_eol) continue;
+            else break;
+        } else if (isspace(c)) {
+            // Real space
+            p->head++;
+        }
+        else break;
+    }
+    // Try to get all the comments at once
+    // if we got one, try for another
+    if (p->head != start) goto again;
+}
 
 #ifdef PIK_DEBUG
+void test_header(const char* h) {
+    static int count = 0;
+    count++;
+    printf("\n-----------------%i: %s-----------------\n", count, h);
+}
+
 int main(void) {
     pik_vm* vm = pik_new();
-    puts("\nback in main");
-    pik_object* object = pik_alloc_object(vm, PIK_TYPE_NONE, NULL);
-    pik_decref(vm, object);
-
-    puts("\nGarbage test");
-    object = pik_alloc_object(vm, PIK_TYPE_NONE, NULL);
-    puts("\nCreate garbage");
+    test_header("Create 10 garbage objects -- should reuse");
+    size_t init = vm->gc.num_objects;
     for (size_t i = 0; i < 10; i++) {
         pik_decref(vm, pik_alloc_object(vm, PIK_TYPE_NONE, NULL));
     }
-    puts("\nCreate non garbage");
+    size_t created = vm->gc.num_objects - init;
+    PIK_DEBUG_ASSERT(created == 1, "failed to reuse object with no refs");
+
+    test_header("Create non garbage");
     char* buf;
-    for (size_t i = 0; i < 10; i++) {
+    pik_object* top = pik_alloc_object(vm, PIK_TYPE_NONE, NULL);
+    for (size_t i = 0; i < 5; i++) {
         unsigned int h = pik_hashmap_hash(buf);
         free(buf);
         buf = NULL;
         asprintf(&buf, "MyProp%u", h + 1);
         pik_object* obj = pik_alloc_object(vm, PIK_TYPE_NONE, NULL);
-        pik_hashmap_put(vm, object->properties, buf, obj, true);
+        pik_hashmap_put(vm, top->properties, buf, obj, true);
         pik_decref(vm, obj);
     }
     free(buf);
-    assert(pik_hashmap_has(object->properties, "MyProp6"));
-    assert(pik_hashmap_entry_is_locked(object->properties, "MyProp6"));
-    puts("\ntriggering tombstoning of all");
-    pik_decref(vm, object);
+    test_header("Check hashmap_has()");
+    PIK_DEBUG_ASSERT(pik_hashmap_has(top->properties, "MyProp6"), "pik_hashmap_has() doesn't work");
+    test_header("Check hashmap_is_locked()");
+    PIK_DEBUG_ASSERT(pik_hashmap_entry_is_locked(top->properties, "MyProp6"), "entry->locked wasn't set right");
+
+    test_header("triggering tombstoning of all");
+    pik_decref(vm, top);
     pik_dogc(vm);
 
-    puts("\nParser test");
-    pik_push_parser(vm, "foobar barbaz", 0);
-    assert(vm->parser != NULL);
-    assert(vm->parser->depth == 0);
+    test_header("Parser test");
+    pik_push_parser(vm, "# I am a line comment\n###\n\tI am a block comment\n\t$foobar barbaz\n###\n# I am a line comment\nfoobar", 0);
+    PIK_DEBUG_ASSERT(vm->parser != NULL, "Failed to push parser");
+    PIK_DEBUG_ASSERT(vm->parser->depth == 0, "Set incorrect depth on parser");
+    PIK_DEBUG_DUMP_PARSER(vm->parser);
+    pik_parser_skip_whitespace_and_comments(vm->parser);
+    PIK_DEBUG_DUMP_PARSER(vm->parser);
 
+    test_header("END tests");
     pik_destroy(vm);
     return 0;
 }

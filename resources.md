@@ -159,7 +159,11 @@ Special vars
 
 Syntax
 
+* `# ...` == line comments
+* `### ... ###` == block comments
 * `{...}` == literal string (could be code)
+* `"..."` == literal string (could be code)
+* `'...'` == literal string (could be code)
 * `[...]` == list
 * `(...)` == parens
 * Newline or `;` == end of command
