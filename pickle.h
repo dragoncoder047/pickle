@@ -801,12 +801,51 @@ static void skip_whitespace(pik_parser* p) {
     if (p->head != start) goto again;
 }
 
-static pik_object* next_word(pik_vm* vm) {
+static pik_object* get_getvar(pik_vm* vm) {
+
+}
+
+static pik_object* get_string(pik_vm* vm, char end) {
+    
+}
+
+static pik_object* get_brace_string(pik_vm* vm) {
+    
+}
+
+static pik_object* get_expression(pik_vm* vm) {
+    
+}
+
+static pik_object* get_list(pik_vm* vm) {
+    
+}
+
+static pik_object* get_word(pik_vm* vm) {
+    
+}
+
+static pik_object* next_item(pik_vm* vm) {
     IF_NULL_RETURN(vm) NULL;
-    IF_NULL_RETURN(vm->parser) NULL;
-    skip_whitespace(vm->parser);
-    size_t start = vm->parser->head;
-    while (!isspace(vm->parser->code[vm->parser->head])) vm->parser->head++;
+    pik_parser* p = vm->parser;
+    IF_NULL_RETURN(p) NULL;
+    skip_whitespace(p);
+
+    switch(at(p)) {
+        case '$':
+            return get_getvar(vm);
+        case '"':
+        case '\'':
+            return get_string(vm, at(vm));
+        case '{':
+            return get_brace_string(vm);
+        case '(':
+            return get_expression(vm);
+        case '[':
+            return get_list(vm);
+        default:
+            return get_word(vm);
+    }
 }
 
 #ifdef PIK_DEBUG
@@ -849,7 +888,7 @@ int main(void) {
     pik_collect_garbage(vm);
 
     test_header("Parser test");
-    push_parser(vm, "# I am a line comment\n###\n\tI am a block comment\n\t$foobar barbaz\n###\n# I am a line comment\nfoobar", 0);
+    push_parser(vm, "# I am a line comment\n###\n\tI am a block comment\n\t$foobar barbaz\n###\n# I am a line comment\n'foobar'barbaz", 0);
     PIK_DEBUG_ASSERT(vm->parser != NULL, "Failed to push parser");
     PIK_DEBUG_ASSERT(vm->parser->depth == 0, "Set incorrect depth on parser");
     PIK_DEBUG_DUMP_PARSER(vm->parser);
