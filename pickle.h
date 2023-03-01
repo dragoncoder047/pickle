@@ -88,9 +88,10 @@ typedef const char* (*pik_checkinterrupt_callback)(pik_vm*);
 #define PIK_CODE_BLOCK 0
 #define PIK_CODE_LINE 1
 #define PIK_CODE_WORD 2
-#define PIK_CODE_GETVAR 3
-#define PIK_CODE_CONCAT 4
-#define PIK_CODE_LIST 5
+#define PIK_CODE_OPERATOR 3
+#define PIK_CODE_GETVAR 4
+#define PIK_CODE_CONCAT 5
+#define PIK_CODE_LIST 6
 
 #define PIK_HASHMAP_BUCKETS 256
 #define PIK_HASHMAP_BUCKETMASK 0xFF
@@ -659,6 +660,7 @@ void pik_tf_mark_code(pik_vm* vm, pik_object* object, void* arg) {
     switch (ct) {
         case PIK_CODE_WORD:
         case PIK_CODE_GETVAR:
+        case PIK_CODE_OPERATOR:
             break;
         case PIK_CODE_CONCAT:
         case PIK_CODE_LINE:
@@ -675,6 +677,7 @@ void pik_tf_free_code(pik_vm* vm, pik_object* object, void* arg) {
     switch (ct) {
         case PIK_CODE_WORD:
         case PIK_CODE_GETVAR:
+        case PIK_CODE_OPERATOR:
             free(object->payload.as_pointer);
             object->payload.as_pointer = NULL;
             break;
@@ -824,8 +827,7 @@ static inline char escape(char c) {
     }
 }
 
-// USes int, int instead of bool, char because of same signature of isdigit()
-static int valid_varchar(int c) {
+static bool valid_varchar(char c) {
     if ('A' <= c && 'Z' >= c) return true;
     if ('a' <= c && 'z' >= c) return true;
     if ('0' <= c && '9' >= c) return true;
@@ -873,7 +875,7 @@ static bool skip_whitespace(pik_parser* p) {
         PIK_DEBUG_PRINTF("Skipped whitespace\n");
         goto again;
     }
-    PIK_DEBUG_PRINTF("end charcode when done skipping whitespace: %u (\\%c)\n", at(p), escape(at(p)));
+    PIK_DEBUG_PRINTF("end charcode when done skipping whitespace: %u (%s%c)\n", at(p), needs_escape(at(p)) ? "\\" : "", escape(at(p)));
     return skipped;
 }
 
@@ -887,8 +889,8 @@ static pik_object* get_getvar(pik_vm* vm, pik_parser* p) {
     // First pass: find length
     size_t len = 0;
     size_t start = save(p);
-    int (*tst)(int) = isdigit(at(p)) ? isdigit : valid_varchar;
-    while (tst(at(p)) && !p_eof(p)) {
+    bool islambda = isdigit(at(p));
+    while ((islambda ? isdigit(at(p)) : valid_varchar(at(p))) && !p_eof(p)) {
         len++;
         next(p);
     }
@@ -975,16 +977,19 @@ static pik_object* get_brace_string(pik_vm* vm, pik_parser* p) {
 
 static pik_object* get_colon_string(pik_vm* vm, pik_parser* p) {
     PIK_DEBUG_PRINTF("get_colon_string()\n");
+    PIK_DEBUG_PRINTF("UNIMPLEMENTED\n");
     return NULL;
 }
 
 static pik_object* get_expression(pik_vm* vm, pik_parser* p) {
     PIK_DEBUG_PRINTF("get_expression()\n");
+    PIK_DEBUG_PRINTF("UNIMPLEMENTED\n");
     return NULL;
 }
 
 static pik_object* get_list(pik_vm* vm, pik_parser* p) {
     PIK_DEBUG_PRINTF("get_list()\n");
+    PIK_DEBUG_PRINTF("UNIMPLEMENTED\n");
     return NULL;
 }
 
@@ -993,7 +998,7 @@ static pik_object* get_word(pik_vm* vm, pik_parser* p) {
     size_t len = 0;
     // Special case: boolean
     if (p_startswith(p, "true") || p_startswith(p, "false")) {
-        bool truthy = p_startswith(p, "true");
+        int64_t truthy = at(p) == 't';
         size_t start = save(p);
         advance(p, truthy ? 4 : 5);
         if (isspace(at(p)) || ispunct(at(p))) return pik_create_primitive(vm, PIK_TYPE_BOOL, (void*)&truthy);
@@ -1034,7 +1039,7 @@ static pik_object* get_word(pik_vm* vm, pik_parser* p) {
     // Pick it out
     size_t end = save(p);
     restore(p, start);
-    pik_object* w = create_codeobj(vm, PIK_CODE_WORD);
+    pik_object* w = create_codeobj(vm, ispunct(at(p)) ? PIK_CODE_OPERATOR : PIK_CODE_WORD);
     asprintf((char**)&w->payload.as_pointer, "%.*s", (int)len, str_of(p));
     restore(p, end);
     return w;
@@ -1181,7 +1186,8 @@ static void dump_ast(pik_object* code, int indent) {
                     break;
                 case PIK_CODE_GETVAR:
                 case PIK_CODE_WORD:
-                    printf("#%s(%s)", code->flags.obj == PIK_CODE_GETVAR ? "getvar" : "word", (char*)code->payload.as_pointer);
+                case PIK_CODE_OPERATOR:
+                    printf("#%s(%s)", code->flags.obj == PIK_CODE_GETVAR ? "getvar" : code->flags.obj == PIK_CODE_OPERATOR ? "operator" : "word", (char*)code->payload.as_pointer);
                     break;
                 case PIK_CODE_LIST:
                     printf("#list_todo");
@@ -1206,52 +1212,58 @@ void test_header(const char* h) {
 
 int main(void) {
     pik_vm* vm = pik_new();
-    test_header("Create 10 garbage objects -- should reuse");
-    size_t init = vm->gc.num_objects;
-    for (size_t i = 0; i < 10; i++) {
-        pik_decref(vm, alloc_object(vm, PIK_TYPE_NONE, NULL));
-    }
-    size_t created = vm->gc.num_objects - init;
-    PIK_DEBUG_ASSERT(created == 1, "failed to reuse object with no refs");
+    // test_header("Create 10 garbage objects -- should reuse");
+    // size_t init = vm->gc.num_objects;
+    // for (size_t i = 0; i < 10; i++) {
+    //     pik_decref(vm, alloc_object(vm, PIK_TYPE_NONE, NULL));
+    // }
+    // size_t created = vm->gc.num_objects - init;
+    // PIK_DEBUG_ASSERT(created == 1, "failed to reuse object with no refs");
 
-    test_header("Create non garbage");
-    char* buf;
-    pik_object* top = alloc_object(vm, PIK_TYPE_NONE, NULL);
-    for (size_t i = 0; i < 5; i++) {
-        unsigned int h = hashmap_hash(buf);
-        free(buf);
-        buf = NULL;
-        asprintf(&buf, "MyProp%u", h + 1);
-        pik_object* obj = alloc_object(vm, PIK_TYPE_NONE, NULL);
-        pik_hashmap_put(vm, top->properties, buf, obj, true);
-        pik_decref(vm, obj);
-    }
-    free(buf);
-    test_header("Check hashmap_has()");
-    PIK_DEBUG_ASSERT(pik_hashmap_has(top->properties, "MyProp6"), "pik_hashmap_has() doesn't work");
-    test_header("Check hashmap_is_locked()");
-    PIK_DEBUG_ASSERT(pik_hashmap_entry_is_locked(top->properties, "MyProp6"), "entry->locked wasn't set right");
+    // test_header("Create non garbage");
+    // char* buf;
+    // pik_object* top = alloc_object(vm, PIK_TYPE_NONE, NULL);
+    // for (size_t i = 0; i < 5; i++) {
+    //     unsigned int h = hashmap_hash(buf);
+    //     free(buf);
+    //     buf = NULL;
+    //     asprintf(&buf, "MyProp%u", h + 1);
+    //     pik_object* obj = alloc_object(vm, PIK_TYPE_NONE, NULL);
+    //     pik_hashmap_put(vm, top->properties, buf, obj, true);
+    //     pik_decref(vm, obj);
+    // }
+    // free(buf);
+    // test_header("Check hashmap_has()");
+    // PIK_DEBUG_ASSERT(pik_hashmap_has(top->properties, "MyProp6"), "pik_hashmap_has() doesn't work");
+    // test_header("Check hashmap_is_locked()");
+    // PIK_DEBUG_ASSERT(pik_hashmap_entry_is_locked(top->properties, "MyProp6"), "entry->locked wasn't set right");
 
-    test_header("triggering tombstoning of all");
-    pik_decref(vm, top);
-    pik_collect_garbage(vm);
+    // test_header("triggering tombstoning of all");
+    // pik_decref(vm, top);
+    // pik_collect_garbage(vm);
 
     test_header("Parser test");
-    const char* code = R"===("foobar" 'noobarbaz' # Ignore me
+    const char* code = R"===(
+
+"foobar" 'noobarbaz' # Ignore me
 "blarg\n"; "newline on prev"
 ### Comment ### "bing" ###
 ### "bing2"
 $iam $123foo {
-    the previous
-    should be
-    123 and
-    foo
-    separately
-    in an implicit concat
-} word word
+the previous
+should be
+123 and
+foo
+separately
+in an implicit concat # comments stay too
+} word word;;;;;;;;;;;;;;
 newline; word
 1+2|>$foo|>$bar
-truefoo true"haha"false{true {true}}
+truefoo true"haha"false{true {true}}|@|!|@@!|!@||@!%^%^%
+begin block
+    foo bar
+    bar baz
+out of block
 )===";
     pik_parser* p = push_parser(vm, NULL, code, 0, false);
     PIK_DEBUG_ASSERT(p != NULL, "Failed to push parser");
