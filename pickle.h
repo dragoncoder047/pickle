@@ -85,11 +85,12 @@ typedef const char* (*pik_checkinterrupt_callback)(pik_vm*);
 #define PIK_FUNCTION_FLAG_IS_USER 1
 
 // Code Types
-#define PIK_CODE_LINE 0
-#define PIK_CODE_WORD 1
-#define PIK_CODE_GETVAR 2
-#define PIK_CODE_CONCAT 3
-#define PIK_CODE_LIST 4
+#define PIK_CODE_BLOCK 0
+#define PIK_CODE_LINE 1
+#define PIK_CODE_WORD 2
+#define PIK_CODE_GETVAR 3
+#define PIK_CODE_CONCAT 4
+#define PIK_CODE_LIST 5
 
 #define PIK_HASHMAP_BUCKETS 256
 #define PIK_HASHMAP_BUCKETMASK 0xFF
@@ -205,7 +206,7 @@ if (vm->callbacks.name != NULL) { \
 
 // Forward references
 void pik_register_globals(pik_vm*);
-void pik_register_builtin_types(pik_vm*);
+static void register_primitive_types(pik_vm*);
 inline void pik_incref(pik_object*);
 void pik_decref(pik_vm*, pik_object*);
 static void mark_object(pik_vm*, pik_object*);
@@ -270,19 +271,19 @@ void pik_add_prototype(pik_object* object, pik_object* proto) {
     for (size_t i = 0; i < object->proto.sz; i++) {
         if (object->proto.bases[i] == proto) return; // Don't add the same prototype twice
     }
-    object->proto.bases = (pik_object**)realloc(object->proto.bases, (object->proto.sz + 1) * sizeof(pik_object));
+    object->proto.bases = (pik_object**)realloc(object->proto.bases, (object->proto.sz + 1) * sizeof(pik_object*));
     object->proto.bases[object->proto.sz] = proto;
     object->proto.sz++;
     pik_incref(proto);
 }
 
-pik_object* pik_create_fromproto(pik_vm* vm, pik_type type, pik_object* proto, void* arg) {
+pik_object* pik_create(pik_vm* vm, pik_type type, pik_object* proto, void* arg) {
     pik_object* object = alloc_object(vm, type, arg);
     pik_add_prototype(object, proto);
     return object;
 }
 
-pik_object* pik_create(pik_vm* vm, pik_type type, void* arg) {
+pik_object* pik_create_primitive(pik_vm* vm, pik_type type, void* arg) {
     pik_object* proto = NULL;
     for (size_t i = 0; i < vm->type_managers.sz; i++) { 
         if (vm->type_managers.mgrs[i].type_for == type && vm->type_managers.mgrs[i].prototype != NULL) { 
@@ -290,7 +291,7 @@ pik_object* pik_create(pik_vm* vm, pik_type type, void* arg) {
             break;
         }
     }
-    return pik_create_fromproto(vm, type, proto, arg);
+    return pik_create(vm, type, proto, arg);
 }
 
 inline void pik_incref(pik_object* object) {
@@ -410,7 +411,7 @@ size_t pik_collect_garbage(pik_vm* vm) {
 
 pik_vm* pik_new(void) {
     pik_vm* vm = (pik_vm*)calloc(1, sizeof(pik_vm));
-    pik_register_builtin_types(vm);
+    register_primitive_types(vm);
     PIK_DEBUG_PRINTF("For global scope: ");
     vm->global_scope = alloc_object(vm, PIK_TYPE_NONE, NULL);
     // TODO: register global functions
@@ -636,16 +637,6 @@ void pik_tf_init_code(pik_vm* vm, pik_object* object, void* arg) {
     (void)vm;
     pik_flags ct = *(pik_flags*)arg;
     object->flags.obj = ct;
-    switch (ct) {
-        case PIK_CODE_WORD:
-        case PIK_CODE_GETVAR:
-            pik_tf_STRDUP_ARG(vm, object, arg);
-            break;
-        case PIK_CODE_CONCAT:
-        case PIK_CODE_LINE:
-        case PIK_CODE_LIST:
-            break;
-    }
 }
 
 void pik_tf_mark_code(pik_vm* vm, pik_object* object, void* arg) {
@@ -657,6 +648,7 @@ void pik_tf_mark_code(pik_vm* vm, pik_object* object, void* arg) {
             break;
         case PIK_CODE_CONCAT:
         case PIK_CODE_LINE:
+        case PIK_CODE_BLOCK:
         case PIK_CODE_LIST:
             pik_tf_MARK_ITEMS(vm, object, NULL);
     }
@@ -674,13 +666,14 @@ void pik_tf_free_code(pik_vm* vm, pik_object* object, void* arg) {
             break;
         case PIK_CODE_CONCAT:
         case PIK_CODE_LINE:
+        case PIK_CODE_BLOCK:
         case PIK_CODE_LIST:
             pik_tf_FREE_ITEMS(vm, object, NULL);
             break;
     }
 }
 
-void pik_register_builtin_types(pik_vm* vm) {
+static void register_primitive_types(pik_vm* vm) {
     PIK_DEBUG_PRINTF("Registering builtin types\n");
     pik_register_type(vm, PIK_TYPE_INT, "int", pik_tf_COPY_ARG_BITS, pik_tf_NOOP, pik_tf_NOOP);
     pik_register_type(vm, PIK_TYPE_FLOAT, "float", pik_tf_COPY_ARG_BITS, pik_tf_NOOP, pik_tf_NOOP);
@@ -697,11 +690,14 @@ void pik_register_builtin_types(pik_vm* vm) {
 
 void pik_APPEND_INPLACE(pik_object* a, pik_object* item) {
     IF_NULL_RETURN(a);
-    PIK_DEBUG_ASSERT(a->payload.as_array.items != NULL, "Not an array");
-    a->payload.as_array.items = (pik_object**)realloc(a->payload.as_array.items, (a->payload.as_array.sz + 1) * sizeof(pik_object));
+    a->payload.as_array.items = (pik_object**)realloc(a->payload.as_array.items, (a->payload.as_array.sz + 1) * sizeof(pik_object*));
     a->payload.as_array.items[a->payload.as_array.sz] = item;
     a->payload.as_array.sz++;
     pik_incref(item);
+}
+
+static inline pik_object* create_codeobj(pik_vm* vm, pik_flags codetype) {
+    return pik_create_primitive(vm, PIK_TYPE_CODE, (void*)&codetype);
 }
 
 // ------------------------------- Parser ------------------------------
@@ -725,6 +721,14 @@ static inline void next(pik_parser* p) {
     advance(p, 1);
 }
 
+static inline size_t save(pik_parser* p) {
+    return p->head;
+}
+
+static inline void restore(pik_parser* p, size_t i) {
+    p->head = i;
+}
+
 static inline bool p_eof(pik_parser* p) {
     IF_NULL_RETURN(p) true;
     return p->head >= p->len || at(p) == '\0';
@@ -744,18 +748,18 @@ static inline bool p_startswith(pik_parser* p, const char* str) {
     return strncmp(&p->code[p->head], str, strlen(str)) == 0;
 }
 
-static void push_parser(pik_vm* vm, const char* str, size_t len) {
-    IF_NULL_RETURN(vm);
-    if (vm->parser != NULL && vm->parser->depth > PIK_MAX_PARSER_DEPTH) {
+static pik_parser* push_parser(pik_vm* vm, pik_parser* p, const char* str, size_t len) {
+    IF_NULL_RETURN(vm) NULL;
+    if (p != NULL && p->depth + 1 > PIK_MAX_PARSER_DEPTH) {
         pik_set_error(vm, "too much recursion");
-        return;
+        return NULL;
     }
     pik_parser* next = (pik_parser*)calloc(1, sizeof(pik_parser));
-    next->parent = vm->parser;
+    next->parent = p;
     next->code = str;
     next->len = len > 0 ? len : strlen(str);
-    if (vm->parser) next->depth = vm->parser->depth + 1;
-    vm->parser = next;
+    if (p) next->depth = p->depth + 1;
+    return next;
 }
 
 #ifdef PIK_DEBUG
@@ -765,10 +769,11 @@ void PIK_DEBUG_DUMP_PARSER(pik_parser* p) {
 }
 #endif
 
-static void skip_whitespace(pik_parser* p) {
-    IF_NULL_RETURN(p);
+static bool skip_whitespace(pik_parser* p) {
+    IF_NULL_RETURN(p) true;
+    bool skipped = false;
     again:
-    size_t start = p->head;
+    size_t start = save(p);
     while (!p_eof(p)) {
         char c = at(p);
         if (c == '#') {
@@ -787,8 +792,10 @@ static void skip_whitespace(pik_parser* p) {
             while (!p_endline(p)) next(p);
         } else if (eolchar(c)) {
             // Not escaped EOL
-            next(p);
-            if (p->ignore_eol) continue;
+            if (p->ignore_eol) {
+                next(p);
+                continue;
+            }
             else break;
         } else if (isspace(c)) {
             // Real space
@@ -798,55 +805,171 @@ static void skip_whitespace(pik_parser* p) {
     }
     // Try to get all the comments at once
     // if we got one, try for another
-    if (p->head != start) goto again;
+    if (p->head != start) {
+        skipped = true;
+        PIK_DEBUG_PRINTF("Skipped whitespace\n");
+        goto again;
+    }
+    PIK_DEBUG_PRINTF("end charcode when done skipping whitespace: %u (%c)\n", at(p), at(p));
+    return skipped;
 }
 
-static pik_object* get_getvar(pik_vm* vm) {
-
+static pik_object* get_getvar(pik_vm* vm, pik_parser* p) {
+    PIK_DEBUG_PRINTF("get_getvar()\n");
+    return NULL;
 }
 
-static pik_object* get_string(pik_vm* vm, char end) {
-    
+static pik_object* get_string(pik_vm* vm, pik_parser* p) {
+    PIK_DEBUG_PRINTF("get_string()\n");
+    return NULL;
 }
 
-static pik_object* get_brace_string(pik_vm* vm) {
-    
+static pik_object* get_brace_string(pik_vm* vm, pik_parser* p) {
+    PIK_DEBUG_PRINTF("get_brace_string()\n");
+    return NULL;
 }
 
-static pik_object* get_expression(pik_vm* vm) {
-    
+static pik_object* get_expression(pik_vm* vm, pik_parser* p) {
+    PIK_DEBUG_PRINTF("get_expression()\n");
+    return NULL;
 }
 
-static pik_object* get_list(pik_vm* vm) {
-    
+static pik_object* get_list(pik_vm* vm, pik_parser* p) {
+    PIK_DEBUG_PRINTF("get_list()\n");
+    return NULL;
 }
 
-static pik_object* get_word(pik_vm* vm) {
-    
+static pik_object* get_word(pik_vm* vm, pik_parser* p) {
+    PIK_DEBUG_PRINTF("get_word()\n");
+    return NULL;
 }
 
-static pik_object* next_item(pik_vm* vm) {
+static pik_object* next_item(pik_vm* vm, pik_parser* p) {
     IF_NULL_RETURN(vm) NULL;
-    pik_parser* p = vm->parser;
     IF_NULL_RETURN(p) NULL;
-    skip_whitespace(p);
+    bool concatenated = false;
+    pik_object* result = NULL;
+    again:
+    bool hadspace = skip_whitespace(p);
+    if (hadspace && result != NULL) return result;
+    pik_object* next;
+    switch (at(p)) {
+        case '$':  next = get_getvar(vm, p); break;
+        case '"':  // fallthrough
+        case '\'': next = get_string(vm, p); break;
+        case '{':  next = get_brace_string(vm, p); break;
+        case '(':  next = get_expression(vm, p); break;
+        case '[':  next = get_list(vm, p); break;
+        case '\n': return result;
+        default:   next = get_word(vm, p); break;
+    }
+    if (result == NULL) {
+        result = next;
+    } else if (!concatenated) {
+        pik_object* c = create_codeobj(vm, PIK_CODE_CONCAT);
+        pik_APPEND_INPLACE(c, result);
+        pik_APPEND_INPLACE(c, next);
+        pik_decref(vm, result);
+        pik_decref(vm, next);
+        result = c;
+        concatenated = true;
+    } else {
+        pik_APPEND_INPLACE(result, next);
+        pik_decref(vm, next);
+    }
+    return result;
+}
 
-    switch(at(p)) {
-        case '$':
-            return get_getvar(vm);
-        case '"':
-        case '\'':
-            return get_string(vm, at(p));
-        case '{':
-            return get_brace_string(vm);
-        case '(':
-            return get_expression(vm);
-        case '[':
-            return get_list(vm);
+static pik_object* compile_block(pik_vm* vm, pik_parser* p) {
+    IF_NULL_RETURN(vm) NULL;
+    IF_NULL_RETURN(p) NULL;
+    pik_object* block = create_codeobj(vm, PIK_CODE_BLOCK);
+    while (!p_eof(p)) {
+        pik_object* line = create_codeobj(vm, PIK_CODE_LINE);
+        while (!p_eof(p)) {
+            pik_object* item = next_item(vm, p);
+            if (item != NULL) pik_APPEND_INPLACE(line, item);
+            pik_decref(vm, item);
+            if (eolchar(at(p))) {
+                next(p);
+                break;
+            }
+        }
+        pik_APPEND_INPLACE(block, line);
+        pik_decref(vm, line);
+    }
+    return block;
+}
+
+#ifdef PIK_DEBUG
+static void dump_ast(pik_object* code, int tabs) {
+    if (code == NULL) {
+        printf("%s", (char*)code);
+        return;
+    }
+    char* str;
+    switch (code->type) {
+        case PIK_TYPE_INT:
+            printf("%lli", code->payload.as_int);
+            break;
+        case PIK_TYPE_FLOAT:
+            printf("%lg", code->payload.as_double);
+            break;
+        case PIK_TYPE_COMPLEX:
+            printf("%g%+g", code->payload.as_complex.real, code->payload.as_complex.imag);
+            break;
+        case PIK_TYPE_BOOL:
+            printf("%s", code->payload.as_int ? "true" : "false");
+            break;
+        case PIK_TYPE_STRING:
+            putchar('"');
+            str = (char*)code->payload.as_pointer;
+            for (size_t i = 0; i < strlen(str); i++) {
+                if (strchr("\"{}()", str[i]) != NULL) putchar('\\');
+                putchar(str[i]);
+            }
+            putchar('"');
+            break;
+        case PIK_TYPE_CODE:
+            switch  (code->flags.obj) {
+                case PIK_CODE_BLOCK:
+                    printf("{\n%*s", tabs * 4, "");
+                    for (size_t i = 0; i < code->payload.as_array.sz; i++) {
+                        dump_ast(code->payload.as_array.items[i], tabs + 1);
+                        putchar('\n');
+                    }
+                    putchar('}');
+                    break;
+                case PIK_CODE_LINE:
+                    for (size_t i = 0; i < code->payload.as_array.sz; i++) {
+                        if (i) putchar(' ');
+                        dump_ast(code->payload.as_array.items[i], tabs + 1);
+                    }
+                    putchar(';');
+                    break;
+                case PIK_CODE_CONCAT:
+                    for (size_t i = 0; i < code->payload.as_array.sz; i++) {
+                        dump_ast(code->payload.as_array.items[i], tabs + 1);
+                    }
+                    break;
+                case PIK_CODE_GETVAR:
+                    putchar('$');
+                case PIK_CODE_WORD:
+                    printf("%s", (char*)code->payload.as_pointer);
+                    break;
+                case PIK_CODE_LIST:
+                    printf("[list todo]");
+                    break;
+                default:
+                    PIK_DEBUG_ASSERT(false, "Invalid code type");
+                    break;
+            }
+            break;
         default:
-            return get_word(vm);
+            printf("<object type %u at %p>", code->type, (void*)code);
     }
 }
+#endif
 
 #ifdef PIK_DEBUG
 void test_header(const char* h) {
@@ -888,12 +1011,16 @@ int main(void) {
     pik_collect_garbage(vm);
 
     test_header("Parser test");
-    push_parser(vm, "# I am a line comment\n###\n\tI am a block comment\n\t$foobar barbaz\n###\n# I am a line comment\n'foobar'barbaz", 0);
-    PIK_DEBUG_ASSERT(vm->parser != NULL, "Failed to push parser");
-    PIK_DEBUG_ASSERT(vm->parser->depth == 0, "Set incorrect depth on parser");
-    PIK_DEBUG_DUMP_PARSER(vm->parser);
-    skip_whitespace(vm->parser);
-    PIK_DEBUG_DUMP_PARSER(vm->parser);
+    pik_parser* p = push_parser(vm, NULL, "# I am a line comment\n###\n\tI am a block comment\n\tmore block comment\n###\n# I am a line comment\n'foobar'barbaz", 0);
+    PIK_DEBUG_ASSERT(p != NULL, "Failed to push parser");
+    PIK_DEBUG_ASSERT(p->depth == 0, "Set incorrect depth on parser");
+    PIK_DEBUG_DUMP_PARSER(p);
+    for (size_t i = 0; i < 10; i++) {
+        pik_object* res = compile_block(vm, p);
+        dump_ast(res, 3);
+        pik_decref(vm, res);
+        PIK_DEBUG_DUMP_PARSER(p);
+    }
 
     test_header("END tests");
     pik_destroy(vm);
