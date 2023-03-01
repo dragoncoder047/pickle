@@ -503,21 +503,33 @@ static void hashmap_destroy(pik_vm* vm, pik_hashmap* map) {
     free(map);
 }
 
+static pik_hashbucket* get_bucket(pik_hashmap* map, const char* key) {
+    IF_NULL_RETURN(map) NULL;
+    unsigned int hash = hashmap_hash(key);
+    return &map->buckets[hash];
+}
+
+static pik_hashentry* find_entry(pik_hashbucket* b, const char* key) {
+    IF_NULL_RETURN(b) NULL;
+    PIK_DEBUG_PRINTF("Checking %zu existing entries in bucket:\n", b->sz);
+    for (size_t i = 0; i < b->sz; i++) {
+        if (streq(b->entries[i].key, key)) return &b->entries[i];
+    }
+    return NULL;
+}
+
 void pik_hashmap_put(pik_vm* vm, pik_hashmap* map, const char* key, pik_object* value, bool locked) {
     PIK_DEBUG_PRINTF("Adding %s at %p to hashmap at key \"%s\"%s\n", pik_typeof(vm, value), (void*)value, key, locked ? " (locked)" : "");
-    unsigned int hash = hashmap_hash(key);
     IF_NULL_RETURN(map);
-    pik_hashbucket* b = &map->buckets[hash];
     pik_incref(value);
-    PIK_DEBUG_PRINTF("Checking %zu existing entries in bucket %u:\n", b->sz, hash);
-    for (size_t i = 0; i < b->sz; i++) {
-        if (streq(b->entries[i].key, key)) {
-            PIK_DEBUG_PRINTF("used old entry for %s\n", key);
-            pik_decref(vm, b->entries[i].value);
-            b->entries[i].value = value;
-            b->entries[i].locked = locked;
-            return;
-        }
+    pik_hashbucket* b = get_bucket(map, key);
+    pik_hashentry* e = find_entry(b, key);
+    if (e != NULL) {
+        PIK_DEBUG_PRINTF("used old entry for %s\n", key);
+        pik_decref(vm, e->value);
+        e->value = value;
+        e->locked = locked;
+        return;
     }
     PIK_DEBUG_PRINTF("new entry for %s\n", key);
     b->entries = (pik_hashentry*)realloc(b->entries, sizeof(pik_hashentry) * (b->sz + 1));
@@ -529,14 +541,12 @@ void pik_hashmap_put(pik_vm* vm, pik_hashmap* map, const char* key, pik_object* 
 
 pik_object* pik_hashmap_get(pik_hashmap* map, const char* key) {
     PIK_DEBUG_PRINTF("Getting entry %s on hashmap %p\n", key, (void*)map);
-    unsigned int hash = hashmap_hash(key);
     IF_NULL_RETURN(map) NULL;
-    pik_hashbucket* b = &map->buckets[hash];
-    for (size_t i = 0; i < b->sz; i++) {
-        if (streq(b->entries[i].key, key)) {
-            PIK_DEBUG_PRINTF("key %s found\n", key);
-            return b->entries[i].value;
-        }
+    pik_hashentry* e = find_entry(get_bucket(map, key), key);
+    if (e != NULL) {
+        PIK_DEBUG_PRINTF("key %s found\n", key);
+        pik_incref(e->value);
+        return e->value;
     }
     PIK_DEBUG_PRINTF("key %s not found\n", key);
     return NULL;
@@ -544,14 +554,11 @@ pik_object* pik_hashmap_get(pik_hashmap* map, const char* key) {
 
 bool pik_hashmap_entry_is_locked(pik_hashmap* map, const char* key) {
     PIK_DEBUG_PRINTF("Getting lock bit of %s on hashmap %p\n", key, (void*)map);
-    unsigned int hash = hashmap_hash(key);
     IF_NULL_RETURN(map) false;
-    pik_hashbucket* b = &map->buckets[hash];
-    for (size_t i = 0; i < b->sz; i++) {
-        if (streq(b->entries[i].key, key)) {
-            PIK_DEBUG_PRINTF("key %s found: %s\n", key, b->entries[i].locked ? "locked" : "writable");
-            return b->entries[i].locked;
-        }
+    pik_hashentry* e = find_entry(get_bucket(map, key), key);
+    if (e != NULL) {
+        PIK_DEBUG_PRINTF("key %s found: %s\n", key, e->locked ? "locked" : "writable");
+        return e->locked;
     }
     PIK_DEBUG_PRINTF("key %s not found\n", key);
     return false;

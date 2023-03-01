@@ -2,12 +2,12 @@ PICKLE programming language
 
 `.pik` file extension
 
-* https://en.wikipedia.org/wiki/Prototype-based_programming
-* https://github.com/dragoncoder047/lilduino/blob/master/src/lil.h
-* https://github.com/dragoncoder047/lilduino/blob/master/src/lil.c
-* https://github.com/dragoncoder047/tehssl/blob/main/tehssl.cpp
-* https://developer.mozilla.org/en-US/docs/Web/JavaScript/Inheritance_and_the_prototype_chain
-* https://docs.python.org/3/reference/datamodel.html
+* <https://en.wikipedia.org/wiki/Prototype-based_programming>
+* <https://github.com/dragoncoder047/lilduino/blob/master/src/lil.h>
+* <https://github.com/dragoncoder047/lilduino/blob/master/src/lil.c>
+* <https://github.com/dragoncoder047/tehssl/blob/main/tehssl.cpp>
+* <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Inheritance_and_the_prototype_chain>
+* <https://docs.python.org/3/reference/datamodel.html>
 
 ```mermaid
 classDiagram
@@ -140,7 +140,7 @@ classDiagram
 | F | F || F | True | F | True | F | True |
 | F | True || F | F | True | True | True | F |
 | True | F || True | F | True | F | F | True |
-| True | True || True | F | True | True | True | F | 
+| True | True || True | F | True | True | True | F |
 
 Special vars
 
@@ -172,7 +172,7 @@ Syntax
 
 Literal for NULL is `null` or `pass`
 
-* each item on the line is literalized at compile time to either number or string 
+* each item on the line is literalized at compile time to either number or string
 * the args of each line are evaluated in an expresssion, recursively merging (thing op thing) to result of op
 * first object is called with second object, unless in list syntax, where it is just returned as a new list
 
