@@ -305,7 +305,11 @@ static void finalize(pik_vm* vm, pik_object* object) {
     PIK_DEBUG_PRINTF("Finalizing %s at %p\n", pik_typeof(vm, object), (void*)object);
     // Free object-specific stuff
     run_typefun(vm, object, NULL, PIK_FINALFUN);
-    PIK_DEBUG_ASSERT(object->payload.as_int == 0, "Finalizer did not clear object payload");
+    #ifdef PIK_DEBUG
+    if (object->payload.as_int != 0) {
+        printf("warning: object at %p (a %s) payload was not cleared by finalizer\n", (void*)object, pik_typeof(vm, object));
+    }
+    #endif
     // Free everything else
     object->flags.global = 0;
     object->flags.obj = 0;
@@ -802,7 +806,7 @@ static inline char unescape(char c) {
 }
 
 static inline bool needs_escape(char c) {
-    return strchr("{}\b\t\n\v\f\r\a", c) != NULL;
+    return strchr("{}\b\t\n\v\f\r\a\\", c) != NULL;
 }
 
 static inline char escape(char c) {
@@ -820,7 +824,8 @@ static inline char escape(char c) {
     }
 }
 
-static bool valid_varchar(char c) {
+// USes int, int instead of bool, char because of same signature of isdigit()
+static int valid_varchar(int c) {
     if ('A' <= c && 'Z' >= c) return true;
     if ('a' <= c && 'z' >= c) return true;
     if ('0' <= c && '9' >= c) return true;
@@ -882,7 +887,8 @@ static pik_object* get_getvar(pik_vm* vm, pik_parser* p) {
     // First pass: find length
     size_t len = 0;
     size_t start = save(p);
-    while (valid_varchar(at(p)) && !p_eof(p)) {
+    int (*tst)(int) = isdigit(at(p)) ? isdigit : valid_varchar;
+    while (tst(at(p)) && !p_eof(p)) {
         len++;
         next(p);
     }
@@ -898,6 +904,11 @@ static pik_object* get_getvar(pik_vm* vm, pik_parser* p) {
 static pik_object* get_string(pik_vm* vm, pik_parser* p) {
     char q = at(p);
     next(p);
+    if (p_eof(p)) {
+        char iq = q == '"' ? '\'' : '"';
+        pik_set_error_fmt(vm, "syntax error: dangling %c%c%c", iq, q, iq);
+        return NULL;
+    }
     PIK_DEBUG_PRINTF("get_string(%c)\n", q);
     // First pass: get length of string
     size_t len = 0;
@@ -931,6 +942,10 @@ static pik_object* get_string(pik_vm* vm, pik_parser* p) {
 static pik_object* get_brace_string(pik_vm* vm, pik_parser* p) {
     PIK_DEBUG_PRINTF("get_brace_string()\n");
     next(p); // Skip {
+    if (p_eof(p)) {
+        pik_set_error(vm, "syntax error: dangling \"{\"");
+        return NULL;
+    }
     // First pass: find length
     size_t len = 0;
     size_t start = save(p);
@@ -940,7 +955,7 @@ static pik_object* get_brace_string(pik_vm* vm, pik_parser* p) {
         if (at(p) == '}') depth--;
         if (p_eof(p)) {
             restore(p, start - 1);
-            pik_set_error_fmt(vm, "syntax error: unterminated brace-string %.20s...", str_of(p));
+            pik_set_error_fmt(vm, "syntax error: unbalanced curlies: %.20s...", str_of(p));
             return NULL;
         }
         next(p);
@@ -975,7 +990,54 @@ static pik_object* get_list(pik_vm* vm, pik_parser* p) {
 
 static pik_object* get_word(pik_vm* vm, pik_parser* p) {
     PIK_DEBUG_PRINTF("get_word()\n");
-    return NULL;
+    size_t len = 0;
+    // Special case: boolean
+    if (p_startswith(p, "true") || p_startswith(p, "false")) {
+        bool truthy = p_startswith(p, "true");
+        size_t start = save(p);
+        advance(p, truthy ? 4 : 5);
+        if (isspace(at(p)) || ispunct(at(p))) return pik_create_primitive(vm, PIK_TYPE_BOOL, (void*)&truthy);
+        else restore(p, start);
+    }
+    // Special case: numbers
+    if (isdigit(at(p))) {
+        char c;
+        // Integer
+        int64_t intnum;
+        if (sscanf(str_of(p), "%lli%ln%c", &intnum, &len, &c) == 2) {
+            advance(p, len);
+            PIK_DEBUG_PRINTF("integer %lli\n", intnum);
+            return pik_create_primitive(vm, PIK_TYPE_INT, (void*)&intnum);
+        }
+        // Float
+        double floatnum;
+        if (sscanf(str_of(p), "%lg%ln%c", &floatnum, &len, &c) == 2) {
+            advance(p, len);
+            PIK_DEBUG_PRINTF("float %lg\n", floatnum);
+            return pik_create_primitive(vm, PIK_TYPE_FLOAT, (void*)&floatnum);
+        }
+        // Complex
+        union { struct { float real; float imag; }; uint64_t complexbits; };
+        if (sscanf(str_of(p), "%g%gj%ln%c", &real, &imag, &len, &c) == 3) {
+            advance(p, len);
+            PIK_DEBUG_PRINTF("complex %g %+g * i (bits = %#llx)\n", real, imag, complexbits);
+            return pik_create_primitive(vm, PIK_TYPE_COMPLEX, (void*)&complexbits);
+        }
+    }
+    // First pass: find length
+    size_t start = save(p);
+    bool is_operator = ispunct(at(p));
+    while (!isspace(at(p)) && !p_eof(p) && !(valid_opchr(at(p)) ^ is_operator)) {
+        len++;
+        next(p);
+    }
+    // Pick it out
+    size_t end = save(p);
+    restore(p, start);
+    pik_object* w = create_codeobj(vm, PIK_CODE_WORD);
+    asprintf((char**)&w->payload.as_pointer, "%.*s", (int)len, str_of(p));
+    restore(p, end);
+    return w;
 }
 
 static pik_object* next_item(pik_vm* vm, pik_parser* p) {
@@ -983,6 +1045,7 @@ static pik_object* next_item(pik_vm* vm, pik_parser* p) {
     IF_NULL_RETURN(p) NULL;
     bool concatenated = false;
     pik_object* result = NULL;
+    PIK_DEBUG_PRINTF("next_item()\n");
     again:
     bool hadspace = skip_whitespace(p);
     if (hadspace && result != NULL) return result;
@@ -996,15 +1059,20 @@ static pik_object* next_item(pik_vm* vm, pik_parser* p) {
         case '{':  next = get_brace_string(vm, p); break;
         case '(':  next = get_expression(vm, p); break;
         case '[':  next = get_list(vm, p); break;
+        case ']':  // fallthrough
+        case ')':  // fallthrough
+        case '}':  pik_set_error_fmt(vm, "syntax error: unexpected \"%c\"", at(p)); break;
         case ':':  if (strchr("\n\r", peek(p, 1)) != NULL) { next = get_colon_string(vm, p); break; } // else fallthrough
         default:   if (eolchar(at(p), p->ieol)) return result; else next = get_word(vm, p); break;
     }
-    if (save(p) == here) {
-        pik_set_error_fmt(vm, "unparseable code: %.20s...", str_of(p));
+    if (!vm->error && save(p) == here) {
+        // Generic failed to parse message
+        pik_set_error_fmt(vm, "syntax error: failed to parse: %.20s...", str_of(p));
     }
     if (vm->error) return NULL;
     if (result == NULL) {
         result = next;
+        goto again;
     } else if (!concatenated) {
         pik_object* c = create_codeobj(vm, PIK_CODE_CONCAT);
         pik_APPEND_INPLACE(c, result);
@@ -1013,9 +1081,11 @@ static pik_object* next_item(pik_vm* vm, pik_parser* p) {
         pik_decref(vm, next);
         result = c;
         concatenated = true;
+        goto again;
     } else {
         pik_APPEND_INPLACE(result, next);
         pik_decref(vm, next);
+        goto again;
     }
     return result;
 }
@@ -1024,6 +1094,7 @@ static pik_object* compile_block(pik_vm* vm, pik_parser* p) {
     IF_NULL_RETURN(vm) NULL;
     IF_NULL_RETURN(p) NULL;
     if (p_eof(p)) return NULL;
+    PIK_DEBUG_PRINTF("Begin compile\n");
     pik_object* block = create_codeobj(vm, PIK_CODE_BLOCK);
     while (!p_eof(p)) {
         PIK_DEBUG_PRINTF("Beginning of line: ");
@@ -1045,13 +1116,13 @@ static pik_object* compile_block(pik_vm* vm, pik_parser* p) {
         }
         #ifdef PIK_DEBUG
         else printf("Empty line\n");
-        #endif;
+        #endif
     }
     return block;
 }
 
 #ifdef PIK_DEBUG
-static void dump_ast(pik_object* code, int tabs) {
+static void dump_ast(pik_object* code, int indent) {
     if (code == NULL) {
         printf("%s", (char*)code);
         return;
@@ -1059,59 +1130,64 @@ static void dump_ast(pik_object* code, int tabs) {
     char* str;
     switch (code->type) {
         case PIK_TYPE_INT:
-            printf("%lli", code->payload.as_int);
+            printf("#int(%lli)", code->payload.as_int);
             break;
         case PIK_TYPE_FLOAT:
-            printf("%lg", code->payload.as_double);
+            printf("#float(%lg)", code->payload.as_double);
             break;
         case PIK_TYPE_COMPLEX:
-            printf("%g%+g", code->payload.as_complex.real, code->payload.as_complex.imag);
+            printf("#complex(%g%+gj)", code->payload.as_complex.real, code->payload.as_complex.imag);
             break;
         case PIK_TYPE_BOOL:
-            printf("%s", code->payload.as_int ? "true" : "false");
+            printf("#bool(%s)", code->payload.as_int ? "true" : "false");
             break;
         case PIK_TYPE_STRING:
-            putchar('"');
+            printf("#string(\"");
             str = (char*)code->payload.as_pointer;
             for (size_t i = 0; i < strlen(str); i++) {
                 if (needs_escape(str[i])) putchar('\\');
                 putchar(escape(str[i]));
             }
-            putchar('"');
+            printf("\")");
             break;
         case PIK_TYPE_CODE:
             switch  (code->flags.obj) {
                 case PIK_CODE_BLOCK:
-                    printf("{\n");
+                    printf("#block(\n");
                     for (size_t i = 0; i < code->payload.as_array.sz; i++) {
-                        printf("%*s", (tabs + 1) * 4, "");
-                        dump_ast(code->payload.as_array.items[i], tabs + 1);
-                        putchar('\n');
+                        if (i) printf(",\n");
+                        printf("%*s", (indent + 1) * 4, "");
+                        dump_ast(code->payload.as_array.items[i], indent + 1);
                     }
-                    putchar('}');
+                    printf("\n%*s)", indent * 4, "");
                     break;
                 case PIK_CODE_LINE:
+                    printf("#line(\n");
                     for (size_t i = 0; i < code->payload.as_array.sz; i++) {
-                        if (i) putchar(' ');
-                        dump_ast(code->payload.as_array.items[i], tabs + 1);
+                        if (i) printf(",\n");
+                        printf("%*s", (indent + 1) * 4, "");
+                        dump_ast(code->payload.as_array.items[i], indent + 1);
                     }
-                    putchar(';');
+                    printf("\n%*s)", indent * 4, "");
                     break;
                 case PIK_CODE_CONCAT:
+                    printf("#concat(\n");
                     for (size_t i = 0; i < code->payload.as_array.sz; i++) {
-                        dump_ast(code->payload.as_array.items[i], tabs + 1);
+                        if (i) printf(",\n");
+                        printf("%*s", (indent + 1) * 4, "");
+                        dump_ast(code->payload.as_array.items[i], indent + 1);
                     }
+                    printf("\n%*s)", indent * 4, "");
                     break;
                 case PIK_CODE_GETVAR:
-                    putchar('$');
                 case PIK_CODE_WORD:
-                    printf("%s", (char*)code->payload.as_pointer);
+                    printf("#%s(%s)", code->flags.obj == PIK_CODE_GETVAR ? "getvar" : "word", (char*)code->payload.as_pointer);
                     break;
                 case PIK_CODE_LIST:
-                    printf("[list todo]");
+                    printf("#list_todo");
                     break;
                 default:
-                    PIK_DEBUG_ASSERT(false, "Invalid code type");
+                    PIK_DEBUG_ASSERT(false, "Bad code type");
                     break;
             }
             break;
@@ -1165,7 +1241,18 @@ int main(void) {
 "blarg\n"; "newline on prev"
 ### Comment ### "bing" ###
 ### "bing2"
-$iam $avariable {)===";
+$iam $123foo {
+    the previous
+    should be
+    123 and
+    foo
+    separately
+    in an implicit concat
+} word word
+newline; word
+1+2|>$foo|>$bar
+truefoo true"haha"false{true {true}}
+)===";
     pik_parser* p = push_parser(vm, NULL, code, 0, false);
     PIK_DEBUG_ASSERT(p != NULL, "Failed to push parser");
     PIK_DEBUG_ASSERT(p->depth == 0, "Set incorrect depth on parser");
