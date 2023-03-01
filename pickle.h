@@ -166,7 +166,7 @@ struct pik_parser {
     const char* code;
     size_t len;
     size_t head;
-    bool ignore_eol;
+    bool ieol;
     size_t depth;
 };
 
@@ -580,6 +580,7 @@ void pik_tf_FREE_PAYLOAD(pik_vm* vm, pik_object* object, void* arg) {
     (void)vm;
     (void)arg;
     free(object->payload.as_pointer);
+    object->payload.as_pointer = NULL;
 }
 
 void pik_tf_NOOP(pik_vm* vm, pik_object* object, void* arg) {
@@ -602,6 +603,7 @@ void pik_tf_DECREF_IF_USER_CODE(pik_vm* vm, pik_object* object, void* arg) {
     (void)arg;
     if (object->flags.obj & PIK_FUNCTION_FLAG_IS_USER) {
         pik_decref(vm, object->payload.as_object);
+        object->payload.as_object = NULL;
     }
 }
 
@@ -638,6 +640,7 @@ void pik_tf_mark_hashmap(pik_vm* vm, pik_object* object, void* arg) {
 void pik_tf_free_hashmap(pik_vm* vm, pik_object* object, void* arg) {
     (void)arg;
     hashmap_destroy(vm, object->payload.as_hashmap);
+    object->payload.as_hashmap = NULL;
 }
 
 void pik_tf_init_code(pik_vm* vm, pik_object* object, void* arg) {
@@ -738,24 +741,30 @@ static inline void restore(pik_parser* p, size_t i) {
 
 static inline bool p_eof(pik_parser* p) {
     IF_NULL_RETURN(p) true;
-    return p->head >= p->len || at(p) == '\0';
+    return p->head > p->len || at(p) == '\0';
 }
 
-static inline bool eolchar(char c) {
-    return strchr(";\n\r", c) != NULL;
+static inline const char* str_of(pik_parser* p) {
+    return &p->code[p->head];
+}
+
+static inline bool eolchar(char c, bool ieol) {
+    if (c == ';') return true;
+    if (ieol) return false;
+    return c == '\n' || c == '\r';
 }
 
 static inline bool p_endline(pik_parser* p) {
     IF_NULL_RETURN(p) true;
     if (p_eof(p)) return true;
-    return eolchar(at(p));
+    return eolchar(at(p), false);
 }
 
 static inline bool p_startswith(pik_parser* p, const char* str) {
-    return strncmp(&p->code[p->head], str, strlen(str)) == 0;
+    return strncmp(str_of(p), str, strlen(str)) == 0;
 }
 
-static pik_parser* push_parser(pik_vm* vm, pik_parser* p, const char* str, size_t len) {
+static pik_parser* push_parser(pik_vm* vm, pik_parser* p, const char* str, size_t len, bool ieol) {
     IF_NULL_RETURN(vm) NULL;
     if (p != NULL && p->depth + 1 > PIK_MAX_PARSER_DEPTH) {
         pik_set_error(vm, "too much recursion");
@@ -765,6 +774,7 @@ static pik_parser* push_parser(pik_vm* vm, pik_parser* p, const char* str, size_
     next->parent = p;
     next->code = str;
     next->len = len > 0 ? len : strlen(str);
+    next->ieol = ieol;
     if (p) next->depth = p->depth + 1;
     return next;
 }
@@ -772,9 +782,54 @@ static pik_parser* push_parser(pik_vm* vm, pik_parser* p, const char* str, size_
 #ifdef PIK_DEBUG
 void PIK_DEBUG_DUMP_PARSER(pik_parser* p) {
     IF_NULL_RETURN(p);
-    printf("\"%.*s\"\n", (int)(p->len - p->head), &p->code[p->head]);
+    printf("\"%.*s\"\n", (int)(p->len - p->head), str_of(p));
 }
 #endif
+
+static inline char unescape(char c) {
+    switch (c) {
+        case 'b': return '\b';
+        case 't': return '\t';
+        case 'n': return '\n';
+        case 'v': return '\v';
+        case 'f': return '\f';
+        case 'r': return '\r';
+        case 'a': return '\a';
+        case 'o': return '{';
+        case 'c': return '}';
+        default:  return c;
+    }
+}
+
+static inline bool needs_escape(char c) {
+    return strchr("{}\b\t\n\v\f\r\a", c) != NULL;
+}
+
+static inline char escape(char c) {
+    switch (c) {
+        case '\b': return 'b';
+        case '\t': return 't';
+        case '\n': return 'n';
+        case '\v': return 'v';
+        case '\f': return 'f';
+        case '\r': return 'r';
+        case '\a': return 'a';
+        case '{': return 'o';
+        case '}': return 'c';
+        default:  return c;
+    }
+}
+
+static bool valid_varchar(char c) {
+    if ('A' <= c && 'Z' >= c) return true;
+    if ('a' <= c && 'z' >= c) return true;
+    if ('0' <= c && '9' >= c) return true;
+    return strchr("#@?^.~", c) != NULL;
+}
+
+static bool valid_opchr(char c) {
+    return strchr("`~!@#%^&*_-+=<>,./|:;", c) != NULL;
+}
 
 static bool skip_whitespace(pik_parser* p) {
     IF_NULL_RETURN(p) true;
@@ -793,17 +848,13 @@ static bool skip_whitespace(pik_parser* p) {
                 // Line comment
                 while (!p_endline(p)) next(p);
             }
-        } else if (c == '\\' && eolchar(peek(p, 1))) {
+        } else if (c == '\\' && eolchar(peek(p, 1), p->ieol)) {
             // Escaped EOL
             next(p);
             while (!p_endline(p)) next(p);
-        } else if (eolchar(c)) {
+        } else if (eolchar(c, p->ieol)) {
             // Not escaped EOL
-            if (p->ignore_eol) {
-                next(p);
-                continue;
-            }
-            else break;
+            break;
         } else if (isspace(c)) {
             // Real space
             next(p);
@@ -817,22 +868,98 @@ static bool skip_whitespace(pik_parser* p) {
         PIK_DEBUG_PRINTF("Skipped whitespace\n");
         goto again;
     }
-    PIK_DEBUG_PRINTF("end charcode when done skipping whitespace: %u (%c)\n", at(p), at(p));
+    PIK_DEBUG_PRINTF("end charcode when done skipping whitespace: %u (\\%c)\n", at(p), escape(at(p)));
     return skipped;
 }
 
 static pik_object* get_getvar(pik_vm* vm, pik_parser* p) {
     PIK_DEBUG_PRINTF("get_getvar()\n");
-    return NULL;
+    next(p); // Skip $
+    if (!valid_varchar(at(p))) {
+        pik_set_error_fmt(vm, "syntax error: \"%s%c\" not allowed after \"$\"", needs_escape(at(p)) ? "\\" : "", escape(at(p)));
+        return NULL;
+    }
+    // First pass: find length
+    size_t len = 0;
+    size_t start = save(p);
+    while (valid_varchar(at(p)) && !p_eof(p)) {
+        len++;
+        next(p);
+    }
+    // Now pick it out
+    size_t end = save(p);
+    restore(p, start);
+    pik_object* gv = create_codeobj(vm, PIK_CODE_GETVAR);
+    asprintf((char**)&gv->payload.as_pointer, "%.*s", (int)len, str_of(p));
+    restore(p, end);
+    return gv;
 }
 
 static pik_object* get_string(pik_vm* vm, pik_parser* p) {
-    PIK_DEBUG_PRINTF("get_string()\n");
-    return NULL;
+    char q = at(p);
+    next(p);
+    PIK_DEBUG_PRINTF("get_string(%c)\n", q);
+    // First pass: get length of string
+    size_t len = 0;
+    size_t start = save(p);
+    while (at(p) != q) {
+        len++;
+        if (at(p) == '\\') advance(p, 2);
+        else next(p);
+        if (p_eof(p)) {
+            restore(p, start - 1);
+            pik_set_error_fmt(vm, "syntax error: unterminated string %.20s...", str_of(p));
+            return NULL;
+        }
+    }
+    char* buf = (char*)calloc(len + 1, sizeof(char));
+    // Second pass: grab the string
+    restore(p, start);
+    for (size_t i = 0; i < len; i++) {
+        if (at(p) == '\\') {
+            next(p);
+            buf[i] = unescape(at(p));
+        } else buf[i] = at(p);
+        next(p);
+    }
+    next(p);
+    pik_object* stringobj = pik_create_primitive(vm, PIK_TYPE_STRING, (void*)buf);
+    free(buf);
+    return stringobj;
 }
 
 static pik_object* get_brace_string(pik_vm* vm, pik_parser* p) {
     PIK_DEBUG_PRINTF("get_brace_string()\n");
+    next(p); // Skip {
+    // First pass: find length
+    size_t len = 0;
+    size_t start = save(p);
+    size_t depth = 1;
+    while (true) {
+        if (at(p) == '{') depth++;
+        if (at(p) == '}') depth--;
+        if (p_eof(p)) {
+            restore(p, start - 1);
+            pik_set_error_fmt(vm, "syntax error: unterminated brace-string %.20s...", str_of(p));
+            return NULL;
+        }
+        next(p);
+        if (depth == 0) break;
+        len++;
+    }
+    // Now pick it out
+    size_t end = save(p);
+    restore(p, start);
+    char* buf;
+    asprintf(&buf, "%.*s", (int)len, str_of(p));
+    pik_object* str = pik_create_primitive(vm, PIK_TYPE_STRING, (void*)buf);
+    restore(p, end);
+    free(buf);
+    return str;
+}
+
+static pik_object* get_colon_string(pik_vm* vm, pik_parser* p) {
+    PIK_DEBUG_PRINTF("get_colon_string()\n");
     return NULL;
 }
 
@@ -859,7 +986,9 @@ static pik_object* next_item(pik_vm* vm, pik_parser* p) {
     again:
     bool hadspace = skip_whitespace(p);
     if (hadspace && result != NULL) return result;
+    if (p_eof(p)) return result;
     pik_object* next;
+    size_t here = save(p);
     switch (at(p)) {
         case '$':  next = get_getvar(vm, p); break;
         case '"':  // fallthrough
@@ -867,9 +996,13 @@ static pik_object* next_item(pik_vm* vm, pik_parser* p) {
         case '{':  next = get_brace_string(vm, p); break;
         case '(':  next = get_expression(vm, p); break;
         case '[':  next = get_list(vm, p); break;
-        case '\n': return result;
-        default:   next = get_word(vm, p); break;
+        case ':':  if (strchr("\n\r", peek(p, 1)) != NULL) { next = get_colon_string(vm, p); break; } // else fallthrough
+        default:   if (eolchar(at(p), p->ieol)) return result; else next = get_word(vm, p); break;
     }
+    if (save(p) == here) {
+        pik_set_error_fmt(vm, "unparseable code: %.20s...", str_of(p));
+    }
+    if (vm->error) return NULL;
     if (result == NULL) {
         result = next;
     } else if (!concatenated) {
@@ -890,20 +1023,29 @@ static pik_object* next_item(pik_vm* vm, pik_parser* p) {
 static pik_object* compile_block(pik_vm* vm, pik_parser* p) {
     IF_NULL_RETURN(vm) NULL;
     IF_NULL_RETURN(p) NULL;
+    if (p_eof(p)) return NULL;
     pik_object* block = create_codeobj(vm, PIK_CODE_BLOCK);
     while (!p_eof(p)) {
+        PIK_DEBUG_PRINTF("Beginning of line: ");
         pik_object* line = create_codeobj(vm, PIK_CODE_LINE);
         while (!p_eof(p)) {
+            PIK_DEBUG_PRINTF("Beginning of item: ");
             pik_object* item = next_item(vm, p);
             if (item != NULL) pik_APPEND_INPLACE(line, item);
             pik_decref(vm, item);
-            if (eolchar(at(p))) {
+            if (vm->error) return NULL;
+            if (eolchar(at(p), p->ieol)) {
                 next(p);
                 break;
             }
         }
-        pik_APPEND_INPLACE(block, line);
-        pik_decref(vm, line);
+        if (line->payload.as_array.sz > 0) {
+            pik_APPEND_INPLACE(block, line);
+            pik_decref(vm, line);
+        }
+        #ifdef PIK_DEBUG
+        else printf("Empty line\n");
+        #endif;
     }
     return block;
 }
@@ -932,16 +1074,17 @@ static void dump_ast(pik_object* code, int tabs) {
             putchar('"');
             str = (char*)code->payload.as_pointer;
             for (size_t i = 0; i < strlen(str); i++) {
-                if (strchr("\"{}()", str[i]) != NULL) putchar('\\');
-                putchar(str[i]);
+                if (needs_escape(str[i])) putchar('\\');
+                putchar(escape(str[i]));
             }
             putchar('"');
             break;
         case PIK_TYPE_CODE:
             switch  (code->flags.obj) {
                 case PIK_CODE_BLOCK:
-                    printf("{\n%*s", tabs * 4, "");
+                    printf("{\n");
                     for (size_t i = 0; i < code->payload.as_array.sz; i++) {
+                        printf("%*s", (tabs + 1) * 4, "");
                         dump_ast(code->payload.as_array.items[i], tabs + 1);
                         putchar('\n');
                     }
@@ -1018,15 +1161,26 @@ int main(void) {
     pik_collect_garbage(vm);
 
     test_header("Parser test");
-    pik_parser* p = push_parser(vm, NULL, "# I am a line comment\n###\n\tI am a block comment\n\tmore block comment\n###\n# I am a line comment\n'foobar'barbaz", 0);
+    const char* code = R"===("foobar" 'noobarbaz' # Ignore me
+"blarg\n"; "newline on prev"
+### Comment ### "bing" ###
+### "bing2"
+$iam $avariable {)===";
+    pik_parser* p = push_parser(vm, NULL, code, 0, false);
     PIK_DEBUG_ASSERT(p != NULL, "Failed to push parser");
     PIK_DEBUG_ASSERT(p->depth == 0, "Set incorrect depth on parser");
     PIK_DEBUG_DUMP_PARSER(p);
-    for (size_t i = 0; i < 10; i++) {
+    while (1) {
         pik_object* res = compile_block(vm, p);
-        dump_ast(res, 3);
+        printf("Dumping AST\n");
+        dump_ast(res, 0);
+        printf("\nFreeing AST\n");
         pik_decref(vm, res);
         PIK_DEBUG_DUMP_PARSER(p);
+        if (res == NULL) break;
+    }
+    if (vm->error) {
+        PIK_DEBUG_ASSERT(false, (const char*)vm->error->payload.as_pointer);
     }
 
     test_header("END tests");
