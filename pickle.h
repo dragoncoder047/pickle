@@ -1251,19 +1251,19 @@ static void dump_ast(pik_object* code, int indent) {
     char* str;
     switch (code->type) {
         case PIK_TYPE_INT:
-            printf("#int(%lli)", code->payload.as_int);
+            printf("int(%lli)", code->payload.as_int);
             break;
         case PIK_TYPE_FLOAT:
-            printf("#float(%lg)", code->payload.as_double);
+            printf("float(%lg)", code->payload.as_double);
             break;
         case PIK_TYPE_COMPLEX:
-            printf("#complex(%g%+gj)", code->payload.as_complex.real, code->payload.as_complex.imag);
+            printf("complex(%g%+gj)", code->payload.as_complex.real, code->payload.as_complex.imag);
             break;
         case PIK_TYPE_BOOL:
-            printf("#bool(%s)", code->payload.as_int ? "true" : "false");
+            printf("bool(%s)", code->payload.as_int ? "true" : "false");
             break;
         case PIK_TYPE_STRING:
-            printf("#string(\"");
+            printf("string(\"");
             str = (char*)code->payload.as_pointer;
             for (size_t i = 0; i < strlen(str); i++) {
                 if (needs_escape(str[i])) putchar('\\');
@@ -1274,7 +1274,7 @@ static void dump_ast(pik_object* code, int indent) {
         case PIK_TYPE_CODE:
             switch  (code->flags.obj) {
                 case PIK_CODE_BLOCK:
-                    printf("#block(\n");
+                    printf("block(\n");
                     for (size_t i = 0; i < code->payload.as_array.sz; i++) {
                         if (i) printf(",\n");
                         printf("%*s", (indent + 1) * 4, "");
@@ -1283,7 +1283,7 @@ static void dump_ast(pik_object* code, int indent) {
                     printf("\n%*s)", indent * 4, "");
                     break;
                 case PIK_CODE_LINE:
-                    printf("#line(\n");
+                    printf("line(\n");
                     for (size_t i = 0; i < code->payload.as_array.sz; i++) {
                         if (i) printf(",\n");
                         printf("%*s", (indent + 1) * 4, "");
@@ -1292,7 +1292,7 @@ static void dump_ast(pik_object* code, int indent) {
                     printf("\n%*s)", indent * 4, "");
                     break;
                 case PIK_CODE_CONCAT:
-                    printf("#concat(\n");
+                    printf("concat(\n");
                     for (size_t i = 0; i < code->payload.as_array.sz; i++) {
                         if (i) printf(",\n");
                         printf("%*s", (indent + 1) * 4, "");
@@ -1303,10 +1303,10 @@ static void dump_ast(pik_object* code, int indent) {
                 case PIK_CODE_GETVAR:
                 case PIK_CODE_WORD:
                 case PIK_CODE_OPERATOR:
-                    printf("#%s(%s)", code->flags.obj == PIK_CODE_GETVAR ? "getvar" : code->flags.obj == PIK_CODE_OPERATOR ? "operator" : "word", (char*)code->payload.as_pointer);
+                    printf("%s(%s)", code->flags.obj == PIK_CODE_GETVAR ? "getvar" : code->flags.obj == PIK_CODE_OPERATOR ? "operator" : "word", (char*)code->payload.as_pointer);
                     break;
                 case PIK_CODE_LIST:
-                    printf("#list(\n");
+                    printf("list(\n");
                     for (size_t i = 0; i < code->payload.as_array.sz; i++) {
                         if (i) printf(",\n");
                         printf("%*s", (indent + 1) * 4, "");
@@ -1315,8 +1315,8 @@ static void dump_ast(pik_object* code, int indent) {
                     printf("\n%*s)", indent * 4, "");
                     break;
                 default:
-                    PIK_DEBUG_ASSERT(false, "Bad code type");
-                    break;
+                    printf("Bad code type\n");
+                    exit(70);
             }
             break;
         default:
