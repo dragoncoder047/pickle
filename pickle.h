@@ -4,7 +4,8 @@
 #include <string.h>
 #include <ctype.h>
 
-#define PIK_DEBUG
+//#define PIK_DEBUG
+#define PIK_TEST
 
 #ifndef PIK_MAX_PARSER_DEPTH
 #define PIK_MAX_PARSER_DEPTH 16384
@@ -794,8 +795,8 @@ static pik_parser* push_parser(pik_vm* vm, pik_parser* p, const char* str, size_
     return next;
 }
 
-#ifdef PIK_DEBUG
-void PIK_DEBUG_DUMP_PARSER(pik_parser* p) {
+#ifdef PIK_TEST
+void PIK_TEST_DUMP_PARSER(pik_parser* p) {
     IF_NULL_RETURN(p);
     printf("\"%.*s\"\n", (int)(p->len - p->head), str_of(p));
 }
@@ -1055,11 +1056,11 @@ static pik_object* get_colon_string(pik_vm* vm, pik_parser* p) {
 
 static pik_object* get_expression(pik_vm* vm, pik_parser* p) {
     PIK_DEBUG_PRINTF("get_expression()\n");
-    next(p);
+    next(p); // Skip (
     pik_object* expr = create_codeobj(vm, PIK_CODE_LINE);
     while (true) {
         if (at(p) == ')') {
-            next(p); // Skip over )
+            next(p); // Skip )
             break;
         }
         pik_object* next = next_item(vm, p);
@@ -1077,8 +1078,24 @@ static pik_object* get_expression(pik_vm* vm, pik_parser* p) {
 
 static pik_object* get_list(pik_vm* vm, pik_parser* p) {
     PIK_DEBUG_PRINTF("get_list()\n");
-    PIK_DEBUG_PRINTF("UNIMPLEMENTED\n");
-    return NULL;
+    next(p); // Skip [
+    pik_object* list = create_codeobj(vm, PIK_CODE_LIST);
+    while (true) {
+        if (at(p) == ']') {
+            next(p); // Skip ]
+            break;
+        }
+        pik_object* next = next_item(vm, p);
+        if (vm->error) return NULL;
+        if (next) {
+            pik_APPEND_INPLACE(list, next);
+            pik_decref(vm, next);
+        }
+        #ifdef PIK_DEBUG
+        else printf("Empty list line\n");
+        #endif
+    }
+    return list;
 }
 
 static pik_object* get_word(pik_vm* vm, pik_parser* p) {
@@ -1123,6 +1140,24 @@ static pik_object* get_word(pik_vm* vm, pik_parser* p) {
     while (!isspace(at(p)) && !p_eof(p) && !(valid_opchr(at(p)) ^ is_operator)) {
         len++;
         next(p);
+    }
+    // Check if last is a colon, if it is a colon but there is non-whitespace before the newline
+    // that means it is part of this word (get_colon_string() will ignore it)
+    if (at(p) == ':') {
+        size_t x = save(p);
+        bool me_has_colon = true;
+        next(p);
+        while (!isspace(at(p))) {
+            if (at(p) == '\n') {
+                me_has_colon = false;
+                break;
+            }
+            next(p);
+        }
+        if (me_has_colon) {
+            restore(p, x + 1);
+            len++;
+        } else restore(p, x);
     }
     // Pick it out
     size_t end = save(p);
@@ -1214,7 +1249,7 @@ static pik_object* compile_block(pik_vm* vm, pik_parser* p) {
     return block;
 }
 
-#ifdef PIK_DEBUG
+#ifdef PIK_TEST
 static void dump_ast(pik_object* code, int indent) {
     if (code == NULL) {
         printf("NULL");
@@ -1278,7 +1313,13 @@ static void dump_ast(pik_object* code, int indent) {
                     printf("#%s(%s)", code->flags.obj == PIK_CODE_GETVAR ? "getvar" : code->flags.obj == PIK_CODE_OPERATOR ? "operator" : "word", (char*)code->payload.as_pointer);
                     break;
                 case PIK_CODE_LIST:
-                    printf("#list_todo");
+                    printf("#list(\n");
+                    for (size_t i = 0; i < code->payload.as_array.sz; i++) {
+                        if (i) printf(",\n");
+                        printf("%*s", (indent + 1) * 4, "");
+                        dump_ast(code->payload.as_array.items[i], indent + 1);
+                    }
+                    printf("\n%*s)", indent * 4, "");
                     break;
                 default:
                     PIK_DEBUG_ASSERT(false, "Bad code type");
@@ -1289,9 +1330,7 @@ static void dump_ast(pik_object* code, int indent) {
             printf("<object type %u at %p>", code->type, (void*)code);
     }
 }
-#endif
 
-#ifdef PIK_DEBUG
 void test_header(const char* h) {
     static int count = 0;
     count++;
@@ -1338,6 +1377,7 @@ print "hello world!"
 print:
                 foobar
                 barbaz
+print a list: [1 2 3 + 4]
 make x (123 + 456)
 $x |> $print
 
@@ -1345,14 +1385,14 @@ $x |> $print
     pik_parser* p = push_parser(vm, NULL, code, 0, false);
     PIK_DEBUG_ASSERT(p != NULL, "Failed to push parser");
     PIK_DEBUG_ASSERT(p->depth == 0, "Set incorrect depth on parser");
-    PIK_DEBUG_DUMP_PARSER(p);
+    PIK_TEST_DUMP_PARSER(p);
     while (1) {
         pik_object* res = compile_block(vm, p);
         printf("Dumping AST\n");
         dump_ast(res, 0);
         printf("\nFreeing AST\n");
         pik_decref(vm, res);
-        PIK_DEBUG_DUMP_PARSER(p);
+        PIK_TEST_DUMP_PARSER(p);
         if (res == NULL) break;
     }
     if (vm->error) {
