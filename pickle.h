@@ -7,10 +7,6 @@
 #define PIK_DEBUG
 #define PIK_TEST
 
-#ifndef PIK_MAX_PARSER_DEPTH
-#define PIK_MAX_PARSER_DEPTH 16384
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -163,15 +159,11 @@ typedef struct pik_operator {
     int precedence;
 } pik_operator;
 
-typedef struct pik_parser pik_parser;
-struct pik_parser {
-    pik_parser* parent;
+typedef struct pik_parser {
     const char* code;
     size_t len;
     size_t head;
-    bool ieol;
-    size_t depth;
-};
+} pik_parser;
 
 struct pik_vm {
     struct {
@@ -186,7 +178,6 @@ struct pik_vm {
         pik_operator* ops;
         size_t sz;
     } operators;
-    pik_parser* parser;
     pik_object* global_scope;
     pik_object* dollar_function;
     pik_object* error;
@@ -443,12 +434,6 @@ void pik_destroy(pik_vm* vm) {
     free(vm->type_managers.mgrs);
     PIK_DEBUG_PRINTF("Freeing %zu operators\n", vm->operators.sz);
     free(vm->operators.ops);
-    while (vm->parser) {
-        pik_parser* p = vm->parser;
-        vm->parser = p->parent;
-        PIK_DEBUG_PRINTF("Freeing a parser with code \"%.*s%s\"\n", (int)(p->len < 15 ? p->len : 15), p->code, p->len < 15 ? "" : "...");
-        free(p);
-    }
     PIK_DEBUG_PRINTF("Freeing VM\n");
     free(vm);
 }
@@ -766,35 +751,19 @@ static inline const char* str_of(pik_parser* p) {
     return &p->code[p->head];
 }
 
-static inline bool eolchar(char c, bool ieol) {
+static inline bool eolchar(char c) {
     if (c == ';') return true;
-    if (ieol) return false;
     return c == '\n' || c == '\r';
 }
 
 static inline bool p_endline(pik_parser* p) {
     IF_NULL_RETURN(p) true;
     if (p_eof(p)) return true;
-    return eolchar(at(p), false);
+    return eolchar(at(p));
 }
 
 static inline bool p_startswith(pik_parser* p, const char* str) {
     return strncmp(str_of(p), str, strlen(str)) == 0;
-}
-
-static pik_parser* push_parser(pik_vm* vm, pik_parser* p, const char* str, size_t len, bool ieol) {
-    IF_NULL_RETURN(vm) NULL;
-    if (p && p->depth + 1 > PIK_MAX_PARSER_DEPTH) {
-        pik_set_error(vm, "too much recursion");
-        return NULL;
-    }
-    pik_parser* next = (pik_parser*)calloc(1, sizeof(pik_parser));
-    next->parent = p;
-    next->code = str;
-    next->len = len > 0 ? len : strlen(str);
-    next->ieol = ieol;
-    if (p) next->depth = p->depth + 1;
-    return next;
 }
 
 static inline char unescape(char c) {
@@ -859,11 +828,11 @@ static bool skip_whitespace(pik_parser* p) {
                 // Line comment
                 while (!p_endline(p)) next(p);
             }
-        } else if (c == '\\' && eolchar(peek(p, 1), p->ieol)) {
+        } else if (c == '\\' && eolchar(peek(p, 1))) {
             // Escaped EOL
             next(p);
             while (!p_endline(p)) next(p);
-        } else if (eolchar(c, p->ieol)) {
+        } else if (eolchar(c)) {
             // Not escaped EOL
             break;
         } else if (isspace(c)) {
@@ -1186,7 +1155,7 @@ static pik_object* next_item(pik_vm* vm, pik_parser* p) {
         case ')':  return result; // allow get_expression() and get_list() to see their end
         case '}':  pik_set_error(vm, "syntax error: unexpected \"}\""); break;
         case ':':  if (result) return result; /* colon blocks are always their own item */ else if (strchr("\n\r", peek(p, 1))) { next = get_colon_string(vm, p); break; } // else fallthrough
-        default:   if (eolchar(at(p), p->ieol)) return result; else next = get_word(vm, p); break;
+        default:   if (eolchar(at(p))) return result; else next = get_word(vm, p); break;
     }
     if (!vm->error && save(p) == here) {
         // Generic failed to parse message
@@ -1235,7 +1204,7 @@ static pik_object* compile_block(pik_vm* vm, pik_parser* p) {
                 pik_decref(vm, block);
                 return NULL;
             }
-            if (eolchar(at(p), p->ieol)) {
+            if (eolchar(at(p))) {
                 next(p);
                 break;
             }
@@ -1346,36 +1315,6 @@ void dump_parser(pik_parser* p) {
 
 int main(void) {
     pik_vm* vm = pik_new();
-    // test_header("Create 10 garbage objects -- should reuse");
-    // size_t init = vm->gc.num_objects;
-    // for (size_t i = 0; i < 10; i++) {
-    //     pik_decref(vm, alloc_object(vm, PIK_TYPE_NONE, NULL));
-    // }
-    // size_t created = vm->gc.num_objects - init;
-    // PIK_DEBUG_ASSERT(created == 1, "failed to reuse object with no refs");
-
-    // test_header("Create non garbage");
-    // char* buf;
-    // pik_object* top = alloc_object(vm, PIK_TYPE_NONE, NULL);
-    // for (size_t i = 0; i < 5; i++) {
-    //     unsigned int h = hashmap_hash(buf);
-    //     free(buf);
-    //     buf = NULL;
-    //     asprintf(&buf, "MyProp%u", h + 1);
-    //     pik_object* obj = alloc_object(vm, PIK_TYPE_NONE, NULL);
-    //     pik_hashmap_put(vm, top->properties, buf, obj, true);
-    //     pik_decref(vm, obj);
-    // }
-    // free(buf);
-    // test_header("Check hashmap_has()");
-    // PIK_DEBUG_ASSERT(pik_hashmap_has(top->properties, "MyProp6"), "pik_hashmap_has() doesn't work");
-    // test_header("Check hashmap_is_locked()");
-    // PIK_DEBUG_ASSERT(pik_hashmap_entry_is_locked(top->properties, "MyProp6"), "entry->locked wasn't set right");
-
-    // test_header("triggering tombstoning of all");
-    // pik_decref(vm, top);
-    // pik_collect_garbage(vm);
-
     test_header("Parser test");
     const char* code = R"===(
 
@@ -1390,25 +1329,23 @@ if $x == $y:
         print Y is going dooooown!!!!!!!!!!!!!!!!!!!
         dec y
 print a list: [1 2 3 + 4]
-print a complex: ((((((((1+33j)))):-0))))
+print a complex: 1+33j
 make x (123 + 456)
-$x |> $print
+$x |> $print !+! custom operator
 
 )===";
-    pik_parser* p = push_parser(vm, NULL, code, 0, false);
-    PIK_DEBUG_ASSERT(p != NULL, "Failed to push parser");
-    PIK_DEBUG_ASSERT(p->depth == 0, "Set incorrect depth on parser");
+    pik_parser p = {.code = code, .len = strlen(code)};
     printf("Current code: ");
-    dump_parser(p);
+    dump_parser(&p);
     while (true) {
-        if (p_eof(p)) break;
-        pik_object* res = compile_block(vm, p);
+        if (p_eof(&p)) break;
+        pik_object* res = compile_block(vm, &p);
         if (vm->error) break;
         printf("Dumping AST\n");
         dump_ast(res, 0);
         printf("\nFreeing AST\n");
         pik_decref(vm, res);
-        dump_parser(p);
+        dump_parser(&p);
         if (res == NULL) break;
     }
     if (vm->error) {
@@ -1417,7 +1354,6 @@ $x |> $print
 
     test_header("END tests");
     pik_destroy(vm);
-    free(p);
     return 0;
 }
 #endif
