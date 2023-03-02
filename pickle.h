@@ -80,6 +80,7 @@ typedef const char* (*pik_checkinterrupt_callback)(pik_vm*);
 
 // Global Flags
 #define PIK_MARKED 1
+#define PIK_ALREADY_FINALIZED 2
 
 // Object Flags
 #define PIK_FUNCTION_FLAG_IS_USER 1
@@ -262,6 +263,8 @@ static pik_object* alloc_object(pik_vm* vm, pik_type type, void* arg) {
     object->type = type;
     object->gc.refcnt = 1;
     object->properties = new_hashmap();
+    object->flags.obj = 0;
+    object->flags.global = 0;
     run_typefun(vm, object, arg, PIK_INITFUN);
     return object;
 }
@@ -304,6 +307,10 @@ inline void pik_incref(pik_object* object) {
 static void finalize(pik_vm* vm, pik_object* object) {
     IF_NULL_RETURN(object);
     PIK_DEBUG_PRINTF("Finalizing %s at %p\n", pik_typeof(vm, object), (void*)object);
+    if (object->flags.global & PIK_ALREADY_FINALIZED) {
+        PIK_DEBUG_PRINTF("Already finalized.\n");
+        return;
+    }
     // Free object-specific stuff
     run_typefun(vm, object, NULL, PIK_FINALFUN);
     #ifdef PIK_DEBUG
@@ -312,7 +319,7 @@ static void finalize(pik_vm* vm, pik_object* object) {
     }
     #endif
     // Free everything else
-    object->flags.global = 0;
+    object->flags.global = PIK_ALREADY_FINALIZED;
     object->flags.obj = 0;
     for (size_t i = 0; i < object->proto.sz; i++) {
         pik_decref(vm, object->proto.bases[i]);
@@ -1007,6 +1014,13 @@ static pik_object* get_word(pik_vm* vm, pik_parser* p) {
     // Special case: numbers
     if (isdigit(at(p))) {
         char c;
+        // Complex
+        union { struct { float real; float imag; }; uint64_t complexbits; };
+        if (sscanf(str_of(p), "%g%gj%ln%c", &real, &imag, &len, &c) == 3) {
+            advance(p, len);
+            PIK_DEBUG_PRINTF("complex %g %+g * i (bits = %#llx)\n", real, imag, complexbits);
+            return pik_create_primitive(vm, PIK_TYPE_COMPLEX, (void*)&complexbits);
+        }
         // Integer
         int64_t intnum;
         if (sscanf(str_of(p), "%lli%ln%c", &intnum, &len, &c) == 2) {
@@ -1020,13 +1034,6 @@ static pik_object* get_word(pik_vm* vm, pik_parser* p) {
             advance(p, len);
             PIK_DEBUG_PRINTF("float %lg\n", floatnum);
             return pik_create_primitive(vm, PIK_TYPE_FLOAT, (void*)&floatnum);
-        }
-        // Complex
-        union { struct { float real; float imag; }; uint64_t complexbits; };
-        if (sscanf(str_of(p), "%g%gj%ln%c", &real, &imag, &len, &c) == 3) {
-            advance(p, len);
-            PIK_DEBUG_PRINTF("complex %g %+g * i (bits = %#llx)\n", real, imag, complexbits);
-            return pik_create_primitive(vm, PIK_TYPE_COMPLEX, (void*)&complexbits);
         }
     }
     // First pass: find length
@@ -1129,7 +1136,7 @@ static pik_object* compile_block(pik_vm* vm, pik_parser* p) {
 #ifdef PIK_DEBUG
 static void dump_ast(pik_object* code, int indent) {
     if (code == NULL) {
-        printf("%s", (char*)code);
+        printf("NULL");
         return;
     }
     char* str;
@@ -1258,7 +1265,7 @@ separately
 in an implicit concat # comments stay too
 } word word;;;;;;;;;;;;;;
 newline; word
-1+2|>$foo|>$bar
+1+2|>$foo|>$bar+1+2j
 truefoo true"haha"false{true {true}}|@|!|@@!|!@||@!%^%^%
 begin block
     foo bar
