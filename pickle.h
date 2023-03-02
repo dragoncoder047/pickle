@@ -306,11 +306,11 @@ inline void pik_incref(pik_object* object) {
 
 static void finalize(pik_vm* vm, pik_object* object) {
     IF_NULL_RETURN(object);
-    PIK_DEBUG_PRINTF("Finalizing %s at %p\n", pik_typeof(vm, object), (void*)object);
     if (object->flags.global & PIK_ALREADY_FINALIZED) {
-        PIK_DEBUG_PRINTF("Already finalized.\n");
+        PIK_DEBUG_PRINTF("Already finalized %s at %p\n", pik_typeof(vm, object), (void*)object);
         return;
     }
+    PIK_DEBUG_PRINTF("Finalizing %s at %p\n", pik_typeof(vm, object), (void*)object);
     // Free object-specific stuff
     run_typefun(vm, object, NULL, PIK_FINALFUN);
     #ifdef PIK_DEBUG
@@ -746,10 +746,12 @@ static inline void next(pik_parser* p) {
 }
 
 static inline size_t save(pik_parser* p) {
+    IF_NULL_RETURN(p) 0;
     return p->head;
 }
 
 static inline void restore(pik_parser* p, size_t i) {
+    IF_NULL_RETURN(p);
     p->head = i;
 }
 
@@ -759,6 +761,7 @@ static inline bool p_eof(pik_parser* p) {
 }
 
 static inline const char* str_of(pik_parser* p) {
+    IF_NULL_RETURN(p) NULL;
     return &p->code[p->head];
 }
 
@@ -848,7 +851,7 @@ static bool valid_opchr(char c) {
 static bool skip_whitespace(pik_parser* p) {
     IF_NULL_RETURN(p) true;
     bool skipped = false;
-    again:
+    again:;
     size_t start = save(p);
     while (!p_eof(p)) {
         char c = at(p);
@@ -1015,11 +1018,11 @@ static pik_object* get_word(pik_vm* vm, pik_parser* p) {
     if (isdigit(at(p))) {
         char c;
         // Complex
-        union { struct { float real; float imag; }; uint64_t complexbits; };
-        if (sscanf(str_of(p), "%g%gj%ln%c", &real, &imag, &len, &c) == 3) {
+        union { struct { float real; float imag; }; uint64_t complexbits; } foo;
+        if (sscanf(str_of(p), "%g%gj%ln%c", &foo.real, &foo.imag, &len, &c) == 3) {
             advance(p, len);
-            PIK_DEBUG_PRINTF("complex %g %+g * i (bits = %#llx)\n", real, imag, complexbits);
-            return pik_create_primitive(vm, PIK_TYPE_COMPLEX, (void*)&complexbits);
+            PIK_DEBUG_PRINTF("complex %g %+g * i (bits = %#llx)\n", foo.real, foo.imag, foo.complexbits);
+            return pik_create_primitive(vm, PIK_TYPE_COMPLEX, (void*)&foo.complexbits);
         }
         // Integer
         int64_t intnum;
@@ -1058,7 +1061,7 @@ static pik_object* next_item(pik_vm* vm, pik_parser* p) {
     bool concatenated = false;
     pik_object* result = NULL;
     PIK_DEBUG_PRINTF("next_item()\n");
-    again:
+    again:;
     bool hadspace = skip_whitespace(p);
     if (hadspace && result != NULL) return result;
     if (p_eof(p)) return result;
