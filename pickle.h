@@ -4,7 +4,7 @@
 #include <string.h>
 #include <ctype.h>
 
-//#define PIK_DEBUG
+#define PIK_DEBUG
 #define PIK_TEST
 
 #ifndef PIK_MAX_PARSER_DEPTH
@@ -252,8 +252,9 @@ static pik_object* alloc_object(pik_vm* vm, pik_type type, void* arg) {
         }
         object = object->gc.next;
     }
-    PIK_DEBUG_PRINTF("Allocating new memory");
+    PIK_DEBUG_PRINTF("Allocating new memory ");
     object = (pik_object*)calloc(1, sizeof(pik_object));
+    PIK_DEBUG_PRINTF("at %p", (void*)object);
     object->gc.next = vm->gc.first;
     vm->gc.first = object;
     vm->gc.num_objects++;
@@ -332,6 +333,7 @@ static void finalize(pik_vm* vm, pik_object* object) {
 
 void pik_decref(pik_vm* vm, pik_object* object) {
     IF_NULL_RETURN(object);
+    PIK_DEBUG_ASSERT(object->gc.refcnt > 0, "Decref'ed an object with 0 references");
     object->gc.refcnt--;
     if (object->gc.refcnt == 0) {
         PIK_DEBUG_PRINTF("%s at %p lost all references, finalizing\n", pik_typeof(vm, object), (void*)object);
@@ -1190,7 +1192,10 @@ static pik_object* next_item(pik_vm* vm, pik_parser* p) {
         // Generic failed to parse message
         pik_set_error_fmt(vm, "syntax error: failed to parse: %.20s...", str_of(p));
     }
-    if (vm->error) return NULL;
+    if (vm->error) {
+        pik_decref(vm, result);
+        return NULL;
+    }
     if (result == NULL) {
         result = next;
         goto again;
@@ -1225,7 +1230,11 @@ static pik_object* compile_block(pik_vm* vm, pik_parser* p) {
             pik_object* item = next_item(vm, p);
             if (item) pik_APPEND_INPLACE(line, item);
             pik_decref(vm, item);
-            if (vm->error) return NULL;
+            if (vm->error) {
+                pik_decref(vm, line);
+                pik_decref(vm, block);
+                return NULL;
+            }
             if (eolchar(at(p), p->ieol)) {
                 next(p);
                 break;
@@ -1374,13 +1383,14 @@ int main(void) {
 print "hello world!"
 print:
                 foobar
-                barbaz
+            barbaz
 if $x == $y:
     print X equals Y!
     while $y > 0:
         print Y is going dooooown
         dec y
 print a list: [1 2 3 + 4]
+print a complex: 1+33j
 make x (123 + 456)
 $x |> $print
 
@@ -1402,11 +1412,12 @@ $x |> $print
         if (res == NULL) break;
     }
     if (vm->error) {
-        PIK_DEBUG_ASSERT(false, (const char*)vm->error->payload.as_pointer);
+        printf("error: %s\n", (const char*)vm->error->payload.as_pointer);
     }
 
     test_header("END tests");
     pik_destroy(vm);
+    free(p);
     return 0;
 }
 #endif
