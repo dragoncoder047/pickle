@@ -1147,7 +1147,7 @@ static pik_object* get_word(pik_vm* vm, pik_parser* p) {
         size_t x = save(p);
         bool me_has_colon = true;
         next(p);
-        while (!isspace(at(p))) {
+        while (isspace(at(p))) {
             if (at(p) == '\n') {
                 me_has_colon = false;
                 break;
@@ -1386,8 +1386,10 @@ $x |> $print
     PIK_DEBUG_ASSERT(p != NULL, "Failed to push parser");
     PIK_DEBUG_ASSERT(p->depth == 0, "Set incorrect depth on parser");
     PIK_TEST_DUMP_PARSER(p);
-    while (1) {
+    while (true) {
+        if (p_eof(p)) break;
         pik_object* res = compile_block(vm, p);
+        if (vm->error) break;
         printf("Dumping AST\n");
         dump_ast(res, 0);
         printf("\nFreeing AST\n");
