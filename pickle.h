@@ -202,7 +202,7 @@ struct pik_vm {
 };
 
 #define PIK_DOCALLBACK(vm, name, ...) \
-if (vm->callbacks.name != NULL) { \
+if (vm->callbacks.name) { \
     vm->callbacks.name(vm, __VA_ARGS__);\
 }
 
@@ -214,9 +214,7 @@ void pik_decref(pik_vm*, pik_object*);
 static void mark_object(pik_vm*, pik_object*);
 static inline pik_hashmap* new_hashmap(void);
 static void hashmap_destroy(pik_vm*, pik_hashmap*);
-// void pik_tf_STRDUP_ARG(pik_vm*, pik_object*, void*);
-// void pik_tf_FREE_ARG(pik_vm*, pik_object*, void*);
-// void pik_tf_NOOP(pik_vm*, pik_object*, void*);
+static pik_object* next_item(pik_vm*, pik_parser*);
 
 // ------------------- Basic objects -------------------------
 
@@ -442,7 +440,7 @@ void pik_destroy(pik_vm* vm) {
     free(vm->type_managers.mgrs);
     PIK_DEBUG_PRINTF("Freeing %zu operators\n", vm->operators.sz);
     free(vm->operators.ops);
-    while (vm->parser != NULL) {
+    while (vm->parser) {
         pik_parser* p = vm->parser;
         vm->parser = p->parent;
         PIK_DEBUG_PRINTF("Freeing a parser with code \"%.*s%s\"\n", (int)(p->len < 15 ? p->len : 15), p->code, p->len < 15 ? "" : "...");
@@ -536,7 +534,7 @@ void pik_hashmap_put(pik_vm* vm, pik_hashmap* map, const char* key, pik_object* 
     pik_incref(value);
     pik_hashbucket* b = get_bucket(map, key);
     pik_hashentry* e = find_entry(b, key);
-    if (e != NULL) {
+    if (e) {
         PIK_DEBUG_PRINTF("used old entry for %s\n", key);
         pik_decref(vm, e->value);
         e->value = value;
@@ -555,7 +553,7 @@ pik_object* pik_hashmap_get(pik_hashmap* map, const char* key) {
     PIK_DEBUG_PRINTF("Getting entry %s on hashmap %p\n", key, (void*)map);
     IF_NULL_RETURN(map) NULL;
     pik_hashentry* e = find_entry(get_bucket(map, key), key);
-    if (e != NULL) {
+    if (e) {
         PIK_DEBUG_PRINTF("key %s found\n", key);
         pik_incref(e->value);
         return e->value;
@@ -568,7 +566,7 @@ bool pik_hashmap_entry_is_locked(pik_hashmap* map, const char* key) {
     PIK_DEBUG_PRINTF("Getting lock bit of %s on hashmap %p\n", key, (void*)map);
     IF_NULL_RETURN(map) false;
     pik_hashentry* e = find_entry(get_bucket(map, key), key);
-    if (e != NULL) {
+    if (e) {
         PIK_DEBUG_PRINTF("key %s found: %s\n", key, e->locked ? "locked" : "writable");
         return e->locked;
     }
@@ -783,7 +781,7 @@ static inline bool p_startswith(pik_parser* p, const char* str) {
 
 static pik_parser* push_parser(pik_vm* vm, pik_parser* p, const char* str, size_t len, bool ieol) {
     IF_NULL_RETURN(vm) NULL;
-    if (p != NULL && p->depth + 1 > PIK_MAX_PARSER_DEPTH) {
+    if (p && p->depth + 1 > PIK_MAX_PARSER_DEPTH) {
         pik_set_error(vm, "too much recursion");
         return NULL;
     }
@@ -1004,7 +1002,7 @@ static pik_object* get_colon_string(pik_vm* vm, pik_parser* p) {
         indent++;
         next(p);
     }
-    PIK_DEBUG_PRINTF("indent is %i %s\n", indent, spaces ? "spaces" : "tabs");
+    PIK_DEBUG_PRINTF("indent is %zu %s\n", indent, spaces ? "spaces" : "tabs");
     // Count size of string
     size_t start = save(p);
     size_t len = 0;
@@ -1033,8 +1031,8 @@ static pik_object* get_colon_string(pik_vm* vm, pik_parser* p) {
             return NULL;
         }
         if (this_indent < indent) {
-            // comma at end means the next items are part of the same line
-            if (at(p) != ',') {
+            // & at end means the next items are part of the same line
+            if (at(p) != '&') {
                 restore(p, last_nl);
             } else next(p);
             break;
@@ -1044,7 +1042,6 @@ static pik_object* get_colon_string(pik_vm* vm, pik_parser* p) {
     size_t end = save(p);
     restore(p, start);
     char* buf = (char*)calloc(len + 1, sizeof(char));
-    size_t i = 0;
     for (size_t i = 0; i < len; i++) {
         buf[i] = at(p);
         if (at(p) == '\n') advance(p, indent); // Skip the indent
@@ -1058,8 +1055,24 @@ static pik_object* get_colon_string(pik_vm* vm, pik_parser* p) {
 
 static pik_object* get_expression(pik_vm* vm, pik_parser* p) {
     PIK_DEBUG_PRINTF("get_expression()\n");
-    PIK_DEBUG_PRINTF("UNIMPLEMENTED\n");
-    return NULL;
+    next(p);
+    pik_object* expr = create_codeobj(vm, PIK_CODE_LINE);
+    while (true) {
+        if (at(p) == ')') {
+            next(p); // Skip over )
+            break;
+        }
+        pik_object* next = next_item(vm, p);
+        if (vm->error) return NULL;
+        if (next) {
+            pik_APPEND_INPLACE(expr, next);
+            pik_decref(vm, next);
+        }
+        #ifdef PIK_DEBUG
+        else printf("Empty subexpr line\n");
+        #endif
+    }
+    return expr;
 }
 
 static pik_object* get_list(pik_vm* vm, pik_parser* p) {
@@ -1128,7 +1141,7 @@ static pik_object* next_item(pik_vm* vm, pik_parser* p) {
     PIK_DEBUG_PRINTF("next_item()\n");
     again:;
     bool hadspace = skip_whitespace(p);
-    if (hadspace && result != NULL) return result;
+    if (hadspace && result) return result;
     if (p_eof(p)) return result;
     pik_object* next;
     size_t here = save(p);
@@ -1140,9 +1153,9 @@ static pik_object* next_item(pik_vm* vm, pik_parser* p) {
         case '(':  next = get_expression(vm, p); break;
         case '[':  next = get_list(vm, p); break;
         case ']':  // fallthrough
-        case ')':  // fallthrough
-        case '}':  pik_set_error_fmt(vm, "syntax error: unexpected \"%c\"", at(p)); break;
-        case ':':  if (result) return result; /* colon blocks are always their own item */ else if (strchr("\n\r", peek(p, 1)) != NULL) { next = get_colon_string(vm, p); break; } // else fallthrough
+        case ')':  return result; // allow get_expression() and get_list() to see their end
+        case '}':  pik_set_error(vm, "syntax error: unexpected \"}\""); break;
+        case ':':  if (result) return result; /* colon blocks are always their own item */ else if (strchr("\n\r", peek(p, 1))) { next = get_colon_string(vm, p); break; } // else fallthrough
         default:   if (eolchar(at(p), p->ieol)) return result; else next = get_word(vm, p); break;
     }
     if (!vm->error && save(p) == here) {
@@ -1182,7 +1195,7 @@ static pik_object* compile_block(pik_vm* vm, pik_parser* p) {
         while (!p_eof(p)) {
             PIK_DEBUG_PRINTF("Beginning of item: ");
             pik_object* item = next_item(vm, p);
-            if (item != NULL) pik_APPEND_INPLACE(line, item);
+            if (item) pik_APPEND_INPLACE(line, item);
             pik_decref(vm, item);
             if (vm->error) return NULL;
             if (eolchar(at(p), p->ieol)) {
@@ -1320,28 +1333,13 @@ int main(void) {
     test_header("Parser test");
     const char* code = R"===(
 
-"foobar" 'noobarbaz' # Ignore me
-"blarg\n"; "newline on prev"
-### Comment ### "bing" ###
-### "bing2"
-$iam $123foo {
-the previous
-should be
-123 and
-foo
-separately
-in an implicit concat # comments stay too
-} word word;;;;;;;;;;;;;;
-newline; word
-1+2|>$foo|>$bar+1+2j
-truefoo true"haha"false{true {true}}|@|!|@@!|!@||@!%^%^%
-begin block:
-    foo bar
-    bar baz
-,:
-    another block!
-        super indent
-, out of block
+# Test this
+print "hello world!"
+print:
+                foobar
+                barbaz
+make x (123 + 456)
+$x |> $print
 
 )===";
     pik_parser* p = push_parser(vm, NULL, code, 0, false);
