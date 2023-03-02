@@ -1383,14 +1383,14 @@ int main(void) {
 print "hello world!"
 print:
                 foobar
-            barbaz
+                 barbaz
 if $x == $y:
     print X equals Y!
     while $y > 0:
-        print Y is going dooooown
+        print Y is going dooooown!!!!!!!!!!!!!!!!!!!
         dec y
 print a list: [1 2 3 + 4]
-print a complex: 1+33j
+print a complex: ((((((((1+33j)))):-0))))
 make x (123 + 456)
 $x |> $print
 
@@ -1412,7 +1412,7 @@ $x |> $print
         if (res == NULL) break;
     }
     if (vm->error) {
-        printf("error: %s\n", (const char*)vm->error->payload.as_pointer);
+        printf("\nerror: %s\n", (const char*)vm->error->payload.as_pointer);
     }
 
     test_header("END tests");
