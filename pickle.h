@@ -987,8 +987,73 @@ static pik_object* get_brace_string(pik_vm* vm, pik_parser* p) {
 
 static pik_object* get_colon_string(pik_vm* vm, pik_parser* p) {
     PIK_DEBUG_PRINTF("get_colon_string()\n");
-    PIK_DEBUG_PRINTF("UNIMPLEMENTED\n");
-    return NULL;
+    while (at(p) != '\n') next(p); // Skip all before newline
+    next(p); // Skip newline
+    size_t indent = 0;
+    bool spaces = at(p) == ' ';
+    // Find first indent
+    while (isspace(at(p))) {
+        if (p_eof(p)) {
+            pik_set_error(vm, "syntax error: expected indented block after \":\"");
+            return NULL;
+        }
+        if ((!spaces && at(p) == ' ') || (spaces && at(p) == '\t')) {
+            pik_set_error(vm, "syntax error: mix of tabs and spaces indenting block");
+            return NULL;
+        }
+        indent++;
+        next(p);
+    }
+    PIK_DEBUG_PRINTF("indent is %i %s\n", indent, spaces ? "spaces" : "tabs");
+    // Count size of string
+    size_t start = save(p);
+    size_t len = 0;
+    while (true) {
+        // Skip content of line
+        while (at(p) != '\n') {
+            next(p);
+            len++;
+        }
+        // +1 for \n
+        size_t last_nl = save(p);
+        next(p);
+        len++;
+        // Skip indent of line
+        size_t this_indent = 0;
+        while (isspace(at(p)) && this_indent < indent) {
+            if ((!spaces && at(p) == ' ') || (spaces && at(p) == '\t')) {
+                pik_set_error(vm, "syntax error: mix of tabs and spaces indenting block");
+                return NULL;
+            }
+            this_indent++;
+            next(p);
+        }
+        if (this_indent > 0 && this_indent < indent) {
+            pik_set_error(vm, "syntax error: unindent does not match previous indent");
+            return NULL;
+        }
+        if (this_indent < indent) {
+            // comma at end means the next items are part of the same line
+            if (at(p) != ',') {
+                restore(p, last_nl);
+            } else next(p);
+            break;
+        }
+    }
+    // Go back and get the string
+    size_t end = save(p);
+    restore(p, start);
+    char* buf = (char*)calloc(len + 1, sizeof(char));
+    size_t i = 0;
+    for (size_t i = 0; i < len; i++) {
+        buf[i] = at(p);
+        if (at(p) == '\n') advance(p, indent); // Skip the indent
+        next(p);
+    }
+    pik_object* str = pik_create_primitive(vm, PIK_TYPE_STRING, (void*)buf);
+    restore(p, end);
+    free(buf);
+    return str;
 }
 
 static pik_object* get_expression(pik_vm* vm, pik_parser* p) {
@@ -1077,7 +1142,7 @@ static pik_object* next_item(pik_vm* vm, pik_parser* p) {
         case ']':  // fallthrough
         case ')':  // fallthrough
         case '}':  pik_set_error_fmt(vm, "syntax error: unexpected \"%c\"", at(p)); break;
-        case ':':  if (strchr("\n\r", peek(p, 1)) != NULL) { next = get_colon_string(vm, p); break; } // else fallthrough
+        case ':':  if (result) return result; /* colon blocks are always their own item */ else if (strchr("\n\r", peek(p, 1)) != NULL) { next = get_colon_string(vm, p); break; } // else fallthrough
         default:   if (eolchar(at(p), p->ieol)) return result; else next = get_word(vm, p); break;
     }
     if (!vm->error && save(p) == here) {
@@ -1270,10 +1335,14 @@ in an implicit concat # comments stay too
 newline; word
 1+2|>$foo|>$bar+1+2j
 truefoo true"haha"false{true {true}}|@|!|@@!|!@||@!%^%^%
-begin block
+begin block:
     foo bar
     bar baz
-out of block
+,:
+    another block!
+        super indent
+, out of block
+
 )===";
     pik_parser* p = push_parser(vm, NULL, code, 0, false);
     PIK_DEBUG_ASSERT(p != NULL, "Failed to push parser");
