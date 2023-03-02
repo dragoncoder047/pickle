@@ -170,6 +170,8 @@ Syntax
 
 `foo bar baz` is the same as `foo.bar baz` if `foo` can't be called; `foo.bar.baz` if `foo.bar` can't be called; and a type error any other way (if some property in the chain doesn't exist, for example)
 
+Most primitive types (numbers, strings, etc) return themselves when called with no arguments, otherwise throw an error.
+
 Literal for NULL is `null` or `pass`
 
 * each item on the line is literalized at compile time to either number or string
