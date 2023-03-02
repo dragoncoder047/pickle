@@ -1,20 +1,20 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <ctype.h>
 
-#define PIK_DEBUG
+// #define PIK_DEBUG
 #define PIK_TEST
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #pragma GCC optimize ("Os")
 
 #if !defined(bool) && !defined(__cplusplus)
-typedef uint8_t bool;
+typedef int bool;
 #define true 1
 #define false 0
 #endif
@@ -201,10 +201,10 @@ if (vm->callbacks.name) { \
 // Forward references
 void pik_register_globals(pik_vm*);
 static void register_primitive_types(pik_vm*);
-inline void pik_incref(pik_object*);
+void pik_incref(pik_object*);
 void pik_decref(pik_vm*, pik_object*);
 static void mark_object(pik_vm*, pik_object*);
-static inline pik_hashmap* new_hashmap(void);
+static pik_hashmap* new_hashmap(void);
 static void hashmap_destroy(pik_vm*, pik_hashmap*);
 static pik_object* next_item(pik_vm*, pik_parser*);
 
@@ -722,7 +722,7 @@ static inline char at(pik_parser* p) {
     return peek(p, 0);
 }
 
-static inline void advance(pik_parser* p, ssize_t delta) {
+static inline void advance(pik_parser* p, size_t delta) {
     IF_NULL_RETURN(p);
     if ((p->head + delta) <= p->len) p->head += delta;
 }
@@ -1316,24 +1316,22 @@ void dump_parser(pik_parser* p) {
 int main(void) {
     pik_vm* vm = pik_new();
     test_header("Parser test");
-    const char* code = R"===(
-
-# Test this
-print "hello world!"
-print:
-                foobar
-                 barbaz
-if $x == $y:
-    print X equals Y!
-    while $y > 0:
-        print Y is going dooooown!!!!!!!!!!!!!!!!!!!
-        dec y
-print a list: [1 2 3 + 4]
-print a complex: 1+33j
-make x (123 + 456)
-$x |> $print !+! custom operator
-
-)===";
+    const char* code = 
+        "# Test this\n"
+        "print \"hello world!\"\n"
+        "print:\n"
+        "                foobar\n"
+        "                 barbaz\n"
+        "if $x == $y:\n"
+        "    print X equals Y!\n"
+        "    while $y > 0:\n"
+        "        print Y is going dooooown!!!!!!!!!!!!!!!!!!!\n"
+        "        dec y\n"
+        "print a list: [1 2 3 + 4]\n"
+        "print a complex: 1+33j\n"
+        "make x (123 + 456)\n"
+        "$x |> $print !+! custom operator\n"
+    ;
     pik_parser p = {.code = code, .len = strlen(code)};
     printf("Current code: ");
     dump_parser(&p);
