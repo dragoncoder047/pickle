@@ -795,13 +795,6 @@ static pik_parser* push_parser(pik_vm* vm, pik_parser* p, const char* str, size_
     return next;
 }
 
-#ifdef PIK_TEST
-void PIK_TEST_DUMP_PARSER(pik_parser* p) {
-    IF_NULL_RETURN(p);
-    printf("\"%.*s\"\n", (int)(p->len - p->head), str_of(p));
-}
-#endif
-
 static inline char unescape(char c) {
     switch (c) {
         case 'b': return '\b';
@@ -1142,7 +1135,7 @@ static pik_object* get_word(pik_vm* vm, pik_parser* p) {
         next(p);
     }
     // Check if last is a colon, if it is a colon but there is non-whitespace before the newline
-    // that means it is part of this word (get_colon_string() will ignore it)
+    // that means it is part of this word (get_colon_string() will ignore it otherwise)
     if (at(p) == ':') {
         size_t x = save(p);
         bool me_has_colon = true;
@@ -1337,6 +1330,11 @@ void test_header(const char* h) {
     printf("\n-----------------%i: %s-----------------\n", count, h);
 }
 
+void dump_parser(pik_parser* p) {
+    IF_NULL_RETURN(p);
+    printf("%.*s\n", (int)(p->len - p->head), str_of(p));
+}
+
 int main(void) {
     pik_vm* vm = pik_new();
     // test_header("Create 10 garbage objects -- should reuse");
@@ -1377,6 +1375,11 @@ print "hello world!"
 print:
                 foobar
                 barbaz
+if $x == $y:
+    print X equals Y!
+    while $y > 0:
+        print Y is going dooooown
+        dec y
 print a list: [1 2 3 + 4]
 make x (123 + 456)
 $x |> $print
@@ -1385,7 +1388,8 @@ $x |> $print
     pik_parser* p = push_parser(vm, NULL, code, 0, false);
     PIK_DEBUG_ASSERT(p != NULL, "Failed to push parser");
     PIK_DEBUG_ASSERT(p->depth == 0, "Set incorrect depth on parser");
-    PIK_TEST_DUMP_PARSER(p);
+    printf("Current code: ");
+    dump_parser(p);
     while (true) {
         if (p_eof(p)) break;
         pik_object* res = compile_block(vm, p);
@@ -1394,7 +1398,7 @@ $x |> $print
         dump_ast(res, 0);
         printf("\nFreeing AST\n");
         pik_decref(vm, res);
-        PIK_TEST_DUMP_PARSER(p);
+        dump_parser(p);
         if (res == NULL) break;
     }
     if (vm->error) {
