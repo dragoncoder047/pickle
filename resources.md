@@ -195,4 +195,4 @@ print foo + bar bax * 3 ;#>> print foobar baxbaxbax
 print * 3 ;#>> syntax error
 ```
 
-A scope is an object. The local variables are properties, the prototype is the parent scope, the `__upscope__` property is the upeval scope, the `__result__` variable is the return value, and **the `__error__` value is the thrown error value** ***(TODO)***
+A scope is an object. The local variables are properties, the prototype is the parent scope, the `__upscope__` property is the upeval scope, the `__result__` variable is the return value, the `__last__` property holds the last command's result, and **the `__error__` value is the thrown error value** ***(TODO)***

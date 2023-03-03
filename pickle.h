@@ -39,7 +39,7 @@ typedef uint16_t pik_resultcode;
 typedef struct pik_object pik_object;
 typedef struct pik_vm pik_vm;
 
-typedef pik_object* (*pik_builtin_function)(pik_vm*, pik_object*, size_t, pik_object**, pik_object*);
+typedef pik_object* (*pik_builtin_function)(pik_vm*, pik_object*, pik_object*, pik_object*);
 
 // These function only operate on the void* payload of the object, everything else is handled automatically
 typedef void (*pik_type_function)(pik_vm*, pik_object*, void*);
@@ -1245,8 +1245,102 @@ pik_object* pik_get_property(pik_object* object, const char* property) {
     return x;
 }
 
+// ----------------------------------- Operator stuff -----------------------------
+
+static pik_operator* get_op(pik_vm* vm, const char* op) {
+    IF_NULL_RETURN(vm) NULL;
+    for (size_t i = 0; i < vm->operators.sz; i++) {
+        if (streq(vm->operators.ops[i].symbol, op)) return &vm->operators.ops[i];
+    }
+    return NULL;
+}
+
+static int op_precedence(pik_vm* vm, const char* op) {
+    IF_NULL_RETURN(vm) 0;
+    pik_operator* op = get_op(vm, op);
+    IF_NULL_RETURN(op) 0;
+    return op->precedence;
+}
+
+static const char* op_method(pik_vm* vm, const char* op) {
+    IF_NULL_RETURN(vm) 0;
+    pik_operator* op = get_op(vm, op);
+    IF_NULL_RETURN(op) 0;
+    return op->method;
+}
+
+// ------------------------------------- Evaluate ------------------------------------
+
+pik_object* pik_get_var(pik_vm* vm, pik_object* scope, const char* var, pik_object* self, pik_object* args) {
+    IF_NULL_RETURN(vm) NULL;
+    IF_NULL_RETURN(scope) NULL;
+    pik_object* result = NULL;
+    if (args && isdigit(var[0])) {
+        int num = atoi(var);
+        if (num >= args->payload.as_array.sz) {
+            pik_set_error_fmt(vm, "undefined numvar $%i (there were only %zu args passed)", num, args->payload.as_array.sz);
+            return NULL;
+        }
+        result = args->payload.as_array.items[num];
+        goto done;
+    }
+    if (strlen(var) == 1) {
+        switch (var[0]) {
+            case '@': result = args; goto done;
+            case '#': result = self; goto done;
+            case '?': return pik_hashmap_get(scope->properties, "__last__");
+            default:  break;
+        }
+    }
+    result = pik_get_property(scope, var);
+    if (result) goto done;
+    pik_object* up = pik_get_property(scope, "__upscope__");
+    if (!up) goto error;
+    result = pik_get_property(up, var);
+    if (!result) goto error;
+    done:
+    pik_incref(result);
+    return result;
+    error:
+    pik_set_error_fmt(vm, "undefined variable %s", var);
+    return NULL;
+}
+
+static char* stringify(pik_vm* vm, pik_object* what) {
+    if (!what) return strdup("NULL");
+    char* buf;
+    switch (what->type) {
+        case PIK_TYPE_STRING: buf = strdup((char*)what->payload.as_pointer); break;
+        case PIK_TYPE_INT: asprintf(&buf, "%lli", what->payload.as_integer); break;
+        case PIK_TYPE_FLOAT: asprintf(&buf, "%lg", what->payload.as_double); break;
+        case PIK_TYPE_COMPLEX: asprintf(&buf, "%g%+gj", what->payload.as_complex.real, what->payload.as_complex.imag); break
+        case PIK_TYPE_BOOL: asprintf(&buf, "%s", what->payload.as_integer ? "true" : "false"); break;
+        default:
+            // todo: try call __str__ method
+            asprintf(&buf, "<%s at %p>", pik_typeof(vm, what), (void*)what);
+            break;
+    }
+    return buf;
+}
+
+static pik_object* eval_concat(pik_vm* vm, pik_object* concat, pik_object* self, pik_object* args, pik_object* scope) {
+
+}
+
+static pik_object* smoosh_expression(pik_vm* vm, pik_object* expr, pik_object* self, pik_object* args, pik_object* scope) {
+    IF_NULL_RETURN(vm) NULL;
+    IF_NULL_RETURN(expr) NULL;
+    // Find all unsupported operators
+}
+
 static pik_object* eval_user_code(pik_vm* vm, pik_object* self, pik_object* scope, pik_object* code) {
-    // TODO
+    IF_NULL_RETURN(vm) NULL;
+    IF_NULL_RETURN(scope) NULL;
+    IF_NULL_RETURN(code) NULL;
+    // if (!self) self = scope;
+    switch (code->type) {
+
+    }
 }
 
 #ifdef PIK_TEST
