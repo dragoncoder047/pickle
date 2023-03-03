@@ -279,6 +279,7 @@ pik_object* pik_create(pik_vm* vm, pik_type type, pik_object* proto, void* arg) 
 }
 
 pik_object* pik_create_primitive(pik_vm* vm, pik_type type, void* arg) {
+    // todo: string and number interning
     pik_object* proto = NULL;
     for (size_t i = 0; i < vm->type_managers.sz; i++) { 
         if (vm->type_managers.mgrs[i].type_for == type && vm->type_managers.mgrs[i].prototype != NULL) { 
@@ -1307,7 +1308,7 @@ pik_object* pik_get_var(pik_vm* vm, pik_object* scope, const char* var, pik_obje
     return NULL;
 }
 
-static char* stringify(pik_vm* vm, pik_object* what) {
+static char* stringify(pik_vm* vm, pik_object* what, pik_object* scope) {
     if (!what) return strdup("NULL");
     char* buf;
     switch (what->type) {
@@ -1317,21 +1318,37 @@ static char* stringify(pik_vm* vm, pik_object* what) {
         case PIK_TYPE_COMPLEX: asprintf(&buf, "%g%+gj", what->payload.as_complex.real, what->payload.as_complex.imag); break;
         case PIK_TYPE_BOOL: asprintf(&buf, "%s", what->payload.as_int ? "true" : "false"); break;
         default:
-            // todo: try call __str__ method
+            // todo: try to call __str__ method
             asprintf(&buf, "<%s at %p>", pik_typeof(vm, what), (void*)what);
             break;
     }
     return buf;
 }
 
-static pik_object* eval_concat(pik_vm* vm, pik_object* concat, pik_object* self, pik_object* args, pik_object* scope) {
+static pik_object* process_getvars(pik_vm* vm, pik_object* line, pik_object* self, pik_object* args, pik_object* scope) {
+    IF_NULL_RETURN(vm) NULL;
+    IF_NULL_RETURN(line) NULL;
+    pik_object* new_line = create_codeobj(vm, PIK_CODE_LINE);
+    size_t i, j;
+    for (i = 0, j = 0; i < line->payload.as_array.sz; i++, j++) {
+        pik_object* item = line->payload.as_array.items[i];
+        if (item->type != PIK_TYPE_CODE || item->flags.obj != PIK_CODE_GETVAR) {
+            pik_APPEND_INPLACE(new_line, item);
+            continue;
+        }
+        // todo: Call vm->dollar_function
+    }
+}
 
+static pik_object* eval_concat(pik_vm* vm, pik_object* concat, pik_object* self, pik_object* args, pik_object* scope) {
+    IF_NULL_RETURN(vm) NULL;
+    IF_NULL_RETURN(concat) NULL;
 }
 
 static pik_object* smoosh_expression(pik_vm* vm, pik_object* expr, pik_object* self, pik_object* args, pik_object* scope) {
     IF_NULL_RETURN(vm) NULL;
     IF_NULL_RETURN(expr) NULL;
-    // Find all unsupported operators
+    // todo: Find all unsupported operators and splice the strings together
 }
 
 static pik_object* eval_user_code(pik_vm* vm, pik_object* self, pik_object* scope, pik_object* code) {
@@ -1340,7 +1357,7 @@ static pik_object* eval_user_code(pik_vm* vm, pik_object* self, pik_object* scop
     IF_NULL_RETURN(code) NULL;
     // if (!self) self = scope;
     switch (code->type) {
-
+        // todo: call stuff? break it down? return null or the object singleton?
     }
 }
 
