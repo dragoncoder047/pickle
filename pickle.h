@@ -1257,16 +1257,16 @@ static pik_operator* get_op(pik_vm* vm, const char* op) {
 
 static int op_precedence(pik_vm* vm, const char* op) {
     IF_NULL_RETURN(vm) 0;
-    pik_operator* op = get_op(vm, op);
-    IF_NULL_RETURN(op) 0;
-    return op->precedence;
+    pik_operator* opinfo = get_op(vm, op);
+    IF_NULL_RETURN(opinfo) 0;
+    return opinfo->precedence;
 }
 
 static const char* op_method(pik_vm* vm, const char* op) {
     IF_NULL_RETURN(vm) 0;
-    pik_operator* op = get_op(vm, op);
-    IF_NULL_RETURN(op) 0;
-    return op->method;
+    pik_operator* opinfo = get_op(vm, op);
+    IF_NULL_RETURN(opinfo) 0;
+    return opinfo->method;
 }
 
 // ------------------------------------- Evaluate ------------------------------------
@@ -1275,6 +1275,7 @@ pik_object* pik_get_var(pik_vm* vm, pik_object* scope, const char* var, pik_obje
     IF_NULL_RETURN(vm) NULL;
     IF_NULL_RETURN(scope) NULL;
     pik_object* result = NULL;
+    pik_object* up = NULL;
     if (args && isdigit(var[0])) {
         int num = atoi(var);
         if (num >= args->payload.as_array.sz) {
@@ -1294,7 +1295,7 @@ pik_object* pik_get_var(pik_vm* vm, pik_object* scope, const char* var, pik_obje
     }
     result = pik_get_property(scope, var);
     if (result) goto done;
-    pik_object* up = pik_get_property(scope, "__upscope__");
+    up = pik_get_property(scope, "__upscope__");
     if (!up) goto error;
     result = pik_get_property(up, var);
     if (!result) goto error;
@@ -1311,10 +1312,10 @@ static char* stringify(pik_vm* vm, pik_object* what) {
     char* buf;
     switch (what->type) {
         case PIK_TYPE_STRING: buf = strdup((char*)what->payload.as_pointer); break;
-        case PIK_TYPE_INT: asprintf(&buf, "%lli", what->payload.as_integer); break;
+        case PIK_TYPE_INT: asprintf(&buf, "%lli", what->payload.as_int); break;
         case PIK_TYPE_FLOAT: asprintf(&buf, "%lg", what->payload.as_double); break;
-        case PIK_TYPE_COMPLEX: asprintf(&buf, "%g%+gj", what->payload.as_complex.real, what->payload.as_complex.imag); break
-        case PIK_TYPE_BOOL: asprintf(&buf, "%s", what->payload.as_integer ? "true" : "false"); break;
+        case PIK_TYPE_COMPLEX: asprintf(&buf, "%g%+gj", what->payload.as_complex.real, what->payload.as_complex.imag); break;
+        case PIK_TYPE_BOOL: asprintf(&buf, "%s", what->payload.as_int ? "true" : "false"); break;
         default:
             // todo: try call __str__ method
             asprintf(&buf, "<%s at %p>", pik_typeof(vm, what), (void*)what);
