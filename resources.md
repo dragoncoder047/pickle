@@ -164,15 +164,23 @@ Syntax
 * `{...}` == literal string (could be code)
 * `"..."` == literal string (could be code)
 * `'...'` == literal string (could be code)
+* `:\n<indented block>` == literal string (couuld be code)
 * `[...]` == list
-* `(...)` == parens
+* `(...)` == sublinexpr
 * Newline or `;` == end of command
+
+Calling convention:
+
+* Code has a target (self)
+* Code is in a scope
+* Code has an upeval scope
+* Code has code or a C function that is applied to the target
+* There is a result property (for returning from functions)
+* There can be sentinel errors throw (break/continue)
 
 `foo bar baz` is the same as `foo.bar baz` if `foo` can't be called; `foo.bar.baz` if `foo.bar` can't be called; and a type error any other way (if some property in the chain doesn't exist, for example)
 
 Most primitive types (numbers, strings, etc) return themselves when called with no arguments, otherwise throw an error.
-
-Literal for NULL is `null` or `pass`
 
 * each item on the line is literalized at compile time to either number or string
 * the args of each line are evaluated in an expresssion, recursively merging (thing op thing) to result of op
@@ -186,3 +194,5 @@ print foo bar + baz ;#>> print foo barbaz
 print foo + bar bax * 3 ;#>> print foobar baxbaxbax
 print * 3 ;#>> syntax error
 ```
+
+A scope is an object. The local variables are properties, the prototype is the parent scope, the `__upscope__` property is the upeval scope, the `__result__` variable is the return value, and **the `__error__` value is the thrown error value** ***(TODO)***

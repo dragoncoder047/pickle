@@ -39,7 +39,7 @@ typedef uint16_t pik_resultcode;
 typedef struct pik_object pik_object;
 typedef struct pik_vm pik_vm;
 
-typedef pik_object* (*pik_builtin_function)(pik_vm*, pik_object*, size_t, pik_object**);
+typedef pik_object* (*pik_builtin_function)(pik_vm*, pik_object*, size_t, pik_object**, pik_object*);
 
 // These function only operate on the void* payload of the object, everything else is handled automatically
 typedef void (*pik_type_function)(pik_vm*, pik_object*, void*);
@@ -73,7 +73,7 @@ typedef const char* (*pik_checkinterrupt_callback)(pik_vm*);
 #define PIK_TYPE_FUNCTION 9
 #define PIK_TYPE_CLASS 10
 #define PIK_TYPE_CODE 11
-// TODO: scope
+#define PIK_TYPE_SCOPE 12
 
 // Global Flags
 #define PIK_MARKED 1
@@ -564,7 +564,10 @@ bool pik_hashmap_entry_is_locked(pik_hashmap* map, const char* key) {
 
 bool pik_hashmap_has(pik_hashmap* map, const char* key) {
     PIK_DEBUG_PRINTF("Testing presence of key: ");
-    return pik_hashmap_get(map, key) != NULL;
+    pik_object* dummy = pik_hashmap_get(map, key);
+    if (!dummy) return false;
+    dummy->gc.refcnt--; // Safe here because it already has references (i.e. the hashmap)
+    return true;
 }
 
 // ------------------------------------- Builtin primitive types ----------------------------------
@@ -696,6 +699,7 @@ static void register_primitive_types(pik_vm* vm) {
     pik_register_type(vm, PIK_TYPE_FUNCTION, "function", pik_tf_COPY_PTR, pik_tf_NOOP, pik_tf_DECREF_IF_USER_CODE);
     pik_register_type(vm, PIK_TYPE_CLASS, "class", pik_tf_COPY_PTR, pik_tf_NOOP, pik_tf_DECREF_IF_USER_CODE);
     pik_register_type(vm, PIK_TYPE_CODE, "code", pik_tf_init_code, pik_tf_mark_code, pik_tf_free_code);
+    pik_register_type(vm, PIK_TYPE_SCOPE, "_internal_scope", pik_tf_NOOP, pik_tf_NOOP, pik_tf_NOOP);
 }
 
 void pik_APPEND_INPLACE(pik_object* a, pik_object* item) {
@@ -1220,6 +1224,31 @@ static pik_object* compile_block(pik_vm* vm, pik_parser* p) {
     return block;
 }
 
+// ---------------------------------- Object manipulation --------------------------------
+
+bool pik_set_property(pik_vm* vm, pik_object* object, const char* property, pik_object* value) {
+    if (pik_hashmap_entry_is_locked(object->properties, property)) return false;
+    pik_hashmap_put(vm, object->properties, property, value, false);
+    return true;
+}
+
+pik_object* pik_get_property(pik_object* object, const char* property) {
+    pik_object* x = NULL;
+    x = pik_hashmap_get(object->properties, property);
+    if (x) goto done;
+    for (size_t i = 0; i < object->proto.sz; i++) {
+        x = pik_get_property(object->proto.bases[i], property);
+        if (x) break;
+    }
+    done:
+    pik_incref(x);
+    return x;
+}
+
+static pik_object* eval_user_code(pik_vm* vm, pik_object* self, pik_object* scope, pik_object* code) {
+    // TODO
+}
+
 #ifdef PIK_TEST
 static void dump_ast(pik_object* code, int indent) {
     if (code == NULL) {
@@ -1330,7 +1359,7 @@ int main(void) {
         "print a list: [1 2 3 + 4]\n"
         "print a complex: 1+33j\n"
         "make x (123 + 456)\n"
-        "$x |> $print !+! custom operator\n"
+        "$x |> $print ~> custom operator\n"
     ;
     pik_parser p = {.code = code, .len = strlen(code)};
     printf("Current code: ");
