@@ -586,6 +586,7 @@ bool pik_hashmap_has(pik_hashmap* map, const char* key) {
 
 void pik_tf_STRDUP_ARG(pik_vm* vm, pik_object* object, void* arg) {
     (void)vm;
+    if (arg == NULL) return;
     object->payload.as_chars = strdup((char*)arg);
 }
 
@@ -1394,7 +1395,9 @@ static pik_object* process_getvars(pik_vm* vm, pik_object* line, pik_object* sel
     for (size_t i = 0; i < line->payload.as_array.sz; i++) {
         pik_object* item = line->payload.as_array.items[i];
         if (item->type != PIK_TYPE_CODE || item->flags.obj != PIK_CODE_GETVAR) {
-            pik_APPEND_INPLACE(new_line, item);
+            pik_object* temp = eval_user_code(vm, self, scope, item, scope);
+            pik_APPEND_INPLACE(new_line, temp);
+            pik_decref(vm, temp);
             continue;
         }
         pik_object* string = pik_create_primitive(vm, PIK_TYPE_STRING, (void*)item->payload.as_chars);
@@ -1407,7 +1410,7 @@ static pik_object* process_getvars(pik_vm* vm, pik_object* line, pik_object* sel
             pik_decref(vm, new_line);
             return NULL;
         }
-        // TODO: try get __getitem__ if list after
+        // TODO: try to call __getitem__ if list afterwards
         pik_APPEND_INPLACE(new_line, var);
         pik_decref(vm, var);
     }
@@ -1417,12 +1420,31 @@ static pik_object* process_getvars(pik_vm* vm, pik_object* line, pik_object* sel
 static pik_object* eval_concat(pik_vm* vm, pik_object* concat, pik_object* self, pik_object* args, pik_object* scope) {
     IF_NULL_RETURN(vm) NULL;
     IF_NULL_RETURN(concat) NULL;
+    char** stringified = (char**)calloc(concat->payload.as_array.sz, sizeof(char*));
+    for (size_t i = 0; i < concat->payload.as_array.sz; i++) {
+        stringified[i] = stringify(vm, eval_user_code(vm, self, scope, concat->payload.as_array.items[i], args), scope);
+        if (vm->error) {
+            for (size_t j = 0; j <= i; j++) free(stringified[i]);
+            free(stringified);
+            return NULL;
+        }
+    }
+    char* buf = strdup("");
+    for (size_t i = 0; i < concat->payload.as_array.sz; i++) {
+        char* old = buf;
+        asprintf(&buf, "%s%s", buf, stringified[i]);
+        free(old);
+    }
+    pik_object* str = pik_create_primitive(vm, PIK_TYPE_STRING, (void*)buf);
+    free(buf);
+    return str;
 }
 
 static pik_object* smoosh_expression(pik_vm* vm, pik_object* expr, pik_object* self, pik_object* args, pik_object* scope) {
     IF_NULL_RETURN(vm) NULL;
     IF_NULL_RETURN(expr) NULL;
     // todo: Find all unsupported operators and splice the strings together
+    // TODO: find supported operators and call the methods
 }
 
 static pik_object* eval_to_list(pik_vm* vm, pik_object* expr, pik_object* self, pik_object* args, pik_object* scope) {
