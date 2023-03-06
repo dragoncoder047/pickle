@@ -1460,8 +1460,18 @@ static pik_object* eval_user_code(pik_vm* vm, pik_object* self, pik_object* scop
     IF_NULL_RETURN(scope) NULL;
     IF_NULL_RETURN(code) NULL;
     // if (!self) self = scope;
-    switch (code->type) {
-        // todo: call stuff? break it down? return null or the object singleton?
+    if (code->type != PIK_TYPE_CODE) return code;
+    switch (code->flags.obj) {
+        case PIK_CODE_LIST:
+            return eval_to_list(vm, self, scope, code, args);
+        case PIK_CODE_BLOCK:
+            // TODO: eval block
+            break;
+        case PIK_CODE_LINE:
+            return eval_line(vm, self, scope, code, args);
+        case PIK_CODE_GETVAR:
+        case PIK_CODE_WORD:
+            // TODO: raise runtime error 
     }
 }
 
