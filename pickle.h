@@ -39,23 +39,23 @@ typedef uint16_t pik_resultcode;
 typedef struct pik_object pik_object;
 typedef struct pik_vm pik_vm;
 
-typedef pik_object* (*pik_builtin_function)(pik_vm*, pik_object*, pik_object*, pik_object*);
+typedef pik_object_t (*pik_builtin_function)(pickle_t, pik_object_t, pik_object_t, pik_object_t);
 
 // These function only operate on the void* payload of the object, everything else is handled automatically
-typedef void (*pik_type_function)(pik_vm*, pik_object*, void*);
+typedef void (*pik_type_function)(pickle_t, pik_object_t, void*);
 #define PIK_NUMTYPEFUNS 3
 #define PIK_INITFUN 0
 #define PIK_MARKFUN 1
 #define PIK_FINALFUN 2
 
-typedef void (*pik_exit_callback)(pik_vm*, pik_object*);
-typedef void (*pik_write_callback)(pik_vm*, const char*);
-typedef char* (*pik_read_callback)(pik_vm*, const char*);
-typedef char* (*pik_source_callback)(pik_vm*, const char*);
-typedef void (*pik_store_callback)(pik_vm*, const char*, const char*);
-typedef void (*pik_error_callback)(pik_vm*, size_t, const char*);
-typedef const char* (*pik_embeddedfilter_callback)(pik_vm*, const char*);
-typedef const char* (*pik_checkinterrupt_callback)(pik_vm*);
+typedef void (*pik_exit_callback)(pickle_t, pik_object_t);
+typedef void (*pik_write_callback)(pickle_t, const char*);
+typedef char* (*pik_read_callback)(pickle_t, const char*);
+typedef char* (*pik_source_callback)(pickle_t, const char*);
+typedef void (*pik_store_callback)(pickle_t, const char*, const char*);
+typedef void (*pik_error_callback)(pickle_t, size_t, const char*);
+typedef const char* (*pik_embeddedfilter_callback)(pickle_t, const char*);
+typedef const char* (*pik_checkinterrupt_callback)(pickle_t);
 
 #define streq(a, b) (!strcmp((a), (b)))
 #define IF_NULL_RETURN(x) if ((x) == NULL) return
@@ -95,7 +95,7 @@ typedef const char* (*pik_checkinterrupt_callback)(pik_vm*);
 #define PIK_HASHMAP_BUCKETMASK 0xFF
 typedef struct pik_hashentry {
     char* key;
-    pik_object* value;
+    pik_object_t value;
     bool read_only;
 } pik_hashentry;
 
@@ -114,8 +114,8 @@ typedef struct pik_complex {
 } pik_complex;
 
 typedef struct pik_userfunc {
-    pik_object* code;
-    pik_object* scope;
+    pik_object_t code;
+    pik_object_t scope;
     char* name;
     char** argnames;
     size_t argc;
@@ -124,7 +124,7 @@ typedef struct pik_userfunc {
 struct pik_object {
     pik_type type;
     struct {
-        pik_object* next;
+        pik_object_t next;
         size_t refcnt;
     } gc;
     struct {
@@ -132,7 +132,7 @@ struct pik_object {
         pik_flags obj;
     } flags;
     struct {
-        pik_object** bases;
+        pik_object_t* bases;
         size_t sz;
     } proto;
     pik_hashmap* properties;
@@ -146,9 +146,9 @@ struct pik_object {
         int64_t as_int;
         double as_double;
         pik_complex as_complex;
-        pik_object* as_object;
+        pik_object_t as_object;
         struct {
-            pik_object** items;
+            pik_object_t* items;
             size_t sz;
         } as_array;
         pik_hashmap* as_hashmap;
@@ -161,7 +161,7 @@ typedef struct pik_typemgr {
     pik_type_function funs[PIK_NUMTYPEFUNS];
     pik_type type_for;
     const char* type_string;
-    const pik_object* prototype;
+    const pik_object_t prototype;
 } pik_typemgr;
 
 typedef struct pik_operator {
@@ -178,7 +178,7 @@ typedef struct pik_parser {
 
 struct pik_vm {
     struct {
-        pik_object* first;
+        pik_object_t first;
         size_t num_objects;
     } gc;
     struct {
@@ -189,9 +189,9 @@ struct pik_vm {
         pik_operator* ops;
         size_t sz;
     } operators;
-    pik_object* global_scope;
-    pik_object* dollar_function;
-    pik_object* error;
+    pik_object_t global_scope;
+    pik_object_t dollar_function;
+    pik_object_t error;
     struct {
         pik_exit_callback exit;
         pik_write_callback write;
@@ -210,20 +210,20 @@ if (vm->callbacks.name) { \
 }
 
 // Forward references
-void pik_register_globals(pik_vm*);
-static void register_primitive_types(pik_vm*);
-void pik_incref(pik_object*);
-void pik_decref(pik_vm*, pik_object*);
-static void mark_object(pik_vm*, pik_object*);
+void pik_register_globals(pickle_t);
+static void register_primitive_types(pickle_t);
+void pik_incref(pik_object_t);
+void pik_decref(pickle_t, pik_object_t);
+static void mark_object(pickle_t, pik_object_t);
 static pik_hashmap* new_hashmap(void);
-static void hashmap_destroy(pik_vm*, pik_hashmap*);
-static pik_object* next_item(pik_vm*, pik_parser*);
-static pik_object* eval_line(pik_vm*, pik_object*, pik_object*, pik_object*, pik_object*);
-static pik_object* eval_user_code(pik_vm*, pik_object*, pik_object*, pik_object*, pik_object*);
+static void hashmap_destroy(pickle_t, pik_hashmap*);
+static pik_object_t next_item(pickle_t, pik_parser*);
+static pik_object_t eval_line(pickle_t, pik_object_t, pik_object_t, pik_object_t, pik_object_t);
+static pik_object_t eval_user_code(pickle_t, pik_object_t, pik_object_t, pik_object_t, pik_object_t);
 
 // ------------------- Basic objects -------------------------
 
-const char* pik_typename(pik_vm* vm, pik_type type) {
+const char* pik_typename(pickle_t vm, pik_type type) {
     for (size_t i = 0; i < vm->type_managers.sz; i++) { 
         if (vm->type_managers.mgrs[i].type_for == type) { 
             return vm->type_managers.mgrs[i].type_string;
@@ -232,12 +232,12 @@ const char* pik_typename(pik_vm* vm, pik_type type) {
     return "object";
 }
 
-const char* pik_typeof(pik_vm* vm, pik_object* object) {
+const char* pik_typeof(pickle_t vm, pik_object_t object) {
     IF_NULL_RETURN(object) "null";
     return pik_typename(vm, object->type);
 }
 
-static void run_typefun(pik_vm* vm, pik_object* object, void* arg, int name) {
+static void run_typefun(pickle_t vm, pik_object_t object, void* arg, int name) {
     pik_type type = object->type;
     for (size_t i = 0; i < vm->type_managers.sz; i++) { 
         if (vm->type_managers.mgrs[i].type_for == type && vm->type_managers.mgrs[i].funs[name] != NULL) { 
@@ -247,8 +247,8 @@ static void run_typefun(pik_vm* vm, pik_object* object, void* arg, int name) {
     }
 }
 
-static pik_object* alloc_object(pik_vm* vm, pik_type type, void* arg) {
-    pik_object* object = vm->gc.first;
+static pik_object_t alloc_object(pickle_t vm, pik_type type, void* arg) {
+    pik_object_t object = vm->gc.first;
     while (object != NULL) {
         if (object->gc.refcnt == 0) {
             PIK_DEBUG_PRINTF("Reusing garbage");
@@ -257,7 +257,7 @@ static pik_object* alloc_object(pik_vm* vm, pik_type type, void* arg) {
         object = object->gc.next;
     }
     PIK_DEBUG_PRINTF("Allocating new memory ");
-    object = (pik_object*)calloc(1, sizeof(pik_object));
+    object = (pik_object_t)calloc(1, sizeof(pik_object));
     PIK_DEBUG_PRINTF("at %p", (void*)object);
     object->gc.next = vm->gc.first;
     vm->gc.first = object;
@@ -273,43 +273,43 @@ static pik_object* alloc_object(pik_vm* vm, pik_type type, void* arg) {
     return object;
 }
 
-void pik_add_prototype(pik_object* object, pik_object* proto) {
+void pik_add_prototype(pik_object_t object, pik_object_t proto) {
     IF_NULL_RETURN(object);
     IF_NULL_RETURN(proto);
     for (size_t i = 0; i < object->proto.sz; i++) {
         if (object->proto.bases[i] == proto) return; // Don't add the same prototype twice
     }
-    object->proto.bases = (pik_object**)realloc(object->proto.bases, (object->proto.sz + 1) * sizeof(pik_object*));
+    object->proto.bases = (pik_object_t*)realloc(object->proto.bases, (object->proto.sz + 1) * sizeof(pik_object_t));
     object->proto.bases[object->proto.sz] = proto;
     object->proto.sz++;
     pik_incref(proto);
 }
 
-pik_object* pik_create(pik_vm* vm, pik_type type, pik_object* proto, void* arg) {
-    pik_object* object = alloc_object(vm, type, arg);
+pik_object_t pik_create(pickle_t vm, pik_type type, pik_object_t proto, void* arg) {
+    pik_object_t object = alloc_object(vm, type, arg);
     pik_add_prototype(object, proto);
     return object;
 }
 
-pik_object* pik_create_primitive(pik_vm* vm, pik_type type, void* arg) {
+pik_object_t pik_create_primitive(pickle_t vm, pik_type type, void* arg) {
     // todo: string and number interning
-    pik_object* proto = NULL;
+    pik_object_t proto = NULL;
     for (size_t i = 0; i < vm->type_managers.sz; i++) { 
         if (vm->type_managers.mgrs[i].type_for == type && vm->type_managers.mgrs[i].prototype != NULL) { 
-            proto = (pik_object*)vm->type_managers.mgrs[i].prototype; 
+            proto = (pik_object_t)vm->type_managers.mgrs[i].prototype; 
             break;
         }
     }
     return pik_create(vm, type, proto, arg);
 }
 
-inline void pik_incref(pik_object* object) {
+inline void pik_incref(pik_object_t object) {
     IF_NULL_RETURN(object);
     object->gc.refcnt++;
     PIK_DEBUG_PRINTF("object %p got a new reference (now have %zu)\n", (void*)object, object->gc.refcnt);
 }
 
-static void finalize(pik_vm* vm, pik_object* object) {
+static void finalize(pickle_t vm, pik_object_t object) {
     IF_NULL_RETURN(object);
     if (object->flags.global & PIK_ALREADY_FINALIZED) {
         PIK_DEBUG_PRINTF("Already finalized %s at %p\n", pik_typeof(vm, object), (void*)object);
@@ -336,7 +336,7 @@ static void finalize(pik_vm* vm, pik_object* object) {
     object->properties = NULL;
 }
 
-void pik_decref(pik_vm* vm, pik_object* object) {
+void pik_decref(pickle_t vm, pik_object_t object) {
     IF_NULL_RETURN(object);
     PIK_DEBUG_ASSERT(object->gc.refcnt > 0, "Decref'ed an object with 0 references");
     object->gc.refcnt--;
@@ -354,7 +354,7 @@ void pik_decref(pik_vm* vm, pik_object* object) {
     #endif
 }
 
-static void mark_hashmap(pik_vm* vm, pik_hashmap* map) {
+static void mark_hashmap(pickle_t vm, pik_hashmap* map) {
     for (size_t i = 0; i < PIK_HASHMAP_BUCKETS; i++) {
         pik_hashbucket b = map->buckets[i];
         #ifdef PIK_DEBUG
@@ -366,7 +366,7 @@ static void mark_hashmap(pik_vm* vm, pik_hashmap* map) {
     }
 }
 
-static void mark_object(pik_vm* vm, pik_object* object) {
+static void mark_object(pickle_t vm, pik_object_t object) {
     mark:
     PIK_DEBUG_PRINTF("Marking %s at %p:\n", pik_typeof(vm, object), (void*)object);
     if (object == NULL || object->flags.global & PIK_MARKED) return;
@@ -393,8 +393,8 @@ static void mark_object(pik_vm* vm, pik_object* object) {
     goto mark;
 }
 
-static void sweep_unmarked(pik_vm* vm) {
-    pik_object** object = &vm->gc.first;
+static void sweep_unmarked(pickle_t vm) {
+    pik_object_t* object = &vm->gc.first;
     while (*object != NULL) {
         PIK_DEBUG_PRINTF("Looking at %s at %p: flags=%#x, ", pik_typeof(vm, *object), (void*)(*object), (*object)->flags.global);
         if ((*object)->flags.global & PIK_MARKED) {
@@ -405,7 +405,7 @@ static void sweep_unmarked(pik_vm* vm) {
         } else {
             PIK_DEBUG_PRINTF("unmarked\n");
             // Sweep the object
-            pik_object* unreached = *object;
+            pik_object_t unreached = *object;
             *object = unreached->gc.next;
             finalize(vm, unreached);
             free(unreached);
@@ -414,7 +414,7 @@ static void sweep_unmarked(pik_vm* vm) {
     }
 }
 
-size_t pik_collect_garbage(pik_vm* vm) {
+size_t pik_collect_garbage(pickle_t vm) {
     IF_NULL_RETURN(vm) 0;
     PIK_DEBUG_PRINTF("Collecting garbage\n");
     mark_object(vm, vm->global_scope);
@@ -427,8 +427,8 @@ size_t pik_collect_garbage(pik_vm* vm) {
     return freed;
 }
 
-pik_vm* pik_new(void) {
-    pik_vm* vm = (pik_vm*)calloc(1, sizeof(pik_vm));
+pickle_t pik_new(void) {
+    pickle_t vm = (pickle_t)calloc(1, sizeof(pik_vm));
     register_primitive_types(vm);
     PIK_DEBUG_PRINTF("For global scope: ");
     vm->global_scope = alloc_object(vm, PIK_TYPE_NONE, NULL);
@@ -436,7 +436,7 @@ pik_vm* pik_new(void) {
     return vm;
 }
 
-void pik_destroy(pik_vm* vm) {
+void pik_destroy(pickle_t vm) {
     IF_NULL_RETURN(vm);
     PIK_DEBUG_PRINTF("Freeing the VM - garbage collect all: ");
     vm->global_scope = NULL;
@@ -452,7 +452,7 @@ void pik_destroy(pik_vm* vm) {
     free(vm);
 }
 
-void pik_register_type(pik_vm* vm, pik_type type, const char* name, pik_type_function init, pik_type_function mark, pik_type_function finalize) {
+void pik_register_type(pickle_t vm, pik_type type, const char* name, pik_type_function init, pik_type_function mark, pik_type_function finalize) {
     vm->type_managers.mgrs = (pik_typemgr*)realloc(vm->type_managers.mgrs, (vm->type_managers.sz + 1) * sizeof(pik_typemgr));
     vm->type_managers.mgrs[vm->type_managers.sz].type_for = type;
     vm->type_managers.mgrs[vm->type_managers.sz].type_string = name;
@@ -463,7 +463,7 @@ void pik_register_type(pik_vm* vm, pik_type type, const char* name, pik_type_fun
     PIK_DEBUG_PRINTF("Registered type #%hu: %s\n", type, name);
 }
 
-void pik_set_default_prototype(pik_vm* vm, pik_type type, pik_object* prototype) {
+void pik_set_default_prototype(pickle_t vm, pik_type type, pik_object_t prototype) {
     for (size_t i = 0; i < vm->type_managers.sz; i++) {
         if (vm->type_managers.mgrs[i].type_for == type) {
             vm->type_managers.mgrs[i].prototype = prototype;
@@ -474,7 +474,7 @@ void pik_set_default_prototype(pik_vm* vm, pik_type type, pik_object* prototype)
     }
 }
 
-void pik_set_error(pik_vm* vm, const char* message) {
+void pik_set_error(pickle_t vm, const char* message) {
     pik_decref(vm, vm->error);
     vm->error = alloc_object(vm, PIK_TYPE_ERROR, (void*)message);
 }
@@ -499,7 +499,7 @@ static unsigned int hashmap_hash(const char* value) {
     return hash;
 }
 
-static void hashmap_destroy(pik_vm* vm, pik_hashmap* map) {
+static void hashmap_destroy(pickle_t vm, pik_hashmap* map) {
     IF_NULL_RETURN(map);
     PIK_DEBUG_PRINTF("Freeing hashmap at %p\n", (void*)map);
     for (size_t b = 0; b < PIK_HASHMAP_BUCKETS; b++) {
@@ -534,7 +534,7 @@ static pik_hashentry* find_entry(pik_hashbucket* b, const char* key) {
     return NULL;
 }
 
-void pik_hashmap_put(pik_vm* vm, pik_hashmap* map, const char* key, pik_object* value, bool read_only) {
+void pik_hashmap_put(pickle_t vm, pik_hashmap* map, const char* key, pik_object_t value, bool read_only) {
     PIK_DEBUG_PRINTF("Adding %s at %p to hashmap at key \"%s\"%s\n", pik_typeof(vm, value), (void*)value, key, read_only ? " (read_only)" : "");
     IF_NULL_RETURN(map);
     pik_incref(value);
@@ -555,7 +555,7 @@ void pik_hashmap_put(pik_vm* vm, pik_hashmap* map, const char* key, pik_object* 
     b->sz++;
 }
 
-pik_object* pik_hashmap_get(pik_hashmap* map, const char* key) {
+pik_object_t pik_hashmap_get(pik_hashmap* map, const char* key) {
     PIK_DEBUG_PRINTF("Getting entry %s on hashmap %p\n", key, (void*)map);
     IF_NULL_RETURN(map) NULL;
     pik_hashentry* e = find_entry(get_bucket(map, key), key);
@@ -584,36 +584,36 @@ bool pik_hashmap_has(pik_hashmap* map, const char* key) {
 
 // ------------------------------------- Builtin primitive types ----------------------------------
 
-void pik_tf_STRDUP_ARG(pik_vm* vm, pik_object* object, void* arg) {
+void pik_tf_STRDUP_ARG(pickle_t vm, pik_object_t object, void* arg) {
     (void)vm;
     if (arg == NULL) return;
     object->payload.as_chars = strdup((char*)arg);
 }
 
-void pik_tf_FREE_PAYLOAD(pik_vm* vm, pik_object* object, void* arg) {
+void pik_tf_FREE_PAYLOAD(pickle_t vm, pik_object_t object, void* arg) {
     (void)vm;
     (void)arg;
     free(object->payload.as_pointer);
     object->payload.as_pointer = NULL;
 }
 
-void pik_tf_NOOP(pik_vm* vm, pik_object* object, void* arg) {
+void pik_tf_NOOP(pickle_t vm, pik_object_t object, void* arg) {
     (void)vm;
     (void)object;
     (void)arg;
 }
 
-void pik_tf_COPY_PTR(pik_vm* vm, pik_object* object, void* arg) {
+void pik_tf_COPY_PTR(pickle_t vm, pik_object_t object, void* arg) {
     (void)vm;
     object->payload.as_pointer = arg;
 }
 
-void pik_tf_COPY_ARG_BITS(pik_vm* vm, pik_object* object, void* arg) {
+void pik_tf_COPY_ARG_BITS(pickle_t vm, pik_object_t object, void* arg) {
     (void)vm;
     object->payload.as_int = *(int64_t*)arg;
 }
 
-void pik_tf_FREE_IF_USER_CODE(pik_vm* vm, pik_object* object, void* arg) {
+void pik_tf_FREE_IF_USER_CODE(pickle_t vm, pik_object_t object, void* arg) {
     (void)arg;
     if (object->flags.obj & PIK_FUNCTION_FLAG_IS_USER) {
         pik_decref(vm, object->payload.as_userfunc->code);
@@ -628,7 +628,7 @@ void pik_tf_FREE_IF_USER_CODE(pik_vm* vm, pik_object* object, void* arg) {
     }
 }
 
-void pik_tf_MARK_ITEMS(pik_vm* vm, pik_object* object, void* arg) {
+void pik_tf_MARK_ITEMS(pickle_t vm, pik_object_t object, void* arg) {
     (void)arg;
     IF_NULL_RETURN(object->payload.as_array.items);
     for (size_t i = 0; i < object->payload.as_array.sz; i++) {
@@ -636,7 +636,7 @@ void pik_tf_MARK_ITEMS(pik_vm* vm, pik_object* object, void* arg) {
     }
 }
 
-void pik_tf_FREE_ITEMS(pik_vm* vm, pik_object* object, void* arg) {
+void pik_tf_FREE_ITEMS(pickle_t vm, pik_object_t object, void* arg) {
     (void)arg;
     IF_NULL_RETURN(object->payload.as_array.items);
     for (size_t i = 0; i < object->payload.as_array.sz; i++) {
@@ -647,30 +647,30 @@ void pik_tf_FREE_ITEMS(pik_vm* vm, pik_object* object, void* arg) {
     object->payload.as_array.sz = 0;
 }
 
-void pik_tf_init_hashmap(pik_vm* vm, pik_object* object, void* arg) {
+void pik_tf_init_hashmap(pickle_t vm, pik_object_t object, void* arg) {
     (void)vm;
     (void)arg;
     object->payload.as_hashmap = new_hashmap();
 }
 
-void pik_tf_mark_hashmap(pik_vm* vm, pik_object* object, void* arg) {
+void pik_tf_mark_hashmap(pickle_t vm, pik_object_t object, void* arg) {
     (void)arg;
     mark_hashmap(vm, object->payload.as_hashmap);
 }
 
-void pik_tf_free_hashmap(pik_vm* vm, pik_object* object, void* arg) {
+void pik_tf_free_hashmap(pickle_t vm, pik_object_t object, void* arg) {
     (void)arg;
     hashmap_destroy(vm, object->payload.as_hashmap);
     object->payload.as_hashmap = NULL;
 }
 
-void pik_tf_init_code(pik_vm* vm, pik_object* object, void* arg) {
+void pik_tf_init_code(pickle_t vm, pik_object_t object, void* arg) {
     (void)vm;
     pik_flags ct = *(pik_flags*)arg;
     object->flags.obj = ct;
 }
 
-void pik_tf_mark_code(pik_vm* vm, pik_object* object, void* arg) {
+void pik_tf_mark_code(pickle_t vm, pik_object_t object, void* arg) {
     (void)arg;
     pik_flags ct = object->flags.obj;
     switch (ct) {
@@ -686,7 +686,7 @@ void pik_tf_mark_code(pik_vm* vm, pik_object* object, void* arg) {
     }
 }
 
-void pik_tf_free_code(pik_vm* vm, pik_object* object, void* arg) {
+void pik_tf_free_code(pickle_t vm, pik_object_t object, void* arg) {
     (void)arg;
     pik_flags ct = object->flags.obj;
     object->flags.obj = 0;
@@ -706,7 +706,7 @@ void pik_tf_free_code(pik_vm* vm, pik_object* object, void* arg) {
     }
 }
 
-static void register_primitive_types(pik_vm* vm) {
+static void register_primitive_types(pickle_t vm) {
     PIK_DEBUG_PRINTF("Registering builtin types\n");
     pik_register_type(vm, PIK_TYPE_INT, "int", pik_tf_COPY_ARG_BITS, pik_tf_NOOP, pik_tf_NOOP);
     pik_register_type(vm, PIK_TYPE_FLOAT, "float", pik_tf_COPY_ARG_BITS, pik_tf_NOOP, pik_tf_NOOP);
@@ -722,15 +722,15 @@ static void register_primitive_types(pik_vm* vm) {
     pik_register_type(vm, PIK_TYPE_SCOPE, "_internal_scope", pik_tf_NOOP, pik_tf_NOOP, pik_tf_NOOP);
 }
 
-void pik_APPEND_INPLACE(pik_object* a, pik_object* item) {
+void pik_APPEND_INPLACE(pik_object_t a, pik_object_t item) {
     IF_NULL_RETURN(a);
-    a->payload.as_array.items = (pik_object**)realloc(a->payload.as_array.items, (a->payload.as_array.sz + 1) * sizeof(pik_object*));
+    a->payload.as_array.items = (pik_object_t*)realloc(a->payload.as_array.items, (a->payload.as_array.sz + 1) * sizeof(pik_object_t));
     a->payload.as_array.items[a->payload.as_array.sz] = item;
     a->payload.as_array.sz++;
     pik_incref(item);
 }
 
-static inline pik_object* create_codeobj(pik_vm* vm, pik_flags codetype) {
+static inline pik_object_t create_codeobj(pickle_t vm, pik_flags codetype) {
     return pik_create_primitive(vm, PIK_TYPE_CODE, (void*)&codetype);
 }
 
@@ -880,7 +880,7 @@ static bool skip_whitespace(pik_parser* p) {
     return skipped;
 }
 
-static pik_object* get_getvar(pik_vm* vm, pik_parser* p) {
+static pik_object_t get_getvar(pickle_t vm, pik_parser* p) {
     PIK_DEBUG_PRINTF("get_getvar()\n");
     next(p); // Skip $
     if (!valid_varchar(at(p))) {
@@ -898,13 +898,13 @@ static pik_object* get_getvar(pik_vm* vm, pik_parser* p) {
     // Now pick it out
     size_t end = save(p);
     restore(p, start);
-    pik_object* gv = create_codeobj(vm, PIK_CODE_GETVAR);
+    pik_object_t gv = create_codeobj(vm, PIK_CODE_GETVAR);
     asprintf(&gv->payload.as_chars, "%.*s", (int)len, str_of(p));
     restore(p, end);
     return gv;
 }
 
-static pik_object* get_string(pik_vm* vm, pik_parser* p) {
+static pik_object_t get_string(pickle_t vm, pik_parser* p) {
     char q = at(p);
     next(p);
     if (p_eof(p)) {
@@ -937,12 +937,12 @@ static pik_object* get_string(pik_vm* vm, pik_parser* p) {
         next(p);
     }
     next(p);
-    pik_object* stringobj = pik_create_primitive(vm, PIK_TYPE_STRING, (void*)buf);
+    pik_object_t stringobj = pik_create_primitive(vm, PIK_TYPE_STRING, (void*)buf);
     free(buf);
     return stringobj;
 }
 
-static pik_object* get_brace_string(pik_vm* vm, pik_parser* p) {
+static pik_object_t get_brace_string(pickle_t vm, pik_parser* p) {
     PIK_DEBUG_PRINTF("get_brace_string()\n");
     next(p); // Skip {
     if (p_eof(p)) {
@@ -970,13 +970,13 @@ static pik_object* get_brace_string(pik_vm* vm, pik_parser* p) {
     restore(p, start);
     char* buf;
     asprintf(&buf, "%.*s", (int)len, str_of(p));
-    pik_object* str = pik_create_primitive(vm, PIK_TYPE_STRING, (void*)buf);
+    pik_object_t str = pik_create_primitive(vm, PIK_TYPE_STRING, (void*)buf);
     restore(p, end);
     free(buf);
     return str;
 }
 
-static pik_object* get_colon_string(pik_vm* vm, pik_parser* p) {
+static pik_object_t get_colon_string(pickle_t vm, pik_parser* p) {
     PIK_DEBUG_PRINTF("get_colon_string()\n");
     while (at(p) != '\n') next(p); // Skip all before newline
     next(p); // Skip newline
@@ -1040,22 +1040,22 @@ static pik_object* get_colon_string(pik_vm* vm, pik_parser* p) {
         if (at(p) == '\n') advance(p, indent); // Skip the indent
         next(p);
     }
-    pik_object* str = pik_create_primitive(vm, PIK_TYPE_STRING, (void*)buf);
+    pik_object_t str = pik_create_primitive(vm, PIK_TYPE_STRING, (void*)buf);
     restore(p, end);
     free(buf);
     return str;
 }
 
-static pik_object* get_expression(pik_vm* vm, pik_parser* p) {
+static pik_object_t get_expression(pickle_t vm, pik_parser* p) {
     PIK_DEBUG_PRINTF("get_expression()\n");
     next(p); // Skip (
-    pik_object* expr = create_codeobj(vm, PIK_CODE_LINE);
+    pik_object_t expr = create_codeobj(vm, PIK_CODE_LINE);
     while (true) {
         if (at(p) == ')') {
             next(p); // Skip )
             break;
         }
-        pik_object* next = next_item(vm, p);
+        pik_object_t next = next_item(vm, p);
         if (vm->error) return NULL;
         if (next) {
             pik_APPEND_INPLACE(expr, next);
@@ -1068,16 +1068,16 @@ static pik_object* get_expression(pik_vm* vm, pik_parser* p) {
     return expr;
 }
 
-static pik_object* get_list(pik_vm* vm, pik_parser* p) {
+static pik_object_t get_list(pickle_t vm, pik_parser* p) {
     PIK_DEBUG_PRINTF("get_list()\n");
     next(p); // Skip [
-    pik_object* list = create_codeobj(vm, PIK_CODE_LIST);
+    pik_object_t list = create_codeobj(vm, PIK_CODE_LIST);
     while (true) {
         if (at(p) == ']') {
             next(p); // Skip ]
             break;
         }
-        pik_object* next = next_item(vm, p);
+        pik_object_t next = next_item(vm, p);
         if (vm->error) return NULL;
         if (next) {
             pik_APPEND_INPLACE(list, next);
@@ -1090,7 +1090,7 @@ static pik_object* get_list(pik_vm* vm, pik_parser* p) {
     return list;
 }
 
-static pik_object* get_word(pik_vm* vm, pik_parser* p) {
+static pik_object_t get_word(pickle_t vm, pik_parser* p) {
     PIK_DEBUG_PRINTF("get_word()\n");
     size_t len = 0;
     // Special case: boolean
@@ -1154,23 +1154,23 @@ static pik_object* get_word(pik_vm* vm, pik_parser* p) {
     // Pick it out
     size_t end = save(p);
     restore(p, start);
-    pik_object* w = create_codeobj(vm, ispunct(at(p)) ? PIK_CODE_OPERATOR : PIK_CODE_WORD);
+    pik_object_t w = create_codeobj(vm, ispunct(at(p)) ? PIK_CODE_OPERATOR : PIK_CODE_WORD);
     asprintf(&w->payload.as_chars, "%.*s", (int)len, str_of(p));
     restore(p, end);
     return w;
 }
 
-static pik_object* next_item(pik_vm* vm, pik_parser* p) {
+static pik_object_t next_item(pickle_t vm, pik_parser* p) {
     IF_NULL_RETURN(vm) NULL;
     IF_NULL_RETURN(p) NULL;
     bool concatenated = false;
-    pik_object* result = NULL;
+    pik_object_t result = NULL;
     PIK_DEBUG_PRINTF("next_item()\n");
     again:;
     bool hadspace = skip_whitespace(p);
     if (hadspace && result) return result;
     if (p_eof(p)) return result;
-    pik_object* next;
+    pik_object_t next;
     size_t here = save(p);
     switch (at(p)) {
         case '$':  next = get_getvar(vm, p); break;
@@ -1197,7 +1197,7 @@ static pik_object* next_item(pik_vm* vm, pik_parser* p) {
         result = next;
         goto again;
     } else if (!concatenated) {
-        pik_object* c = create_codeobj(vm, PIK_CODE_CONCAT);
+        pik_object_t c = create_codeobj(vm, PIK_CODE_CONCAT);
         pik_APPEND_INPLACE(c, result);
         pik_APPEND_INPLACE(c, next);
         pik_decref(vm, result);
@@ -1213,18 +1213,18 @@ static pik_object* next_item(pik_vm* vm, pik_parser* p) {
     return result;
 }
 
-static pik_object* compile_block(pik_vm* vm, pik_parser* p) {
+static pik_object_t compile_block(pickle_t vm, pik_parser* p) {
     IF_NULL_RETURN(vm) NULL;
     IF_NULL_RETURN(p) NULL;
     if (p_eof(p)) return NULL;
     PIK_DEBUG_PRINTF("Begin compile\n");
-    pik_object* block = create_codeobj(vm, PIK_CODE_BLOCK);
+    pik_object_t block = create_codeobj(vm, PIK_CODE_BLOCK);
     while (!p_eof(p)) {
         PIK_DEBUG_PRINTF("Beginning of line: ");
-        pik_object* line = create_codeobj(vm, PIK_CODE_LINE);
+        pik_object_t line = create_codeobj(vm, PIK_CODE_LINE);
         while (!p_eof(p)) {
             PIK_DEBUG_PRINTF("Beginning of item: ");
-            pik_object* item = next_item(vm, p);
+            pik_object_t item = next_item(vm, p);
             if (item) pik_APPEND_INPLACE(line, item);
             pik_decref(vm, item);
             if (vm->error) {
@@ -1250,14 +1250,14 @@ static pik_object* compile_block(pik_vm* vm, pik_parser* p) {
 
 // ---------------------------------- Object manipulation --------------------------------
 
-bool pik_set_property(pik_vm* vm, pik_object* object, const char* property, pik_object* value, bool read_only) {
+bool pik_set_property(pickle_t vm, pik_object_t object, const char* property, pik_object_t value, bool read_only) {
     if (pik_hashmap_entry_is_read_only(object->properties, property)) return false;
     pik_hashmap_put(vm, object->properties, property, value, read_only);
     return true;
 }
 
-pik_object* pik_get_property(pik_object* object, const char* property) {
-    pik_object* x = NULL;
+pik_object_t pik_get_property(pik_object_t object, const char* property) {
+    pik_object_t x = NULL;
     x = pik_hashmap_get(object->properties, property);
     if (x) goto done;
     for (size_t i = 0; i < object->proto.sz; i++) {
@@ -1271,7 +1271,7 @@ pik_object* pik_get_property(pik_object* object, const char* property) {
 
 // ----------------------------------- Operator stuff -----------------------------
 
-static pik_operator* get_op(pik_vm* vm, const char* op) {
+static pik_operator* get_op(pickle_t vm, const char* op) {
     IF_NULL_RETURN(vm) NULL;
     for (size_t i = 0; i < vm->operators.sz; i++) {
         if (streq(vm->operators.ops[i].symbol, op)) return &vm->operators.ops[i];
@@ -1279,14 +1279,14 @@ static pik_operator* get_op(pik_vm* vm, const char* op) {
     return NULL;
 }
 
-static int op_precedence(pik_vm* vm, const char* op) {
+static int op_precedence(pickle_t vm, const char* op) {
     IF_NULL_RETURN(vm) 0;
     pik_operator* opinfo = get_op(vm, op);
     IF_NULL_RETURN(opinfo) 0;
     return opinfo->precedence;
 }
 
-static const char* op_method(pik_vm* vm, const char* op) {
+static const char* op_method(pickle_t vm, const char* op) {
     IF_NULL_RETURN(vm) 0;
     pik_operator* opinfo = get_op(vm, op);
     IF_NULL_RETURN(opinfo) 0;
@@ -1295,11 +1295,11 @@ static const char* op_method(pik_vm* vm, const char* op) {
 
 // ------------------------------------- Evaluate ------------------------------------
 
-pik_object* pik_get_var(pik_vm* vm, pik_object* scope, const char* var, pik_object* self, pik_object* args) {
+pik_object_t pik_get_var(pickle_t vm, pik_object_t scope, const char* var, pik_object_t self, pik_object_t args) {
     IF_NULL_RETURN(vm) NULL;
     IF_NULL_RETURN(scope) NULL;
-    pik_object* result = NULL;
-    pik_object* up = NULL;
+    pik_object_t result = NULL;
+    pik_object_t up = NULL;
     if (args && isdigit(var[0])) {
         int num = atoi(var);
         if (num >= args->payload.as_array.sz) {
@@ -1331,7 +1331,7 @@ pik_object* pik_get_var(pik_vm* vm, pik_object* scope, const char* var, pik_obje
     return NULL;
 }
 
-pik_object* pik_call(pik_vm* vm, pik_object* object, pik_object* func, pik_object* args, pik_object* upscope) {
+pik_object_t pik_call(pickle_t vm, pik_object_t object, pik_object_t func, pik_object_t args, pik_object_t upscope) {
     IF_NULL_RETURN(vm) NULL;
     if (!object) object = vm->global_scope;
     if (!func) func = pik_get_property(object, "__call__");
@@ -1339,9 +1339,9 @@ pik_object* pik_call(pik_vm* vm, pik_object* object, pik_object* func, pik_objec
         pik_set_error_fmt(vm, "can't call a %s", pik_typeof(vm, object));
         return NULL;
     }
-    pik_object* new_scope = pik_create(vm, PIK_TYPE_SCOPE, func->payload.as_userfunc->scope, NULL);
+    pik_object_t new_scope = pik_create(vm, PIK_TYPE_SCOPE, func->payload.as_userfunc->scope, NULL);
     pik_set_property(vm, new_scope, "__upscope__", upscope, true);
-    pik_object* result;
+    pik_object_t result;
     if (func->flags.global & PIK_FUNCTION_FLAG_IS_USER) {
         if (func->payload.as_userfunc->argc && (!args || func->payload.as_userfunc->argc < args->payload.as_array.sz)) {
             pik_set_error_fmt(vm, "expected %zu args to %s.%s, got %zu", func->payload.as_userfunc->argc, pik_typeof(vm, object), func->payload.as_userfunc->name, args ? args->payload.as_array.sz : 0);
@@ -1360,16 +1360,16 @@ pik_object* pik_call(pik_vm* vm, pik_object* object, pik_object* func, pik_objec
 
 }
 
-pik_object* pik_call_name(pik_vm* vm, pik_object* object, const char* name, pik_object* args, pik_object* upscope) {
+pik_object_t pik_call_name(pickle_t vm, pik_object_t object, const char* name, pik_object_t args, pik_object_t upscope) {
     IF_NULL_RETURN(vm) NULL;
     if (!object) object = vm->global_scope;
-    pik_object* func = pik_get_property(object, name);
-    pik_object* result = pik_call(vm, object, func, args, upscope);
+    pik_object_t func = pik_get_property(object, name);
+    pik_object_t result = pik_call(vm, object, func, args, upscope);
     pik_decref(vm, func); 
     return result;
 }
 
-static char* stringify(pik_vm* vm, pik_object* what, pik_object* scope) {
+static char* stringify(pickle_t vm, pik_object_t what, pik_object_t scope) {
     if (!what) return strdup("NULL");
     char* buf;
     switch (what->type) {
@@ -1379,7 +1379,7 @@ static char* stringify(pik_vm* vm, pik_object* what, pik_object* scope) {
         case PIK_TYPE_COMPLEX: asprintf(&buf, "%g%+gj", what->payload.as_complex.real, what->payload.as_complex.imag); break;
         case PIK_TYPE_BOOL: asprintf(&buf, "%s", what->payload.as_int ? "true" : "false"); break;
         default:
-            pik_object* string = pik_call_name(vm, what, "__str__", NULL, scope);
+            pik_object_t string = pik_call_name(vm, what, "__str__", NULL, scope);
             if (vm->error) return NULL;
             if (string && string->type == PIK_TYPE_STRING) buf = strdup(string->payload.as_chars);
             else asprintf(&buf, "<%s at %p>", pik_typeof(vm, what), (void*)what);
@@ -1388,22 +1388,22 @@ static char* stringify(pik_vm* vm, pik_object* what, pik_object* scope) {
     return buf;
 }
 
-static pik_object* process_getvars(pik_vm* vm, pik_object* line, pik_object* self, pik_object* args, pik_object* scope) {
+static pik_object_t process_getvars(pickle_t vm, pik_object_t line, pik_object_t self, pik_object_t args, pik_object_t scope) {
     IF_NULL_RETURN(vm) NULL;
     IF_NULL_RETURN(line) NULL;
-    pik_object* new_line = create_codeobj(vm, line->flags.obj); // Same as original (list or line)
+    pik_object_t new_line = create_codeobj(vm, line->flags.obj); // Same as original (list or line)
     for (size_t i = 0; i < line->payload.as_array.sz; i++) {
-        pik_object* item = line->payload.as_array.items[i];
+        pik_object_t item = line->payload.as_array.items[i];
         if (item->type != PIK_TYPE_CODE || item->flags.obj != PIK_CODE_GETVAR) {
-            pik_object* temp = eval_user_code(vm, self, scope, item, scope);
+            pik_object_t temp = eval_user_code(vm, self, scope, item, scope);
             pik_APPEND_INPLACE(new_line, temp);
             pik_decref(vm, temp);
             continue;
         }
-        pik_object* string = pik_create_primitive(vm, PIK_TYPE_STRING, (void*)item->payload.as_chars);
-        pik_object* args = pik_create_primitive(vm, PIK_TYPE_LIST, NULL);
+        pik_object_t string = pik_create_primitive(vm, PIK_TYPE_STRING, (void*)item->payload.as_chars);
+        pik_object_t args = pik_create_primitive(vm, PIK_TYPE_LIST, NULL);
         pik_APPEND_INPLACE(args, string);
-        pik_object* var = pik_call(vm, NULL, vm->dollar_function, args, scope);
+        pik_object_t var = pik_call(vm, NULL, vm->dollar_function, args, scope);
         pik_decref(vm, string);
         pik_decref(vm, args);
         if (vm->error) {
@@ -1417,7 +1417,7 @@ static pik_object* process_getvars(pik_vm* vm, pik_object* line, pik_object* sel
     return new_line;
 }
 
-static pik_object* eval_concat(pik_vm* vm, pik_object* concat, pik_object* self, pik_object* args, pik_object* scope) {
+static pik_object_t eval_concat(pickle_t vm, pik_object_t concat, pik_object_t self, pik_object_t args, pik_object_t scope) {
     IF_NULL_RETURN(vm) NULL;
     IF_NULL_RETURN(concat) NULL;
     char** stringified = (char**)calloc(concat->payload.as_array.sz, sizeof(char*));
@@ -1435,27 +1435,27 @@ static pik_object* eval_concat(pik_vm* vm, pik_object* concat, pik_object* self,
         asprintf(&buf, "%s%s", buf, stringified[i]);
         free(old);
     }
-    pik_object* str = pik_create_primitive(vm, PIK_TYPE_STRING, (void*)buf);
+    pik_object_t str = pik_create_primitive(vm, PIK_TYPE_STRING, (void*)buf);
     free(buf);
     return str;
 }
 
-static pik_object* smoosh_expression(pik_vm* vm, pik_object* expr, pik_object* self, pik_object* args, pik_object* scope) {
+static pik_object_t smoosh_expression(pickle_t vm, pik_object_t expr, pik_object_t self, pik_object_t args, pik_object_t scope) {
     IF_NULL_RETURN(vm) NULL;
     IF_NULL_RETURN(expr) NULL;
     // todo: Find all unsupported operators and splice the strings together
     // TODO: find supported operators and call the methods
 }
 
-static pik_object* eval_to_list(pik_vm* vm, pik_object* expr, pik_object* self, pik_object* args, pik_object* scope) {
+static pik_object_t eval_to_list(pickle_t vm, pik_object_t expr, pik_object_t self, pik_object_t args, pik_object_t scope) {
     // TODO
 }
 
-static pik_object* eval_line(pik_vm* vm, pik_object* expr, pik_object* self, pik_object* args, pik_object* scope) {
+static pik_object_t eval_line(pickle_t vm, pik_object_t expr, pik_object_t self, pik_object_t args, pik_object_t scope) {
     // TODO
 }
 
-static pik_object* eval_user_code(pik_vm* vm, pik_object* self, pik_object* scope, pik_object* code, pik_object* args) {
+static pik_object_t eval_user_code(pickle_t vm, pik_object_t self, pik_object_t scope, pik_object_t code, pik_object_t args) {
     IF_NULL_RETURN(vm) NULL;
     IF_NULL_RETURN(scope) NULL;
     IF_NULL_RETURN(code) NULL;
@@ -1476,7 +1476,7 @@ static pik_object* eval_user_code(pik_vm* vm, pik_object* self, pik_object* scop
 }
 
 #ifdef PIK_TEST
-static void dump_ast(pik_object* code, int indent) {
+static void dump_ast(pik_object_t code, int indent) {
     if (code == NULL) {
         printf("NULL");
         return;
@@ -1569,7 +1569,7 @@ void dump_parser(pik_parser* p) {
 }
 
 int main(void) {
-    pik_vm* vm = pik_new();
+    pickle_t vm = pik_new();
     test_header("Parser test");
     const char* code = 
         "# Test this\n"
@@ -1594,7 +1594,7 @@ int main(void) {
     dump_parser(&p);
     while (true) {
         if (p_eof(&p)) break;
-        pik_object* res = compile_block(vm, &p);
+        pik_object_t res = compile_block(vm, &p);
         if (vm->error) break;
         printf("Dumping AST\n");
         dump_ast(res, 0);
