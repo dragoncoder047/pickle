@@ -15,6 +15,9 @@ typedef int bool;
 #endif
 #define streq(a, b) (!strcmp((a), (b)))
 #define IF_NULL_RETURN(x) if ((x) == NULL) return
+#ifndef fputchar
+#define fputchar(s, c) fprintf(s, "%c", c)
+#endif
 
 #define PIK_DEBUG
 #define PIK_TEST
@@ -41,14 +44,13 @@ enum type {
     CONS,               // car         | cdr       | (empty)
     SYMBOL,             // char*       | (empty)   | (empty)
     STRING,             // char*       | (empty)   | (empty)
-    SOURCECODE,         // char*       | (empty)   | (empty)
     ERROR,              // char*       | (empty)   | (empty)
     INTEGER,            // int64_t............     | (empty)
     BOOLEAN,            // uint8_t     | (empty)   | (empty)
     FLOAT,              // double.............     | (empty)
     COMPLEX,            // float       | float     | (empty)
     RATIONAL,           // float       | float     | (empty)
-    BUILTIN_FUNCTION,   // func*       | (empty)   | (empty)
+    BUILTIN_FUNCTION,   // char*       | func      | (empty)
     STREAM,             // char*       | FILE*     | (empty)
 
     // Complex types
@@ -63,13 +65,11 @@ enum type {
     OPERATOR,           // char*       | (empty)   | (empty)
     GETVAR,             // char*       | (empty)   | (empty)
     EXPRESSION,         // item**s     | len       | (empty)
-    CONCATENATE,        // item**s     | len       | (empty)
     BLOCK,              // item**s     | len       | (empty)
-    CALL,               // name        | args      | (empty)
     LIST_LITERAL,       // item**s     | len       | (empty)
     SCOPE,              // bindings    | result    | parent   -- code is in subtype
     BINDINGS_LIST,      // item**s     | len       | (empty)
-    BINDING             // char*       | value     | rest
+    BINDING             // char*       | value     | (empty)
 };
 
 enum flag {
@@ -125,7 +125,6 @@ struct pik_object {
                 float real;
                 int32_t numerator;
                 uint8_t boolean;
-                pik_func function;
             };
             // Cell 2
             union {
@@ -134,6 +133,7 @@ struct pik_object {
                 float imag;
                 uint32_t denominator;
                 FILE* stream;
+                pik_func function;
             };
             // Cell 3
             union {
@@ -219,14 +219,13 @@ static int type_info(uint16_t type) {
         case CONS:              return CELL1_OBJECT  | CELL2_OBJECT | CELL3_EMPTY;
         case SYMBOL:            return CELL1_CHARS   | CELL2_EMPTY  | CELL3_EMPTY;
         case STRING:            return CELL1_CHARS   | CELL2_EMPTY  | CELL3_EMPTY;
-        case SOURCECODE:        return CELL1_CHARS   | CELL2_EMPTY  | CELL3_EMPTY;
         case ERROR:             return CELL1_CHARS   | CELL2_EMPTY  | CELL3_EMPTY;
         case INTEGER:           return CELL1_EMPTY   | CELL2_EMPTY  | CELL3_EMPTY;
         case BOOLEAN:           return CELL1_EMPTY   | CELL2_EMPTY  | CELL3_EMPTY;
         case FLOAT:             return CELL1_EMPTY   | CELL2_EMPTY  | CELL3_EMPTY;
         case COMPLEX:           return CELL1_EMPTY   | CELL2_EMPTY  | CELL3_EMPTY;
         case RATIONAL:          return CELL1_EMPTY   | CELL2_EMPTY  | CELL3_EMPTY;
-        case BUILTIN_FUNCTION:  return CELL1_EMPTY   | CELL2_EMPTY  | CELL3_EMPTY;
+        case BUILTIN_FUNCTION:  return CELL1_CHARS   | CELL2_EMPTY  | CELL3_EMPTY;
         case STREAM:            return CELL1_CHARS   | CELL2_FILE   | CELL3_EMPTY;
         case LIST:              return CELL1_OBJECTS | CELL2_EMPTY  | CELL3_EMPTY;
         case KV_PAIR:           return CELL1_OBJECT  | CELL2_OBJECT | CELL3_EMPTY;
@@ -237,13 +236,11 @@ static int type_info(uint16_t type) {
         case GETVAR:            return CELL1_CHARS   | CELL2_EMPTY  | CELL3_EMPTY;
         case OPERATOR:          return CELL1_CHARS   | CELL2_EMPTY  | CELL3_EMPTY;
         case EXPRESSION:        return CELL1_OBJECTS | CELL2_EMPTY  | CELL3_EMPTY;
-        case CONCATENATE:       return CELL1_OBJECTS | CELL2_EMPTY  | CELL3_EMPTY;
         case BLOCK:             return CELL1_OBJECTS | CELL2_EMPTY  | CELL3_EMPTY;
-        case CALL:              return CELL1_OBJECTS | CELL2_OBJECT | CELL3_EMPTY;
         case LIST_LITERAL:      return CELL1_OBJECTS | CELL2_EMPTY  | CELL3_EMPTY;
         case SCOPE:             return CELL1_OBJECT  | CELL2_OBJECT | CELL3_OBJECT;
         case BINDINGS_LIST:     return CELL1_OBJECTS | CELL2_EMPTY  | CELL3_EMPTY;
-        case BINDING:           return CELL1_CHARS   | CELL2_OBJECT | CELL3_OBJECT;
+        case BINDING:           return CELL1_CHARS   | CELL2_OBJECT | CELL3_EMPTY;
     }
     return 0; // Satisfy compiler
 }
@@ -665,7 +662,7 @@ static int get_colon_string(pickle_t vm, pik_parser* p, pik_object_t scope) {
     // Find first indent
     while (isspace(at(p))) {
         if (p_eof(p)) {
-            return pik_error(vm, scope, "syntax error: expected indented block after \":\"");
+            return pik_error(vm, scope, "syntax error: unexpected EOF after \":\"");
         }
         if ((!spaces && at(p) == ' ') || (spaces && at(p) == '\t')) {
             return pik_error(vm, scope, "syntax error: mix of tabs and spaces indenting block");
@@ -681,6 +678,7 @@ static int get_colon_string(pickle_t vm, pik_parser* p, pik_object_t scope) {
         // Skip content of line
         while (at(p) != '\n') {
             next(p);
+            if (p_eof(p)) goto stop;
             len++;
         }
         // +1 for \n
@@ -695,6 +693,7 @@ static int get_colon_string(pickle_t vm, pik_parser* p, pik_object_t scope) {
             }
             this_indent++;
             next(p);
+            if (p_eof(p)) goto stop;
         }
         if (this_indent > 0 && this_indent < indent) {
             return pik_error(vm, scope, "syntax error: unindent does not match previous indent");
@@ -707,6 +706,7 @@ static int get_colon_string(pickle_t vm, pik_parser* p, pik_object_t scope) {
             break;
         }
     }
+    stop:;
     // Go back and get the string
     size_t end = save(p);
     restore(p, start);
@@ -859,13 +859,9 @@ static int get_word(pickle_t vm, pik_parser* p, pik_object_t scope) {
 static int next_item(pickle_t vm, pik_parser* p, pik_object_t scope) {
     IF_NULL_RETURN(vm) NULL;
     IF_NULL_RETURN(p) NULL;
-    bool concatenated = false;
-    pik_object_t result = NULL;
     PIK_DEBUG_PRINTF("next_item()\n");
-    again:;
-    bool hadspace = skip_whitespace(p);
-    if (hadspace && result) PIK_DONE(vm, scope, result);
-    if (p_eof(p)) PIK_DONE(vm, scope, result);
+    if (p_eof(p)) return ROK;
+    skip_whitespace(p);
     size_t here = save(p);
     int code = ROK;
     switch (at(p)) {
@@ -876,10 +872,10 @@ static int next_item(pickle_t vm, pik_parser* p, pik_object_t scope) {
         case '(':  code = get_expression(vm, p, scope); break;
         case '[':  code = get_list(vm, p, scope); break;
         case ']':  // fallthrough
-        case ')':  PIK_DONE(vm, scope, result); // allow get_expression() and get_list() to see their end
+        case ')':  PIK_DONE(vm, scope, NULL); // allow get_expression() and get_list() to see their end
         case '}':  pik_error(vm, scope, "syntax error: unexpected \"}\""); break;
-        case ':':  if (result) PIK_DONE(vm, scope, result); /* colon blocks are always their own item */ else if (strchr("\n\r", peek(p, 1))) { code = get_colon_string(vm, p, scope); break; } // else fallthrough
-        default:   if (eolchar(at(p))) PIK_DONE(vm, scope, result); else code = get_word(vm, p, scope); break;
+        case ':':  if (strchr("\n\r", peek(p, 1))) { code = get_colon_string(vm, p, scope); break; } // else fallthrough
+        default:   if (eolchar(at(p))) return ROK; else code = get_word(vm, p, scope); break;
     }
     if (code != RERROR && save(p) == here) {
         // Generic failed to parse message
@@ -887,25 +883,9 @@ static int next_item(pickle_t vm, pik_parser* p, pik_object_t scope) {
         code = RERROR;
     }
     if (code == RERROR) {
-        pik_decref(vm, result);
         return RERROR;
     }
-    if (result == NULL) {
-        result = scope->result;
-        goto again;
-    } else if (!concatenated) {
-        pik_object_t c = alloc_object(vm, CONCATENATE, 0);
-        pik_append(c, result);
-        pik_append(c, scope->result);
-        pik_decref(vm, result);
-        result = c;
-        concatenated = true;
-        goto again;
-    } else {
-        pik_append(result, scope->result);
-        goto again;
-    }
-    PIK_DONE(vm, scope, result);
+    return ROK;
 }
 
 int pik_compile(pickle_t vm, const char* code, pik_object_t scope) {
@@ -951,12 +931,148 @@ int pik_eval(pickle_t vm, pik_object_t x, pik_object_t scope) {
 
 // Section: Printer
 
+static void dump_ast(pik_object_t code, int indent, FILE* s) {
+    if (code == NULL) {
+        fprintf(s, "NULL");
+        return;
+    }
+    switch (code->type) {
+        case CONS:
+            fprintf(s, "cons(\n");
+            fprintf(s, "%*scar: ", (indent + 1) * 4, "");
+            dump_ast(code->car, indent + 1, s);
+            fprintf(s, ",\n%*scdr: ", (indent + 1) * 4, "");
+            dump_ast(code->cdr, indent + 1, s);
+            fprintf(s, "\n%*s)", indent * 4, "");
+            break;
+        case SYMBOL:
+            fprintf(s, "symbol(%s)", code->chars);
+            break;
+        case STRING:
+            fprintf(s, "string(\"");
+            for (size_t i = 0; i < strlen(code->chars); i++) {
+                if (needs_escape(code->chars[i])) fputchar(s, '\\');
+                fputchar(s, escape(code->chars[i]));
+            }
+            fprintf(s, "\")");
+            break;
+        case ERROR:
+            fprintf(s, "%serror(%s)", code->flags & ERROR_HAS_BEEN_CAUGHT ? "caught_" : "", code->message);
+            break;
+        case INTEGER:
+            fprintf(s, "int(%lli)", code->integer);
+            break;
+        case BOOLEAN:
+            fprintf(s, "bool(%s)", code->boolean ? "true" : "false");
+            break;
+        case FLOAT:
+            fprintf(s, "float(%lg)", code->floatnum);
+            break;
+        case COMPLEX:
+            fprintf(s, "complex(%g%+gj)", code->real, code->imag);
+            break;
+        case RATIONAL:
+            fprintf(s, "rational(%i/%u)", code->numerator, code->denominator);
+            break;
+        case BUILTIN_FUNCTION:
+            fprintf(s, "builtin_function(%s at %p)", code->chars, (void*)code->function);
+            break;
+        case STREAM:
+            fprintf(s, "stream(%s at byte %zu)", code->chars, ftell(code->stream));
+            break;
+        case LIST:
+            fprintf(s, "list(\n");
+            goto dump_items;
+        case MAP:
+            fprintf(s, "map(\n");
+            goto dump_items;
+        case KV_PAIR:
+            fprintf(s, "kv_pair(\n");
+            fprintf(s, "%*skey: ", (indent + 1) * 4, "");
+            dump_ast(code->key, indent + 1, s);
+            fprintf(s, ",\n%*sval: ", (indent + 1) * 4, "");
+            dump_ast(code->value, indent + 1, s);
+            fprintf(s, "\n%*s)", indent * 4, "");
+            break;
+        case CLASS:
+            fprintf(s, "class(");
+            fprintf(s, "%*sparents: ", (indent + 1) * 4, "");
+            dump_ast(code->parents, indent + 1, s);
+            fprintf(s, ",\n%*sscope: ", (indent + 1) * 4, "");
+            dump_ast(code->scope, indent + 1, s);
+            fprintf(s, ",\n%*ss: ", (indent + 1) * 4, "");
+            dump_ast(code->ns, indent + 1, s);
+            fprintf(s, "\n%*s)", indent * 4, "");
+            break;
+        case USER_FUNCTION:
+            fprintf(s, "class(");
+            fprintf(s, "%*sname: ", (indent + 1) * 4, "");
+            dump_ast(code->name, indent + 1, s);
+            fprintf(s, ",\n%*sscope: ", (indent + 1) * 4, "");
+            dump_ast(code->scope, indent + 1, s);
+            fprintf(s, ",\n%*sargs: ", (indent + 1) * 4, "");
+            dump_ast(code->args, indent + 1, s);
+            fprintf(s, "\n%*s)", indent * 4, "");
+            break;
+        case ARGUMENT_ENTRY:
+            fprintf(s, "arg_entry(");
+            fprintf(s, "%*sname: ", (indent + 1) * 4, "");
+            dump_ast(code->name, indent + 1, s);
+            fprintf(s, ",\n%*sdefault: ", (indent + 1) * 4, "");
+            dump_ast(code->def, indent + 1, s);
+            fprintf(s, ",\n%*srest: ", (indent + 1) * 4, "");
+            dump_ast(code->rest, indent + 1, s);
+            fprintf(s, "\n%*s)", indent * 4, "");
+            break;
+        case OPERATOR:
+            fprintf(s, "operator(%s)", code->chars);
+            break;
+        case GETVAR:
+            fprintf(s, "getvar(%s)", code->chars);
+            break;
+        case EXPRESSION:
+            fprintf(s, "expr(\n");
+            goto dump_items;
+        case BLOCK:
+            fprintf(s, "block(\n");
+            goto dump_items;
+        case LIST_LITERAL:
+            fprintf(s, "list_literal(\n");
+            goto dump_items;
+        case SCOPE:
+            fprintf(s, "scope(");
+            fprintf(s, "%*sbindings: ", (indent + 1) * 4, "");
+            dump_ast(code->bindings, indent + 1, s);
+            fprintf(s, ",\n%*sresult: ", (indent + 1) * 4, "");
+            dump_ast(code->result, indent + 1, s);
+            fprintf(s, ",\n%*sparent: ", (indent + 1) * 4, "");
+            dump_ast(code->parent, indent + 1, s);
+            fprintf(s, "\n%*s)", indent * 4, "");
+            break;
+        case BINDINGS_LIST:
+            fprintf(s, "bindings_list(\n");
+            goto dump_items;
+        case BINDING:
+            fprintf(s, "binding(%s -> ", code->chars);
+            dump_ast(code->value, indent + 1, s);
+            fprintf(s, ")");
+            break;
+        default:
+            fprintf(s, "<object type %u at %p>", code->type, (void*)code);
+    }
+    return;
+    dump_items:
+    for (size_t i = 0; i < code->len; i++) {
+        if (i) fprintf(s, ",\n");
+        fprintf(s, "%*s", (indent + 1) * 4, "");
+        dump_ast(code->items[i], indent + 1, s);
+    }
+    fprintf(s, "\n%*s)", indent * 4, "");
+}
+
 void pik_print_to(pickle_t vm, pik_object_t object, FILE* s) {
     IF_NULL_RETURN(object);
-    switch (object->type) {
-        case STRING:
-            fprintf(s, "%s", object->chars);
-    }
+    dump_ast(object, 0, s);
 }
 
 // Section: Builtin functions
