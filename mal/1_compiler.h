@@ -256,17 +256,18 @@ static void finalize(pickle_t vm, pik_object_t object) {
     switch (type_info(object->type) & CELL1_MASK) {
         case CELL1_EMPTY: break;
         case CELL1_CHARS: free(object->chars); object->chars = NULL; break;
-        case CELL1_OBJECT: pik_decref(vm, object->cell1); break;
+        case CELL1_OBJECT: pik_decref(vm, object->cell1); object->cell1 = NULL; break;
     }
     switch (type_info(object->type) & CELL2_MASK) {
         case CELL2_EMPTY: break;
         case CELL2_FILE: fclose(object->stream); object->stream = NULL; break;
-        case CELL2_OBJECT: pik_decref(vm, object->cell2); break;
+        case CELL2_OBJECT: pik_decref(vm, object->cell2); object->cell2 = NULL; break;
     }
     switch (type_info(object->type) & CELL3_MASK) {
         case CELL3_EMPTY: break;
-        case CELL3_OBJECT: pik_decref(vm, object->cell3); break;
+        case CELL3_OBJECT: pik_decref(vm, object->cell3); object->cell3 = NULL; break;
     }
+    object->integer = 0; // Clear all
     // Free everything else
     object->flags = FINALIZED;
     pik_decref(vm, object->classes);
@@ -895,6 +896,8 @@ int pik_compile(pickle_t vm, const char* code, pik_object_t scope) {
     if (p_eof(p)) return ROK;
     PIK_DEBUG_PRINTF("Begin compile\n");
     pik_object_t block = alloc_object(vm, BLOCK, 0);
+    pik_decref(vm, scope->result);
+    scope->result = NULL;
     while (!p_eof(p)) {
         PIK_DEBUG_PRINTF("Beginning of line: ");
         pik_object_t line = alloc_object(vm, EXPRESSION, 0);
