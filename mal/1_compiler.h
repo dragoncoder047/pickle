@@ -515,7 +515,7 @@ static bool valid_varchar(char c) {
 }
 
 static bool valid_opchar(char c) {
-    return strchr("`~!@#%^&*_-+=<>,./|:;", c) != NULL;
+    return strchr("`~!@#%^&*_-+=<>,./|:", c) != NULL;
 }
 
 static bool valid_wordchar(char c) {
@@ -861,7 +861,7 @@ static int next_item(pickle_t vm, pik_parser* p, pik_object_t scope) {
     IF_NULL_RETURN(vm) NULL;
     IF_NULL_RETURN(p) NULL;
     PIK_DEBUG_PRINTF("next_item()\n");
-    if (p_eof(p)) return ROK;
+    if (p_eof(p)) return RBREAK;
     skip_whitespace(p);
     size_t here = save(p);
     int code = ROK;
@@ -876,7 +876,7 @@ static int next_item(pickle_t vm, pik_parser* p, pik_object_t scope) {
         case ')':  PIK_DONE(vm, scope, NULL); // allow get_expression() and get_list() to see their end
         case '}':  pik_error(vm, scope, "syntax error: unexpected \"}\""); break;
         case ':':  if (strchr("\n\r", peek(p, 1))) { code = get_colon_string(vm, p, scope); break; } // else fallthrough
-        default:   if (eolchar(at(p))) return ROK; else code = get_word(vm, p, scope); break;
+        default:   if (eolchar(at(p))) return RBREAK; else code = get_word(vm, p, scope); break;
     }
     if (code != RERROR && save(p) == here) {
         // Generic failed to parse message
@@ -903,12 +903,13 @@ int pik_compile(pickle_t vm, const char* code, pik_object_t scope) {
         pik_object_t line = alloc_object(vm, EXPRESSION, 0);
         while (!p_eof(p)) {
             PIK_DEBUG_PRINTF("Beginning of item: ");
-            if (next_item(vm, p, scope) == RERROR) {
+            int result = next_item(vm, p, scope);
+            if (result == RERROR) {
                 pik_decref(vm, line);
                 pik_decref(vm, block);
                 return RERROR;
             }
-            if (scope->result) pik_append(line, scope->result);
+            if (result != RBREAK && scope->result) pik_append(line, scope->result);
             if (eolchar(at(p))) {
                 next(p);
                 break;
