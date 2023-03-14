@@ -637,7 +637,7 @@ static int get_brace_string(pickle_t vm, pik_parser* p, pik_object_t scope) {
         if (at(p) == '}') depth--;
         if (p_eof(p)) {
             restore(p, start - 1);
-            return pik_error_fmt(vm, scope, "syntax error: unbalanced curlies: %.20s...", str_of(p));
+            return pik_error_fmt(vm, scope, "syntax error: unexpected EOF in curlies: %.20s...", str_of(p));
         }
         next(p);
         if (depth == 0) break;
@@ -734,7 +734,9 @@ static int get_expression(pickle_t vm, pik_parser* p, pik_object_t scope) {
             next(p); // Skip )
             break;
         }
-        if (next_item(vm, p, scope) == RERROR) return RERROR;
+        int code = next_item(vm, p, scope);
+        if (p_eof(p) || code == RBREAK) return pik_error(vm, scope, "unbalanced ()'s");
+        if (code == RERROR) return RERROR;
         if (scope->result) {
             pik_append(expr, scope->result);
         }
@@ -754,7 +756,9 @@ static int get_list(pickle_t vm, pik_parser* p, pik_object_t scope) {
             next(p); // Skip ]
             break;
         }
-        if (next_item(vm, p, scope) == RERROR) return RERROR;
+        int code = next_item(vm, p, scope);
+        if (p_eof(p) || code == RBREAK) return pik_error(vm, scope, "unbalanced ()'s");
+        if (code == RERROR) return RERROR;
         if (scope->result) {
             pik_append(list, scope->result);
         }
@@ -873,7 +877,7 @@ static int next_item(pickle_t vm, pik_parser* p, pik_object_t scope) {
         case '(':  code = get_expression(vm, p, scope); break;
         case '[':  code = get_list(vm, p, scope); break;
         case ']':  // fallthrough
-        case ')':  PIK_DONE(vm, scope, NULL); // allow get_expression() and get_list() to see their end
+        case ')':  return RBREAK;
         case '}':  pik_error(vm, scope, "syntax error: unexpected \"}\""); break;
         case ':':  if (strchr("\n\r", peek(p, 1))) { code = get_colon_string(vm, p, scope); break; } // else fallthrough
         default:   if (eolchar(at(p))) return RBREAK; else code = get_word(vm, p, scope); break;
@@ -883,10 +887,7 @@ static int next_item(pickle_t vm, pik_parser* p, pik_object_t scope) {
         pik_error_fmt(vm, scope, "syntax error: failed to parse: %.20s...", str_of(p));
         code = RERROR;
     }
-    if (code == RERROR) {
-        return RERROR;
-    }
-    return ROK;
+    return code;
 }
 
 int pik_compile(pickle_t vm, const char* code, pik_object_t scope) {
