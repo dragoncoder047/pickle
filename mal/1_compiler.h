@@ -519,7 +519,7 @@ static bool valid_opchar(char c) {
 }
 
 static bool valid_wordchar(char c) {
-    return strchr("[](){}\"'", c) == NULL;
+    return strchr("[](){}\"';", c) == NULL;
 }
 
 static bool skip_whitespace(pik_parser* p) {
