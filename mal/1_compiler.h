@@ -757,7 +757,7 @@ static int get_list(pickle_t vm, pik_parser* p, pik_object_t scope) {
             break;
         }
         int code = next_item(vm, p, scope);
-        if (p_eof(p) || code == RBREAK) return pik_error(vm, scope, "unbalanced ()'s");
+        if (p_eof(p) || code == RBREAK) return pik_error(vm, scope, "unbalanced []'s");
         if (code == RERROR) return RERROR;
         if (scope->result) {
             pik_append(list, scope->result);
@@ -905,18 +905,23 @@ int pik_compile(pickle_t vm, const char* code, pik_object_t scope) {
         while (!p_eof(p)) {
             PIK_DEBUG_PRINTF("Beginning of item: ");
             int result = next_item(vm, p, scope);
+            if (result != RBREAK && scope->result) pik_append(line, scope->result);
+            else if (eolchar(at(p))) {
+                next(p);
+                break;
+            } else {
+                result = pik_error(vm, scope, "unknown parser error (too many close brackets?)");
+            }
             if (result == RERROR) {
                 pik_decref(vm, line);
                 pik_decref(vm, block);
                 return RERROR;
             }
-            if (result != RBREAK && scope->result) pik_append(line, scope->result);
-            if (eolchar(at(p))) {
-                next(p);
-                break;
-            }
         }
         if (line->len > 0) {
+            if (line->items[0]->type == SYMBOL) {
+                line->items[0]->type = GETVAR;
+            }
             pik_append(block, line);
             pik_decref(vm, line);
         }
