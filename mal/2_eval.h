@@ -934,12 +934,13 @@ int pik_compile(pickle_t vm, const char* code, pik_object_t scope) {
 }
 
 // Section: Evaluator
-    
+
 // Lispy equal? compare values
 static bool equal(pik_object_t a, pik_object_t b) {
     compare:
-    if (a == NULL && b == NULL) return true;
-    if (a->type != b->type) return false;
+    if (a == b) return true; // Same object
+    if (a == NULL && b == NULL) return true; // Nil is the same as itself
+    if (a->type != b->type) return false; // Not the same type so can't be equivalent
     switch (a->type) {
         case CONS:
             if (!equal(a->car, b->car)) return false;
@@ -1015,7 +1016,65 @@ static bool equal(pik_object_t a, pik_object_t b) {
     }
     return true;
 }
-  
+
+// Map stuff
+static void map_set(pickle_t vm, pik_object_t map, pik_object_t key, pik_object_t value) {
+    IF_NULL_RETURN(vm);
+    IF_NULL_RETURN(map);
+    for (size_t i = 0; i < map->len; i++) {
+        pik_object_t kvpair = map->items[i];
+        if (equal(kvpair->key, key)) {
+            pik_decref(vm, kvpair->value);
+            pik_incref(value);
+            kvpair->value = value;
+            return;
+        }
+    }
+    pik_object_t newpair = alloc_object(vm, KV_PAIR, 0);
+    newpair->key = key;
+    newpair->value = value;
+    pik_incref(key);
+    pik_incref(value);
+    pik_append(map, newpair);
+}
+
+static pik_object_t map_get(pik_object_t map, pik_object_t key) {
+    IF_NULL_RETURN(map) NULL;
+    for (size_t i = 0; i < map->len; i++) {
+        pik_object_t kvpair = map->items[i];
+        if (equal(kvpair->key, key)) {
+            pik_incref(kvpair->value);
+            return kvpair->value;
+        }
+    }
+    return NULL;
+}
+
+static bool map_has(pik_object_t map, pik_object_t key) {
+    IF_NULL_RETURN(map) false;
+    for (size_t i = 0; i < map->len; i++) {
+        pik_object_t kvpair = map->items[i];
+        if (equal(kvpair->key, key)) return true;
+    }
+    return false;
+}
+
+static void map_delete(pickle_t vm, pik_object_t map, pik_object_t key) {
+    IF_NULL_RETURN(map);
+    for (size_t i = 0; i < map->len; i++) {
+        pik_object_t kvpair = map->items[i];
+        if (equal(kvpair->key, key)) {
+            pik_decref(vm, kvpair->value);
+            if (i + 1 < map->len) {
+                memmove((void*)&map->items[i], (void*)&map->items[i+1], (map->len - i - 1) * sizeof(pik_object_t));
+            }
+            map->items = (pik_object_t*)realloc(map->items, (map->len - 1) * sizeof(pik_object_t));
+            map->len--;
+            return;
+        }
+    }
+}
+
 // Lookup in scope
 static bool look_up() {
 }
