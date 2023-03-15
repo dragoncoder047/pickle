@@ -529,9 +529,8 @@ static bool valid_wordchar(char c) {
     return strchr("[](){}\"';", c) == NULL;
 }
 
-static bool skip_whitespace(pik_parser* p) {
-    IF_NULL_RETURN(p) true;
-    bool skipped = false;
+static void skip_whitespace(pik_parser* p) {
+    IF_NULL_RETURN(p);
     again:;
     size_t start = save(p);
     while (!p_eof(p)) {
@@ -539,7 +538,7 @@ static bool skip_whitespace(pik_parser* p) {
         if (c == '#') {
             if (p_startswith(p, "###")) {
                 // Block comment
-                advance(p, 2);
+                advance(p, 3);
                 while (!p_eof(p) && !p_startswith(p, "###")) next(p);
                 advance(p, 3);
             } else {
@@ -562,12 +561,10 @@ static bool skip_whitespace(pik_parser* p) {
     // Try to get all the comments at once
     // if we got one, try for another
     if (p->head != start) {
-        skipped = true;
         PIK_DEBUG_PRINTF("Skipped whitespace\n");
         goto again;
     }
     PIK_DEBUG_PRINTF("end charcode when done skipping whitespace: %u (%s%c)\n", at(p), needs_escape(at(p)) ? "\\" : "", escape(at(p)));
-    return skipped;
 }
 
 static int get_getvar(pickle_t vm, pik_parser* p, pik_object_t scope) {
@@ -577,15 +574,12 @@ static int get_getvar(pickle_t vm, pik_parser* p, pik_object_t scope) {
         return pik_error_fmt(vm, scope, "syntax error: \"%s%c\" not allowed after \"$\"", needs_escape(at(p)) ? "\\" : "", escape(at(p)));
     }
     // First pass: find length
-    size_t len = 0;
     size_t start = save(p);
     bool islambda = isdigit(at(p));
-    while ((islambda ? isdigit(at(p)) : valid_varchar(at(p))) && !p_eof(p)) {
-        len++;
-        next(p);
-    }
+    while ((islambda ? isdigit(at(p)) : valid_varchar(at(p))) && !p_eof(p)) next(p);
     // Now pick it out
     size_t end = save(p);
+    size_t len = end - start;
     restore(p, start);
     pik_object_t gv = alloc_object(vm, GETVAR, 0);
     asprintf(&gv->chars, "%.*s", (int)len, str_of(p));
@@ -602,10 +596,8 @@ static int get_string(pickle_t vm, pik_parser* p, pik_object_t scope) {
     }
     PIK_DEBUG_PRINTF("get_string(%c)\n", q);
     // First pass: get length of string
-    size_t len = 0;
     size_t start = save(p);
     while (at(p) != q) {
-        len++;
         if (at(p) == '\\') advance(p, 2);
         else next(p);
         if (p_eof(p)) {
@@ -613,6 +605,7 @@ static int get_string(pickle_t vm, pik_parser* p, pik_object_t scope) {
             return pik_error_fmt(vm, scope, "syntax error: unterminated string %.20s...", str_of(p));
         }
     }
+    size_t len = at(p) - start;
     char* buf = (char*)calloc(len + 1, sizeof(char));
     // Second pass: grab the string
     restore(p, start);
@@ -636,7 +629,6 @@ static int get_brace_string(pickle_t vm, pik_parser* p, pik_object_t scope) {
         return pik_error(vm, scope, "syntax error: dangling \"{\"");
     }
     // First pass: find length
-    size_t len = 0;
     size_t start = save(p);
     size_t depth = 1;
     while (true) {
@@ -648,12 +640,12 @@ static int get_brace_string(pickle_t vm, pik_parser* p, pik_object_t scope) {
         }
         next(p);
         if (depth == 0) break;
-        len++;
     }
     // Now pick it out
     size_t end = save(p);
     restore(p, start);
     char* buf;
+    size_t len = end - start;
     asprintf(&buf, "%.*s", (int)len, str_of(p));
     pik_object_t str = alloc_object(vm, STRING, 0);
     str->chars = buf;
@@ -1508,32 +1500,47 @@ static void register_stdlib(pickle_t vm) {
 #ifdef PIK_TEST
 void repl(pickle_t vm) {
     char* buf = (char*)malloc(64 * sizeof(char));
+    char* codebuf = (char*)malloc(64 * sizeof(char));
     size_t sz = 64;
     while (true) {
         printf("pickle> ");
         fflush(stdout);
-        if (getline(&buf, &sz, stdin) == -1) {
-            printf("^D\n");
+        codebuf[0] = 0;
+        while (true) {
+            if (getline(&buf, &sz, stdin) == -1) {
+                printf("^D\n");
+                goto done;
+            }
+            if (strlen(buf) == 1) break; // getline includes the terminating newline
+            printf("   ...> ");
+            fflush(stdout);
+            char* newcode;
+            asprintf(&newcode, "%s%s", codebuf, buf);
+            free(codebuf);
+            codebuf = newcode;
+        }
+        if (!strncmp(codebuf, "bye", 3)) {
             goto done;
         }
-        if (!strncmp(buf, "bye", 3)) {
-            goto done;
-        }
-        if (pik_compile(vm, buf, vm->global_scope) == RERROR) {
+        pik_collect_garbage(vm);
+        if (pik_compile(vm, codebuf, vm->global_scope) == RERROR) {
             printf("Compile error!\n%s\n", vm->global_scope->result->message);
             continue;
         }
-        printf("executing: ");
+        printf("executing:\n");
         pik_print_to(vm, vm->global_scope->result, stdout);
+        putchar('\n');
         if (pik_eval(vm, NULL, vm->global_scope->result, NULL, vm->global_scope) == RERROR) {
             printf("Execution error!\n%s\n", vm->global_scope->result->message);
             continue;
         }
+        printf("result> ");
         pik_print_to(vm, vm->global_scope->result, stdout);
         putchar('\n');
     }
     done:
     free(buf);
+    free(codebuf);
     return;
 }
 
