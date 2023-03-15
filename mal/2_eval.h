@@ -1177,19 +1177,20 @@ static int set_property(pickle_t vm, pik_object_t object, pik_object_t scope, co
 static int call(pickle_t vm, pik_object_t func, pik_object_t self, pik_object_t args, pik_object_t scope) {
     IF_NULL_RETURN(vm) ROK;
     try_again:
-    PIK_DEBUG_PRINTF("call()\n");
+    PIK_DEBUG_PRINTF("call(%s %s %zu)\n", func ? "func" : "nil", self ? "self" : "nil", args ? args->len : 0);
     if (func == NULL && args != NULL && args->len > 0) return pik_error(vm, scope, "can't call NULL");
-    IF_NULL_RETURN(func) ROK;
     if (scope == NULL) scope = vm->global_scope;
     if (func == NULL) {
+        PIK_DEBUG_PRINTF("NO function\n");
         if (!args->len) {
+            PIK_DEBUG_PRINTF("No args, return the object\n");
             PIK_DONE(vm, scope, self);
         }
+        PIK_DEBUG_PRINTF("Has args, trying to call self\n");
         // try to __call__ the object; create a temporory bound method
         pik_object_t bound = alloc_object(vm, BOUND_METHOD, 0);
         bound->bound_self = self;
-        int ret = get_property(vm, self, scope, "__call__");
-        if (ret == RERROR) return RERROR;
+        if (get_property(vm, self, scope, "__call__") == RERROR) return RERROR;
         bound->bound_method = scope->result;
         func = bound;
         goto try_again;
@@ -1227,7 +1228,9 @@ static int call(pickle_t vm, pik_object_t func, pik_object_t self, pik_object_t 
         return ROK;
     }
     else {
-        return pik_error(vm, scope, "unreachable");
+        self = func;
+        func = NULL;
+        goto try_again;
     }
 }
 
@@ -1262,6 +1265,7 @@ static int eval_block(pickle_t vm, pik_object_t self, pik_object_t block, pik_ob
     PIK_DEBUG_PRINTF("eval_block(%zu)\n", block->len);
     for (size_t i = 0; i < block->len; i++) {
         int code = pik_eval(vm, self, block->items[i], args, scope);
+        PIK_DEBUG_PRINTF("block eval code %i\n", code);
         if (code != ROK) return code;
         scope_set(vm, scope, "_", scope->result);
     }
@@ -1271,7 +1275,7 @@ static int eval_block(pickle_t vm, pik_object_t self, pik_object_t block, pik_ob
 static int reduce_expression(pickle_t vm, pik_object_t self, pik_object_t expr, pik_object_t scope) {
     PIK_DEBUG_PRINTF("reduce_expression(%zu)\n", expr->len);
     if (expr->len < 2) PIK_DONE(vm, scope, expr);
-    return pik_error(vm, scope, "foobar");
+    return pik_error(vm, scope, "reduce_expression unimplemented");
 }
 
 static bool is_macro(pik_object_t func) {
@@ -1491,7 +1495,7 @@ void pik_print_to(pickle_t vm, pik_object_t object, FILE* s) {
 // Section: Builtin functions
 
 static int getvar_func(pickle_t vm, pik_object_t self, pik_object_t args, pik_object_t scope) {
-
+    return ROK;
 }
 
 static void register_stdlib(pickle_t vm) {
@@ -1519,6 +1523,8 @@ void repl(pickle_t vm) {
             printf("Compile error!\n%s\n", vm->global_scope->result->message);
             continue;
         }
+        printf("executing: ");
+        pik_print_to(vm, vm->global_scope->result, stdout);
         if (pik_eval(vm, NULL, vm->global_scope->result, NULL, vm->global_scope) == RERROR) {
             printf("Execution error!\n%s\n", vm->global_scope->result->message);
             continue;
