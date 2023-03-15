@@ -59,6 +59,8 @@ enum type {
     KV_PAIR,            // key         | value     | (empty)
     CLASS,              // parents     | scope     | namespace
     USER_FUNCTION,      // name        | scope     | arguments
+    // To save space the body of user function is stored as the last entry in
+    // the arguments linked list. The last argument entry has a NULL name pointer
 
     // Internal types
     ARGUMENT_ENTRY,     // name        | default   | rest
@@ -69,7 +71,8 @@ enum type {
     LIST_LITERAL,       // item**s     | len       | (empty)
     SCOPE,              // bindings    | result    | parent   -- code is in subtype
     BINDINGS_LIST,      // item**s     | len       | (empty)
-    BINDING             // char*       | value     | (empty)
+    BINDING,            // char*       | value     | (empty)
+    BOUND_METHOD        // method      | self      | (empty)
 };
 
 enum flag {
@@ -119,7 +122,7 @@ struct pik_object {
         struct {
             // Cell 1
             union {
-                pik_object_t cell1, car, item, key, parents, name, bindings, symbol, element;
+                pik_object_t cell1, car, item, key, parents, name, bindings, symbol, element, bound_method;
                 pik_object_t* items;
                 char* chars;
                 char* message;
@@ -129,7 +132,7 @@ struct pik_object {
             };
             // Cell 2
             union {
-                pik_object_t cell2, cdr, value, scope, def, result, args;
+                pik_object_t cell2, cdr, value, scope, def, result, args, bound_self;
                 size_t len;
                 float imag;
                 uint32_t denominator;
@@ -162,6 +165,9 @@ struct pickle {
 
 // Section: Forward references
 void pik_decref(pickle_t vm, pik_object_t object);
+static int eval_block(pickle_t vm, pik_object_t self, pik_object_t block, pik_object_t args, pik_object_t scope);
+static int call(pickle_t vm, pik_object_t func, pik_object_t self, pik_object_t args, pik_object_t scope);
+int pik_eval(pickle_t vm, pik_object_t self, pik_object_t x, pik_object_t args, pik_object_t scope);
 static void register_stdlib(pickle_t vm);
 
 // Section: Garbage Collector
@@ -242,6 +248,7 @@ static int type_info(uint16_t type) {
         case SCOPE:             return CELL1_OBJECT  | CELL2_OBJECT | CELL3_OBJECT;
         case BINDINGS_LIST:     return CELL1_OBJECTS | CELL2_EMPTY  | CELL3_EMPTY;
         case BINDING:           return CELL1_CHARS   | CELL2_OBJECT | CELL3_EMPTY;
+        case BOUND_METHOD:      return CELL1_OBJECT  | CELL2_OBJECT | CELL3_EMPTY;
     }
     return 0; // Satisfy compiler
 }
@@ -278,9 +285,8 @@ static void finalize(pickle_t vm, pik_object_t object) {
 
 void pik_decref(pickle_t vm, pik_object_t object) {
     IF_NULL_RETURN(object);
-    PIK_DEBUG_ASSERT(object->refcnt > 0, "Decref'ed an object with 0 references already");
     object->refcnt--;
-    if (object->refcnt == 0) {
+    if (object->refcnt <= 0) {
         PIK_DEBUG_PRINTF("object at %p lost all references, finalizing\n", (void*)object);
         // Free it now, no other references
         finalize(vm, object);
@@ -1017,7 +1023,7 @@ static bool equal(pik_object_t a, pik_object_t b) {
     return true;
 }
 
-// Map stuff
+// Map stuff (for getting properties)
 static void map_set(pickle_t vm, pik_object_t map, pik_object_t key, pik_object_t value) {
     IF_NULL_RETURN(vm);
     IF_NULL_RETURN(map);
@@ -1053,8 +1059,7 @@ static pik_object_t map_get(pik_object_t map, pik_object_t key) {
 static bool map_has(pik_object_t map, pik_object_t key) {
     IF_NULL_RETURN(map) false;
     for (size_t i = 0; i < map->len; i++) {
-        pik_object_t kvpair = map->items[i];
-        if (equal(kvpair->key, key)) return true;
+        if (equal(map->items[i]->key, key)) return true;
     }
     return false;
 }
@@ -1075,13 +1080,266 @@ static void map_delete(pickle_t vm, pik_object_t map, pik_object_t key) {
     }
 }
 
-// Lookup in scope
-static bool look_up() {
+// Scope set, get, has, delete
+void scope_set(pickle_t vm, pik_object_t scope, const char* name, pik_object_t value) {
+    IF_NULL_RETURN(vm);
+    IF_NULL_RETURN(scope);
+    pik_object_t b = scope->bindings;
+    if (b == NULL) {
+        b = alloc_object(vm, BINDINGS_LIST, 0);
+        b->len = 0;
+        scope->bindings = b;
+    }
+    for (size_t i = 0; i < b->len; i++) {
+        pik_object_t entry = b->items[i];
+        if (streq(entry->chars, name)) {
+            pik_decref(vm, entry->value);
+            pik_incref(value);
+            entry->value = value;
+            return;
+        }
+    }
+    pik_object_t newentry = alloc_object(vm, BINDING, 0);
+    newentry->chars = strdup(name);
+    newentry->value = value;
+    pik_incref(value);
+    pik_append(b, newentry);
 }
 
-int pik_eval(pickle_t vm, pik_object_t x, pik_object_t scope) {
-    pik_incref(x);
-    PIK_DONE(vm, scope, x);
+static pik_object_t scope_get(pik_object_t scope, const char* name) {
+    top:
+    IF_NULL_RETURN(scope) NULL;
+    pik_object_t b = scope->bindings;
+    IF_NULL_RETURN(b) scope_get(scope->parent, name);
+    for (size_t i = 0; i < b->len; i++) {
+        if (streq(b->items[i]->chars, name)) {
+            pik_incref(b->value);
+            return b->value;
+        }
+    }
+    scope = scope->parent;
+    goto top;
+}
+
+static bool scope_has(pik_object_t scope, const char* name) {
+    top:
+    IF_NULL_RETURN(scope) false;
+    pik_object_t b = scope->bindings;
+    if (b == NULL) {
+        scope = scope->parent;
+        goto top;
+    }
+    for (size_t i = 0; i < b->len; i++) {
+        if (streq(b->items[i]->chars, name)) return true;
+    }
+    scope = scope->parent;
+    goto top;
+}
+
+static void scope_delete(pickle_t vm, pik_object_t scope, pik_object_t key) {
+    pik_error(vm, scope, "scope_delete() unimplemented");
+}
+
+// Get/set variable wrappers to abstract the dollar_function
+static int get_var(pickle_t vm, const char* name, pik_object_t args, pik_object_t scope) {
+    IF_NULL_RETURN(vm) NULL;
+    // TODO: special vars, index-based, last result, etc.
+    pik_object_t dollar = vm->dollar_function;
+    pik_object_t strname = alloc_object(vm, STRING, 0);
+    strname->chars = strdup(name);
+    pik_object_t alist = alloc_object(vm, LIST, 0);
+    pik_append(alist, strname);
+    return call(vm, NULL, dollar, alist, scope);
+}
+
+static int set_var(pickle_t vm, const char* name, pik_object_t value, pik_object_t scope) {
+    IF_NULL_RETURN(vm) NULL;
+    // TODO: bail if special var, index-based, etc.
+    pik_object_t dollar = vm->dollar_function;
+    pik_object_t strname = alloc_object(vm, STRING, 0);
+    strname->chars = strdup(name);
+    pik_object_t alist = alloc_object(vm, LIST, 0);
+    pik_append(alist, strname);
+    pik_append(alist, value);
+    return call(vm, NULL, dollar, alist, scope);
+}
+
+// Get/set properties on an object
+static int get_property(pickle_t vm, pik_object_t object, pik_object_t scope, const char* property) {
+    return pik_error(vm, scope, "unimplemented get_property()");
+}
+
+static int set_property(pickle_t vm, pik_object_t object, pik_object_t scope, const char* property, pik_object_t value) {
+    return pik_error(vm, scope, "unimplemented set_property()");
+}
+
+// Call an expression with arguments in a scope
+static int call(pickle_t vm, pik_object_t func, pik_object_t self, pik_object_t args, pik_object_t scope) {
+    IF_NULL_RETURN(vm) ROK;
+    try_again:
+    PIK_DEBUG_PRINTF("call()\n");
+    if (func == NULL && args != NULL && args->len > 0) return pik_error(vm, scope, "can't call NULL");
+    IF_NULL_RETURN(func) ROK;
+    if (scope == NULL) scope = vm->global_scope;
+    if (func == NULL) {
+        if (!args->len) {
+            PIK_DONE(vm, scope, self);
+        }
+        // try to __call__ the object; create a temporory bound method
+        pik_object_t bound = alloc_object(vm, BOUND_METHOD, 0);
+        bound->bound_self = self;
+        int ret = get_property(vm, self, scope, "__call__");
+        if (ret == RERROR) return RERROR;
+        bound->bound_method = scope->result;
+        func = bound;
+        goto try_again;
+    }
+    else if (func->type == BUILTIN_FUNCTION) return func->function(vm, self, args, scope);
+    else if (func->type == BOUND_METHOD) {
+        self = func->bound_self;
+        func = func->bound_method;
+        goto try_again;
+    }
+    else if (func->type == USER_FUNCTION) {
+        pik_object_t newscope = alloc_object(vm, SCOPE, 0);
+        newscope->parent = func->scope;
+        pik_incref(func->scope);
+        // Set parameters
+        size_t argn = 0;
+        pik_object_t arg = func->arguments;
+        while (arg->chars != NULL) {
+            if (argn >= args->len) {
+                return pik_error_fmt(vm, newscope, "function %s expects more than %zu args", func->chars, argn);
+            }
+            int ret = set_var(vm, arg->chars, args->items[argn], newscope);
+            if (ret == RERROR) return RERROR;
+            argn++;
+            arg = arg->rest;
+        }
+        // now we have arg->chars == NULL, ->rest == body
+        // eval the body progn style in a block
+        int ret = eval_block(vm, self, arg->rest, args, newscope);
+        if (ret == RERROR) return RERROR;
+        pik_decref(vm, scope->result);
+        scope->result = newscope->result;
+        pik_incref(newscope->result);
+        pik_decref(vm, newscope);
+        return ROK;
+    }
+    else {
+        return pik_error(vm, scope, "unreachable");
+    }
+}
+
+// Eval remainder of expression (items 1...end); return new expression
+static int eval_remainder(pickle_t vm, pik_object_t self, pik_object_t line, pik_object_t args, pik_object_t scope) {
+    IF_NULL_RETURN(vm) NULL;
+    IF_NULL_RETURN(line) NULL;
+    PIK_DEBUG_PRINTF("eval_remainder()\n");
+    if (line->len < 2) {
+        PIK_DONE(vm, scope, line);
+    }
+    pik_object_t newexpr = alloc_object(vm, EXPRESSION, 0);
+    pik_append(newexpr, line->items[0]);
+    for (size_t i = 1; i < line->len; i++) {
+        int code = pik_eval(vm, self, line->items[i], args, scope);
+        if (code != ROK) return code;
+        pik_append(newexpr, scope->result);
+    }
+    PIK_DONE(vm, scope, newexpr);
+}
+
+static int eval_getvar(pickle_t vm, pik_object_t self, pik_object_t getvar, pik_object_t args, pik_object_t scope) {
+    PIK_DEBUG_PRINTF("eval_getvar()\n");
+    return get_var(vm, getvar->chars, args, scope);
+}
+
+// Eval different AST nodes
+// Eval block using progn (no TCO yet)
+static int eval_block(pickle_t vm, pik_object_t self, pik_object_t block, pik_object_t args, pik_object_t scope) {
+    IF_NULL_RETURN(vm) ROK;
+    IF_NULL_RETURN(block) ROK;
+    PIK_DEBUG_PRINTF("eval_block(%zu)\n", block->len);
+    for (size_t i = 0; i < block->len; i++) {
+        int code = pik_eval(vm, self, block->items[i], args, scope);
+        if (code != ROK) return code;
+        scope_set(vm, scope, "_", scope->result);
+    }
+    return ROK;
+}
+
+static int reduce_expression(pickle_t vm, pik_object_t self, pik_object_t expr, pik_object_t scope) {
+    PIK_DEBUG_PRINTF("reduce_expression(%zu)\n", expr->len);
+    if (expr->len < 2) PIK_DONE(vm, scope, expr);
+    return pik_error(vm, scope, "foobar");
+}
+
+static bool is_macro(pik_object_t func) {
+    top:
+    IF_NULL_RETURN(func) false;
+    switch (func->type) {
+        case USER_FUNCTION:
+        case BUILTIN_FUNCTION:
+            return func->flags & FUNCTION_IS_MACRO;
+        case BOUND_METHOD:
+            func = func->bound_method;
+            goto top;
+        default:
+            return false;
+    }
+}
+
+static int eval_expression(pickle_t vm, pik_object_t self, pik_object_t expr, pik_object_t args, pik_object_t scope) {
+    IF_NULL_RETURN(vm) ROK;
+    IF_NULL_RETURN(expr) ROK;
+    PIK_DEBUG_PRINTF("eval_expression(%zu)\n", expr->len);
+    if (scope == NULL) scope = vm->global_scope;
+    if (expr->len == 0) PIK_DONE(vm, scope, NULL);
+    if (pik_eval(vm, self, expr->items[0], args, scope) == RERROR) return RERROR;
+    pik_object_t call_args = alloc_object(vm, LIST, 0);
+    pik_object_t func = scope->result;
+    pik_incref(func);
+    if (is_macro(func)) {
+        PIK_DEBUG_PRINTF("is macro\n");
+        for (size_t i = 0; i < expr->len - 1; i++) {
+            pik_append(call_args, expr->items[i+1]);
+        }
+    } else {
+        PIK_DEBUG_PRINTF("not macro\n");
+        if (reduce_expression(vm, self, expr, scope) == RERROR) return RERROR;
+        pik_object_t reduced = scope->result;
+        for (size_t i = 0; i < reduced->len - 1; i++) {
+            pik_append(call_args, reduced->items[i+1]);
+        }
+    }
+    return call(vm, func, self, call_args, scope);
+}
+
+static int eval_to_list(pickle_t vm, pik_object_t self, pik_object_t list, pik_object_t args, pik_object_t scope) {
+    IF_NULL_RETURN(vm) ROK;
+    IF_NULL_RETURN(list) ROK;
+    PIK_DEBUG_PRINTF("eval_to_list()\n");
+    if (scope == NULL) scope = vm->global_scope;
+    pik_object_t newlist = alloc_object(vm, LIST, 0);
+    for (size_t i = 0; i < list->len; i++) {
+        if (pik_eval(vm, self, list->items[i], args, scope) == RERROR) return RERROR;
+        pik_append(newlist, scope->result);
+    }
+    PIK_DONE(vm, scope, newlist);
+}
+
+int pik_eval(pickle_t vm, pik_object_t self, pik_object_t x, pik_object_t args, pik_object_t scope) {
+    IF_NULL_RETURN(vm) ROK;
+    IF_NULL_RETURN(x) ROK;
+    PIK_DEBUG_PRINTF("evaluating object at %p of type %i\n", (void*)x, x->type);
+    if (scope == NULL) scope = vm->global_scope;
+    switch (x->type) {
+        case GETVAR: return eval_getvar(vm, self, x, args, scope);
+        case EXPRESSION: return eval_expression(vm, self, x, args, scope);
+        case BLOCK: return eval_block(vm, self, x, args, scope);
+        case LIST_LITERAL: return eval_to_list(vm, self, x, args, scope);
+        default: PIK_DONE(vm, scope, x);
+    }
 }
 
 // Section: Printer
@@ -1232,6 +1490,10 @@ void pik_print_to(pickle_t vm, pik_object_t object, FILE* s) {
 
 // Section: Builtin functions
 
+static int getvar_func(pickle_t vm, pik_object_t self, pik_object_t args, pik_object_t scope) {
+
+}
+
 static void register_stdlib(pickle_t vm) {
     PIK_DEBUG_PRINTF("register standard library\n");
 }
@@ -1257,7 +1519,7 @@ void repl(pickle_t vm) {
             printf("Compile error!\n%s\n", vm->global_scope->result->message);
             continue;
         }
-        if (pik_eval(vm, vm->global_scope->result, vm->global_scope) == RERROR) {
+        if (pik_eval(vm, NULL, vm->global_scope->result, NULL, vm->global_scope) == RERROR) {
             printf("Execution error!\n%s\n", vm->global_scope->result->message);
             continue;
         }

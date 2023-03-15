@@ -144,7 +144,8 @@ classDiagram
 
 Special vars
 
-* `$?` == result of last expression
+* `$_` == result of last line in block
+* `$?` == error message in catch block
 * `$@` == args
 * `$#` == self
 * `$^` == target var in `|>` expression
