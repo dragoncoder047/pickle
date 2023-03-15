@@ -745,7 +745,11 @@ static int get_expression(pickle_t vm, pik_parser* p, pik_object_t scope) {
             break;
         }
         int code = next_item(vm, p, scope);
-        if (p_eof(p) || code == RBREAK) return pik_error(vm, scope, "unbalanced ()'s");
+        if (p_eof(p)) return pik_error(vm, scope, "unbalanced ()'s");
+        if (code == RBREAK) {
+            next(p);
+            continue;
+        }
         if (code == RERROR) return RERROR;
         if (scope->result) {
             pik_append(expr, scope->result);
@@ -767,7 +771,11 @@ static int get_list(pickle_t vm, pik_parser* p, pik_object_t scope) {
             break;
         }
         int code = next_item(vm, p, scope);
-        if (p_eof(p) || code == RBREAK) return pik_error(vm, scope, "unbalanced []'s");
+        if (p_eof(p)) return pik_error(vm, scope, "unbalanced []'s");
+        if (code == RBREAK) {
+            next(p);
+            continue;
+        }
         if (code == RERROR) return RERROR;
         if (scope->result) {
             pik_append(list, scope->result);
