@@ -607,7 +607,9 @@ static int get_string(pickle_t vm, pik_parser* p, pik_object_t scope) {
     PIK_DEBUG_PRINTF("get_string(%c)\n", q);
     // First pass: get length of string
     size_t start = save(p);
+    size_t len = 0;
     while (at(p) != q) {
+        len++;
         if (at(p) == '\\') advance(p, 2);
         else next(p);
         if (p_eof(p)) {
@@ -615,7 +617,6 @@ static int get_string(pickle_t vm, pik_parser* p, pik_object_t scope) {
             return pik_error_fmt(vm, scope, "syntax error: unterminated string %.20s...", str_of(p));
         }
     }
-    size_t len = at(p) - start;
     char* buf = (char*)calloc(len + 1, sizeof(char));
     // Second pass: grab the string
     restore(p, start);
@@ -655,7 +656,7 @@ static int get_brace_string(pickle_t vm, pik_parser* p, pik_object_t scope) {
     size_t end = save(p);
     restore(p, start);
     char* buf;
-    size_t len = end - start;
+    size_t len = end - start - 1; // chop off } at end
     asprintf(&buf, "%.*s", (int)len, str_of(p));
     pik_object_t str = alloc_object(vm, STRING, 0);
     str->chars = buf;
@@ -783,7 +784,7 @@ static int get_word(pickle_t vm, pik_parser* p, pik_object_t scope) {
     size_t len = 0;
     // Special case: boolean
     if (p_startswith(p, "true") || p_startswith(p, "false")) {
-        int64_t truthy = at(p) == 't';
+        bool truthy = at(p) == 't';
         PIK_DEBUG_PRINTF("boolean %s\n", truthy ? "true" : "false");
         size_t start = save(p);
         advance(p, truthy ? 4 : 5);
@@ -794,8 +795,18 @@ static int get_word(pickle_t vm, pik_parser* p, pik_object_t scope) {
         }
         else restore(p, start);
     }
+    else if (p_startswith(p, "nil") || p_startswith(p, "pass")) {
+        bool pass = at(p) == 'p';
+        PIK_DEBUG_PRINTF("nil\n");
+        size_t start = save(p);
+        advance(p, pass ? 4 : 3);
+        if (isspace(at(p)) || ispunct(at(p))) {
+            PIK_DONE(vm, scope, NULL);
+        }
+        else restore(p, start);
+    }
     // Special case: numbers
-    if (isdigit(at(p))) {
+    else if (isdigit(at(p))) {
         char c;
         // Complex
         float real; float imag;
@@ -914,7 +925,7 @@ int pik_compile(pickle_t vm, const char* code, pik_object_t scope) {
         while (!p_eof(p)) {
             PIK_DEBUG_PRINTF("Beginning of item: ");
             int result = next_item(vm, p, scope);
-            if (result != RBREAK && scope->result) pik_append(line, scope->result);
+            if (result != RBREAK) pik_append(line, scope->result);
             else if (eolchar(at(p))) {
                 next(p);
                 break;
@@ -928,7 +939,7 @@ int pik_compile(pickle_t vm, const char* code, pik_object_t scope) {
             }
         }
         if (line->len > 0) {
-            if (line->items[0]->type == SYMBOL) {
+            if (line->items[0] && line->items[0]->type == SYMBOL) {
                 line->items[0]->type = GETVAR;
             }
             pik_append(block, line);
@@ -1142,10 +1153,11 @@ static int get_var(pickle_t vm, const char* name, pik_object_t args, pik_object_
     IF_NULL_RETURN(vm) ROK;
     // TODO: special vars, index-based, last result, etc.
     pik_object_t dollar = vm->dollar_function;
-    pik_object_t strname = alloc_object(vm, STRING, 0);
-    strname->chars = strdup(name);
+    pik_object_t symbol = alloc_object(vm, SYMBOL, 0);
+    symbol->chars = strdup(name);
     pik_object_t alist = alloc_object(vm, LIST, 0);
-    pik_append(alist, strname);
+    pik_append(alist, symbol);
+    pik_decref(vm, symbol);
     return call(vm, NULL, dollar, alist, scope);
 }
 
@@ -1153,11 +1165,13 @@ static int set_var(pickle_t vm, const char* name, pik_object_t value, pik_object
     IF_NULL_RETURN(vm) ROK;
     // TODO: bail if special var, index-based, etc.
     pik_object_t dollar = vm->dollar_function;
-    pik_object_t strname = alloc_object(vm, STRING, 0);
-    strname->chars = strdup(name);
+    pik_object_t symbol = alloc_object(vm, SYMBOL, 0);
+    symbol->chars = strdup(name);
     pik_object_t alist = alloc_object(vm, LIST, 0);
-    pik_append(alist, strname);
+    pik_append(alist, symbol);
     pik_append(alist, value);
+    pik_decref(vm, symbol);
+    pik_decref(vm, value);
     return call(vm, NULL, dollar, alist, scope);
 }
 
@@ -1175,7 +1189,7 @@ static int call(pickle_t vm, pik_object_t func, pik_object_t self, pik_object_t 
     IF_NULL_RETURN(vm) ROK;
     try_again:
     PIK_DEBUG_PRINTF("call(%s %s %zu)\n", func ? "func" : "nil", self ? "self" : "nil", args ? args->len : 0);
-    if (func == NULL && args != NULL && args->len > 0) return pik_error(vm, scope, "can't call NULL");
+    if (func == NULL && self == NULL && args != NULL && args->len > 0) return pik_error(vm, scope, "can't call NULL");
     if (scope == NULL) scope = vm->global_scope;
     if (func == NULL) {
         PIK_DEBUG_PRINTF("NO function\n");
@@ -1206,14 +1220,11 @@ static int call(pickle_t vm, pik_object_t func, pik_object_t self, pik_object_t 
         size_t argn = 0;
         pik_object_t arg = func->arguments;
         while (arg->chars != NULL) {
-            if (argn >= args->len) {
-                return pik_error_fmt(vm, newscope, "function %s expects more than %zu args", func->chars, argn);
-            }
-            int ret = set_var(vm, arg->chars, args->items[argn], newscope);
-            if (ret == RERROR) return RERROR;
+            if (set_var(vm, arg->chars, argn >= args->len ? arg->def : args->items[argn], newscope) == RERROR) return RERROR;
             argn++;
             arg = arg->rest;
         }
+        // if there are too many arguments they are silently ignored but can be accessed through $@.
         // now we have arg->chars == NULL, ->rest == body
         // eval the body progn style in a block
         int ret = eval_block(vm, self, arg->rest, args, newscope);
@@ -1260,6 +1271,7 @@ static int eval_block(pickle_t vm, pik_object_t self, pik_object_t block, pik_ob
     IF_NULL_RETURN(vm) ROK;
     IF_NULL_RETURN(block) ROK;
     PIK_DEBUG_PRINTF("eval_block(%zu)\n", block->len);
+    if (block->len == 0) PIK_DONE(vm, scope, NULL);
     for (size_t i = 0; i < block->len; i++) {
         int code = pik_eval(vm, self, block->items[i], args, scope);
         PIK_DEBUG_PRINTF("block eval code %i\n", code);
@@ -1325,6 +1337,8 @@ static int eval_to_list(pickle_t vm, pik_object_t self, pik_object_t list, pik_o
     IF_NULL_RETURN(list) ROK;
     PIK_DEBUG_PRINTF("eval_to_list()\n");
     if (scope == NULL) scope = vm->global_scope;
+    pik_decref(vm, scope->result);
+    scope->result = NULL;
     pik_object_t newlist = alloc_object(vm, LIST, 0);
     for (size_t i = 0; i < list->len; i++) {
         if (pik_eval(vm, self, list->items[i], args, scope) == RERROR) return RERROR;
