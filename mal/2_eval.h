@@ -949,7 +949,7 @@ static bool equal(pik_object_t a, pik_object_t b) {
         case SYMBOL:
         case STRING:
         case ERROR:
-            return !strcmp(a->chars, b->chars);
+            return streq(a->chars, b->chars);
         case INTEGER:
         case BOOLEAN:
         case FLOAT:
@@ -957,9 +957,9 @@ static bool equal(pik_object_t a, pik_object_t b) {
         case RATIONAL:
             return a->integer == b->integer;
         case BUILTIN_FUNCTION:
-            return a->function == b->function && !strcmp(a->chars, b->chars);
+            return a->function == b->function && streq(a->chars, b->chars);
         case STREAM:
-            return a->stream == b->stream && !strcmp(a->chars, b->chars);
+            return a->stream == b->stream && streq(a->chars, b->chars);
         case LIST:
         case MAP:
             goto compare_items;
@@ -987,9 +987,9 @@ static bool equal(pik_object_t a, pik_object_t b) {
             b = b->rest;
             goto compare;
         case OPERATOR:
-            return !strcmp(a->chars, b->chars);
+            return streq(a->chars, b->chars);
         case GETVAR:
-            return !strcmp(a->chars, b->chars);
+            return streq(a->chars, b->chars);
         case EXPRESSION:
         case BLOCK:
         case LIST_LITERAL:

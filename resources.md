@@ -171,20 +171,7 @@ Syntax
 
 Calling convention:
 
-* Code has a target (self)
-* Code is in a scope
-* Code has an upeval scope
-* Code has code or a C function that is applied to the target
-* There is a result property (for returning from functions)
-* There can be sentinel errors throw (break/continue)
-
-`foo bar baz` is the same as `foo.bar baz` if `foo` can't be called; `foo.bar.baz` if `foo.bar` can't be called; and a type error any other way (if some property in the chain doesn't exist, for example)
-
-Most primitive types (numbers, strings, etc) return themselves when called with no arguments, otherwise throw an error.
-
-* each item on the line is literalized at compile time to either number or string
-* the args of each line are evaluated in an expresssion, recursively merging (thing op thing) to result of op
-* first object is called with second object, unless in list syntax, where it is just returned as a new list
+First element of expr node is evaluated. The result must be a callable. If it is a macro, the remainder of the AST line is passed unevaluated, otherwise it is evaluated using expression_eval below then passed to the function. If it is a tail-recursive function the return value is evaluated also using a goto.
 
 Example:
 
