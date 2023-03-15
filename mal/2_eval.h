@@ -1184,8 +1184,37 @@ static int set_var(pickle_t vm, const char* name, pik_object_t value, pik_object
 }
 
 // Get/set properties on an object
-static int get_property(pickle_t vm, pik_object_t object, pik_object_t scope, const char* property) {
-    return pik_error(vm, scope, "unimplemented get_property()");
+static int get_property(pickle_t vm, pik_object_t object, pik_object_t scope, const char* property, bool try_getprop) {
+    IF_NULL_RETURN(vm) ROK;
+    bool tried_getprop = false;
+    PIK_DEBUG_PRINTF("Get_property %s on object %p\n", property, (void*) object);
+    pik_object_t foo = alloc_object(vm, SYMBOL, 0);
+    pik_object_t bar;
+    foo->chars = strdup(property);
+    // try object itself
+    if (object->properties) {
+        if (map_has(object->properties, foo)) {
+            bar = map_get(object->properties, foo);
+            PIK_DONE(vm, scope, bar);
+        }
+    }
+    // check prototypes
+    if (object->classes) {
+        for (size_t i = 0; i < object->classes->len; i++) {
+            if (get_property(vm, object, scope, property, true) == ROK) return ROK;
+            // if OK, result was set on scope->result already
+        }
+    }
+    // call __getproperty__
+    if (try_getprop) {
+        if (get_property(vm, object, scope, "__get_property__", false) == RERROR) return RERROR;
+        pik_object_t args = alloc_object(vm, LIST, 0);
+        pik_append(args, foo);
+        pik_decref(vm, foo);
+        return call(vm, scope->result, object, args, scope);
+    } else {
+        return pik_error_fmt(vm, scope, "object has no property %s", property);
+    }
 }
 
 static int set_property(pickle_t vm, pik_object_t object, pik_object_t scope, const char* property, pik_object_t value) {
@@ -1209,15 +1238,20 @@ static int call(pickle_t vm, pik_object_t func, pik_object_t self, pik_object_t 
         // try to __call__ the object; create a temporory bound method
         pik_object_t bound = alloc_object(vm, BOUND_METHOD, 0);
         bound->bound_self = self;
-        if (get_property(vm, self, scope, "__call__") == RERROR) return RERROR;
+        if (get_property(vm, self, scope, "__call__", true) == RERROR) return pik_error(vm, scope, "can't call object");
         bound->bound_method = scope->result;
         func = bound;
         goto try_again;
     }
     else if (func->type == BUILTIN_FUNCTION) return func->function(vm, self, args, scope);
     else if (func->type == BOUND_METHOD) {
+        PIK_DEBUG_PRINTF("Got bound method, unpacking\n");
         self = func->bound_self;
-        func = func->bound_method;
+        pik_object_t tempfunc = func->bound_method;
+        pik_incref(self);
+        pik_incref(tempfunc);
+        pik_decref(vm, func);
+        func = tempfunc;
         goto try_again;
     }
     else if (func->type == USER_FUNCTION) {
@@ -1518,11 +1552,15 @@ void pik_print_to(pickle_t vm, pik_object_t object, FILE* s) {
 // Section: Builtin functions
 
 static int getvar_func(pickle_t vm, pik_object_t self, pik_object_t args, pik_object_t scope) {
-    return ROK;
+    PIK_DONE(vm, scope, NULL);
 }
 
 static void register_stdlib(pickle_t vm) {
     PIK_DEBUG_PRINTF("register standard library\n");
+    pik_object_t var = alloc_object(vm, BUILTIN_FUNCTION, 0);
+    var->chars = strdup("let");
+    var->function = getvar_func;
+    vm->dollar_function = var;
 }
 
 
