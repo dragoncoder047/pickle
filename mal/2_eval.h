@@ -943,8 +943,8 @@ static bool equal(pik_object_t a, pik_object_t b) {
     switch (a->type) {
         case CONS:
             if (!equal(a->car, b->car)) return false;
-            a = a->car;
-            b = b->car;
+            a = a->cdr;
+            b = b->cdr;
             goto compare;
         case SYMBOL:
         case STRING:
@@ -987,7 +987,6 @@ static bool equal(pik_object_t a, pik_object_t b) {
             b = b->rest;
             goto compare;
         case OPERATOR:
-            return streq(a->chars, b->chars);
         case GETVAR:
             return streq(a->chars, b->chars);
         case EXPRESSION:
