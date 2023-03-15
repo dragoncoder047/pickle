@@ -178,7 +178,7 @@ static void register_stdlib(pickle_t vm);
 // }
 
 static pik_object_t alloc_object(pickle_t vm, uint16_t type, uint16_t subtype) {
-    pik_object* object = vm->first_object;
+    pik_object_t object = vm->first_object;
     while (object != NULL) {
         if (object->refcnt == 0) {
             PIK_DEBUG_PRINTF("Reusing garbage ");
@@ -331,7 +331,7 @@ static void mark_object(pickle_t vm, pik_object_t object) {
 }
 
 static void sweep_unmarked(pickle_t vm) {
-    pik_object** object = &vm->first_object;
+    pik_object_t* object = &vm->first_object;
     while (*object != NULL) {
         PIK_DEBUG_PRINTF("Looking at object at %p: flags=%#hx, ", (void*)(*object), (*object)->flags);
         if ((*object)->flags & MARKBIT) {
@@ -342,7 +342,7 @@ static void sweep_unmarked(pickle_t vm) {
         } else {
             PIK_DEBUG_PRINTF("unmarked\n");
             // Sweep the object
-            pik_object* unreached = *object;
+            pik_object_t unreached = *object;
             *object = unreached->next_object;
             finalize(vm, unreached);
             free(unreached);
@@ -869,8 +869,8 @@ static int get_word(pickle_t vm, pik_parser* p, pik_object_t scope) {
 }
 
 static int next_item(pickle_t vm, pik_parser* p, pik_object_t scope) {
-    IF_NULL_RETURN(vm) NULL;
-    IF_NULL_RETURN(p) NULL;
+    IF_NULL_RETURN(vm) ROK;
+    IF_NULL_RETURN(p) ROK;
     PIK_DEBUG_PRINTF("next_item()\n");
     if (p_eof(p)) return RBREAK;
     skip_whitespace(p);
@@ -1142,7 +1142,7 @@ static void scope_delete(pickle_t vm, pik_object_t scope, pik_object_t key) {
 
 // Get/set variable wrappers to abstract the dollar_function
 static int get_var(pickle_t vm, const char* name, pik_object_t args, pik_object_t scope) {
-    IF_NULL_RETURN(vm) NULL;
+    IF_NULL_RETURN(vm) ROK;
     // TODO: special vars, index-based, last result, etc.
     pik_object_t dollar = vm->dollar_function;
     pik_object_t strname = alloc_object(vm, STRING, 0);
@@ -1153,7 +1153,7 @@ static int get_var(pickle_t vm, const char* name, pik_object_t args, pik_object_
 }
 
 static int set_var(pickle_t vm, const char* name, pik_object_t value, pik_object_t scope) {
-    IF_NULL_RETURN(vm) NULL;
+    IF_NULL_RETURN(vm) ROK;
     // TODO: bail if special var, index-based, etc.
     pik_object_t dollar = vm->dollar_function;
     pik_object_t strname = alloc_object(vm, STRING, 0);
@@ -1233,8 +1233,8 @@ static int call(pickle_t vm, pik_object_t func, pik_object_t self, pik_object_t 
 
 // Eval remainder of expression (items 1...end); return new expression
 static int eval_remainder(pickle_t vm, pik_object_t self, pik_object_t line, pik_object_t args, pik_object_t scope) {
-    IF_NULL_RETURN(vm) NULL;
-    IF_NULL_RETURN(line) NULL;
+    IF_NULL_RETURN(vm) ROK;
+    IF_NULL_RETURN(line) ROK;
     PIK_DEBUG_PRINTF("eval_remainder()\n");
     if (line->len < 2) {
         PIK_DONE(vm, scope, line);
