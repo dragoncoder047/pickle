@@ -419,6 +419,16 @@ void pik_append(pik_object_t array, pik_object_t what) {
     pik_incref(what);
 }
 
+void pik_delete_at_index(pickle_t vm, pik_object_t array, size_t i) {
+    pik_decref(vm, array->items[i]);
+    if (i + 1 < array->len) {
+        memmove((void*)&array->items[i], (void*)&array->items[i+1], (array->len - i - 1) * sizeof(pik_object_t));
+    }
+    array->items = (pik_object_t*)realloc(array->items, (array->len - 1) * sizeof(pik_object_t));
+    array->len--;
+    return;
+}
+
 #define PIK_DONE(vm, scope, rval) do { pik_decref(vm, scope->result); scope->result = rval; return ROK; } while (0)
 
 typedef struct pik_parser {
@@ -518,7 +528,7 @@ static bool valid_varchar(char c) {
     if ('A' <= c && 'Z' >= c) return true;
     if ('a' <= c && 'z' >= c) return true;
     if ('0' <= c && '9' >= c) return true;
-    return strchr("#@?^.~", c) != NULL;
+    return strchr("#@?^_~", c) != NULL;
 }
 
 static bool valid_opchar(char c) {
@@ -1061,12 +1071,7 @@ static void map_delete(pickle_t vm, pik_object_t map, pik_object_t key) {
     for (size_t i = 0; i < map->len; i++) {
         pik_object_t kvpair = map->items[i];
         if (equal(kvpair->key, key)) {
-            pik_decref(vm, kvpair->value);
-            if (i + 1 < map->len) {
-                memmove((void*)&map->items[i], (void*)&map->items[i+1], (map->len - i - 1) * sizeof(pik_object_t));
-            }
-            map->items = (pik_object_t*)realloc(map->items, (map->len - 1) * sizeof(pik_object_t));
-            map->len--;
+            pik_delete_at_index(vm, map, i);
             return;
         }
     }
@@ -1267,6 +1272,7 @@ static int eval_block(pickle_t vm, pik_object_t self, pik_object_t block, pik_ob
 static int reduce_expression(pickle_t vm, pik_object_t self, pik_object_t expr, pik_object_t scope) {
     PIK_DEBUG_PRINTF("reduce_expression(%zu)\n", expr->len);
     if (expr->len < 2) PIK_DONE(vm, scope, expr);
+    // Call eval_remainder
     return pik_error(vm, scope, "reduce_expression unimplemented");
 }
 
@@ -1304,9 +1310,12 @@ static int eval_expression(pickle_t vm, pik_object_t self, pik_object_t expr, pi
         PIK_DEBUG_PRINTF("not macro\n");
         if (reduce_expression(vm, self, expr, scope) == RERROR) return RERROR;
         pik_object_t reduced = scope->result;
-        for (size_t i = 0; i < reduced->len - 1; i++) {
+        for (size_t i = 1; i < reduced->len - 1; i++) {
             pik_append(call_args, reduced->items[i+1]);
         }
+        pik_decref(vm, func);
+        func = reduced->items[0];
+        pik_incref(func);
     }
     return call(vm, func, self, call_args, scope);
 }
