@@ -162,6 +162,7 @@ static int eval_block(pickle_t vm, pik_object_t self, pik_object_t block, pik_ob
 static int call(pickle_t vm, pik_object_t func, pik_object_t self, pik_object_t args, pik_object_t scope);
 int pik_eval(pickle_t vm, pik_object_t self, pik_object_t x, pik_object_t args, pik_object_t scope);
 static void register_stdlib(pickle_t vm);
+static void dump_ast(pik_object_t code, int indent, FILE* s);
 
 // Section: Garbage Collector
 
@@ -205,8 +206,9 @@ static const char* type_name(uint16_t type) {
 static pik_object_t alloc_object(pickle_t vm, uint16_t type, uint16_t subtype) {
     pik_object_t object = vm->first_object;
     while (object != NULL) {
-        if (object->refcnt == 0) {
-            PIK_DEBUG_PRINTF("Reusing garbage ");
+        if (object->refcnt <= 0) {
+            PIK_DEBUG_ASSERT(object->flags & FINALIZED, "didn't dinalize object with 0 references");
+            PIK_DEBUG_PRINTF("Reusing garbage %s ", type_name(object->type));
             goto got_unused;
         }
         object = object->next_object;
@@ -1188,7 +1190,7 @@ static int get_var(pickle_t vm, const char* name, pik_object_t args, pik_object_
     pik_object_t alist = alloc_object(vm, LIST, 0);
     pik_append(alist, symbol);
     pik_decref(vm, symbol);
-    return call(vm, NULL, dollar, alist, scope);
+    return call(vm, dollar, NULL, alist, scope);
 }
 
 static int set_var(pickle_t vm, const char* name, pik_object_t value, pik_object_t scope) {
@@ -1202,13 +1204,13 @@ static int set_var(pickle_t vm, const char* name, pik_object_t value, pik_object
     pik_append(alist, value);
     pik_decref(vm, symbol);
     pik_decref(vm, value);
-    return call(vm, NULL, dollar, alist, scope);
+    return call(vm, dollar, NULL, alist, scope);
 }
 
 // Get/set properties on an object
 static int get_property(pickle_t vm, pik_object_t object, pik_object_t scope, const char* property, bool try_getprop) {
     IF_NULL_RETURN(vm) ROK;
-    PIK_DEBUG_PRINTF("Get_property %s on object %p\n", property, (void*) object);
+    PIK_DEBUG_PRINTF("Get_property %s on %s %p\n", property, type_name(object->type), (void*)object);
     pik_object_t foo = alloc_object(vm, SYMBOL, 0);
     foo->chars = strdup(property);
     // try object itself
@@ -1233,7 +1235,7 @@ static int get_property(pickle_t vm, pik_object_t object, pik_object_t scope, co
         pik_decref(vm, foo);
         return call(vm, scope->result, object, args, scope);
     } else {
-        return pik_error_fmt(vm, scope, "object has no property %s", property);
+        return pik_error_fmt(vm, scope, "%s has no property %s", type_name(object->type), property);
     }
 }
 
@@ -1248,10 +1250,8 @@ static int call(pickle_t vm, pik_object_t func, pik_object_t self, pik_object_t 
     PIK_DEBUG_PRINTF("call(%s %s %u)\n", func ? type_name(func->type) : "NULL", self ? type_name(self->type) : "NULL", args ? args->len : 0);
     if (func == NULL && self == NULL && args != NULL && args->len > 0) return pik_error(vm, scope, "can't call NULL");
     if (scope == NULL) scope = vm->global_scope;
+    if (self == NULL) self = vm->global_scope;
     if (func == NULL) {
-        PIK_DEBUG_PRINTF("trying to call self\n");
-        int ret = call(vm, self, NULL, args, scope);
-        if (ret != RERROR) return ret;
         PIK_DEBUG_PRINTF("NO function\n");
         if (!args->len) {
             PIK_DEBUG_PRINTF("No args, return the object\n");
@@ -1315,6 +1315,7 @@ static int eval_block(pickle_t vm, pik_object_t self, pik_object_t block, pik_ob
     IF_NULL_RETURN(vm) ROK;
     IF_NULL_RETURN(block) ROK;
     PIK_DEBUG_PRINTF("eval_block(%u)\n", block->len);
+    pik_incref(block);
     if (block->len == 0) PIK_DONE(vm, scope, NULL);
     for (size_t i = 0; i < block->len; i++) {
         int code = pik_eval(vm, self, block->items[i], args, scope);
@@ -1322,24 +1323,26 @@ static int eval_block(pickle_t vm, pik_object_t self, pik_object_t block, pik_ob
         if (code != ROK) return code;
         scope_set(vm, scope, "_", scope->result);
     }
+    pik_decref(vm, block);
     return ROK;
 }
 
 // Eval remainder of expression (items 1...end); return new expression
-static int eval_remainder(pickle_t vm, pik_object_t self, pik_object_t line, pik_object_t args, pik_object_t scope) {
+static int eval_rest(pickle_t vm, pik_object_t self, pik_object_t line, pik_object_t args, pik_object_t scope) {
     IF_NULL_RETURN(vm) ROK;
     IF_NULL_RETURN(line) ROK;
-    PIK_DEBUG_PRINTF("eval_remainder()\n");
+    PIK_DEBUG_PRINTF("eval_rest()\n");
+    pik_incref(line);
     if (line->len < 2) {
         PIK_DONE(vm, scope, line);
     }
     pik_object_t newexpr = alloc_object(vm, EXPRESSION, 0);
-    pik_append(newexpr, line->items[0]);
     for (size_t i = 1; i < line->len; i++) {
         int code = pik_eval(vm, self, line->items[i], args, scope);
         if (code != ROK) return code;
         pik_append(newexpr, scope->result);
     }
+    pik_decref(vm, line);
     PIK_DONE(vm, scope, newexpr);
 }
 
@@ -1368,26 +1371,60 @@ static const char* operator_method(pik_object_t scope, const char* op) {
 static int reduce_expression(pickle_t vm, pik_object_t self, pik_object_t func, pik_object_t expr, pik_object_t args, pik_object_t scope) {
     PIK_DEBUG_PRINTF("reduce_expression(%u)\n", expr->len);
     if (expr->len == 0) PIK_DONE(vm, scope, expr);
-    // Call eval_remainder
-    if (eval_remainder(vm, self, expr, args, scope) == RERROR) return RERROR;
-    pik_object_t remainder = scope->result;
-    reduce:
-    // Find highest leftmost precedence operator
-    int max_precedence = -1, position = -1;
-    bool got_supported_operator = true;
+    if (eval_rest(vm, self, expr, args, scope) == RERROR) return RERROR;
+    expr = scope->result;
+    pik_decref(vm, expr->items[0]);
+    pik_incref(func);
+    expr->items[0] = func;
+    pik_incref(expr);
+    pik_incref(func);
+    next_operator:
+    PIK_DEBUG_PRINTF("next_operator: %u items left\n", expr->len);
+    // Find highest leftmost precedence operator that is between things
+    int max_precedence = -1, pos = -1;
+    bool got_supported_operator = false;
     for (size_t i = 0; i < expr->len; i++) {
         if (expr->items[i] && expr->items[i]->type == OPERATOR) {
+            PIK_DEBUG_PRINTF("looking at operator %s\n", expr->items[i]->name);
             int p = operator_precedence(scope, expr->items[i]->name);
             if (p > max_precedence) {
                 max_precedence = p;
-                position = i;
+                pos = i;
                 got_supported_operator = true;
             }
         }
     }
-    // Do something
-    return pik_error(vm, scope, "reduce unfinished");
-    if (got_supported_operator) goto reduce;
+    if (!got_supported_operator) PIK_DONE(vm, scope, expr);
+    // Apply the operator
+    pik_object_t left = expr->items[pos-1];
+    pik_object_t op = expr->items[pos];
+    pik_object_t right = expr->items[pos+1];
+    PIK_DEBUG_PRINTF("Reducing %s %s %s\n", type_name(left->type), op->name, type_name(left->type));
+    const char* method = operator_method(scope, op->name);
+    if (method == NULL) return pik_error_fmt(vm, scope, "weird operator bug for %s in reduce_expression()", op->name);
+    char* magic;
+    asprintf(&magic, "__%s__", method);
+    pik_object_t op_args = alloc_object(vm, LIST, 0);
+    if (get_property(vm, left, scope, magic, true) == RERROR) {
+        // try reflected operation
+        free(magic);
+        asprintf(&magic, "__r%s__", method);
+        PIK_DEBUG_PRINTF("Trying reflected operation %s\n", magic);
+        if (get_property(vm, left, scope, magic, true) == RERROR) return pik_error_fmt(vm, scope, "operator %s unsupported between %s and %s", op->name, type_name(left->type), type_name(right->type));
+        pik_append(op_args, left);
+        if (call(vm, scope->result, right, op_args, scope) == RERROR) return RERROR;
+    } else {
+        PIK_DEBUG_PRINTF("Trying normal operation %s\n", magic);
+        pik_append(op_args, right);
+        if (call(vm, scope->result, left, op_args, scope) == RERROR) return RERROR;
+    }
+    pik_delete_at_index(vm, expr, pos);
+    pik_delete_at_index(vm, expr, pos+1);
+    pik_decref(vm, left);
+    expr->items[pos-1] = scope->result;
+    pik_incref(scope->result);
+    pik_decref(vm, op_args);
+    goto next_operator;
 }
 
 static bool is_macro(pik_object_t func) {
@@ -1412,6 +1449,7 @@ static int eval_expression(pickle_t vm, pik_object_t self, pik_object_t expr, pi
     if (scope == NULL) scope = vm->global_scope;
     if (expr->len == 0) PIK_DONE(vm, scope, NULL);
     if (pik_eval(vm, self, expr->items[0], args, scope) == RERROR) return RERROR;
+    pik_incref(expr);
     pik_object_t call_args = alloc_object(vm, LIST, 0);
     pik_object_t func = scope->result;
     pik_incref(func);
@@ -1441,6 +1479,7 @@ static int eval_to_list(pickle_t vm, pik_object_t self, pik_object_t list, pik_o
     if (scope == NULL) scope = vm->global_scope;
     pik_decref(vm, scope->result);
     scope->result = NULL;
+    pik_incref(list);
     pik_object_t newlist = alloc_object(vm, LIST, 0);
     for (size_t i = 0; i < list->len; i++) {
         if (pik_eval(vm, self, list->items[i], args, scope) == RERROR) return RERROR;
@@ -1604,7 +1643,13 @@ void pik_print_to(pickle_t vm, pik_object_t object, FILE* s) {
 // Section: Builtin functions
 
 static int getvar_func(pickle_t vm, pik_object_t self, pik_object_t args, pik_object_t scope) {
-    PIK_DONE(vm, scope, NULL);
+    pik_decref(vm, scope->result);
+    pik_object_t foo = alloc_object(vm, INTEGER, 0);
+    foo->integer = 42;
+    printf("called $:::::::: ");
+    dump_ast(args, 0, stdout);
+    putchar('\n');
+    PIK_DONE(vm, scope, foo);
 }
 
 static void register_stdlib(pickle_t vm) {
