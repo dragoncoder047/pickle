@@ -1205,9 +1205,9 @@ static int get_property(pickle_t vm, pik_object_t object, pik_object_t scope, co
             // if OK, result was set on scope->result already
         }
     }
-    // call __getproperty__
+    // call __getprop__
     if (try_getprop) {
-        if (get_property(vm, object, scope, "__get_property__", false) == RERROR) return RERROR;
+        if (get_property(vm, object, scope, "__getprop__", false) == RERROR) return RERROR;
         pik_object_t args = alloc_object(vm, LIST, 0);
         pik_append(args, foo);
         pik_decref(vm, foo);
