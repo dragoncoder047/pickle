@@ -62,7 +62,7 @@ enum type {
 
     // Internal types (mostly AST nodes)
     ARGUMENT_ENTRY,     // name        | default   | (empty)
-    OPERATOR,           // char*       | (empty)   | (empty)
+    OPERATOR,           // char*       | char*     | precedence
     GETVAR,             // char*       | (empty)   | (empty)
     EXPRESSION,         // item**s     | len       | (empty)
     BLOCK,              // item**s     | len       | (empty)
@@ -135,12 +135,14 @@ struct pik_object {
                 uint32_t len;
                 float imag;
                 uint32_t denominator;
+                char* method;
                 FILE* stream;
                 pik_func function;
             };
             // Cell 3
             union {
                 pik_object_t cell3, scope, result;
+                int32_t precedence;
             };
         };
     };
@@ -239,6 +241,7 @@ enum _type_fields {
     CELL2_EMPTY   = 0b000000,
     CELL2_FILE    = 0b000100,
     CELL2_OBJECT  = 0b001000,
+    CELL2_CHARS   = 0b001100,
     CELL2_MASK    = 0b001100,
     CELL3_EMPTY   = 0b000000,
     CELL3_OBJECT  = 0b010000,
@@ -265,7 +268,7 @@ static int type_info(uint16_t type) {
         case USER_FUNCTION:     return CELL1_CHARS   | CELL2_OBJECT | CELL3_OBJECT;
         case ARGUMENT_ENTRY:    return CELL1_CHARS   | CELL2_OBJECT | CELL3_EMPTY;
         case GETVAR:            return CELL1_CHARS   | CELL2_EMPTY  | CELL3_EMPTY;
-        case OPERATOR:          return CELL1_CHARS   | CELL2_EMPTY  | CELL3_EMPTY;
+        case OPERATOR:          return CELL1_CHARS   | CELL2_CHARS  | CELL3_EMPTY;
         case EXPRESSION:        return CELL1_OBJECTS | CELL2_EMPTY  | CELL3_EMPTY;
         case BLOCK:             return CELL1_OBJECTS | CELL2_EMPTY  | CELL3_EMPTY;
         case LIST_LITERAL:      return CELL1_OBJECTS | CELL2_EMPTY  | CELL3_EMPTY;
@@ -293,6 +296,7 @@ static void finalize(pickle_t vm, pik_object_t object) {
     switch (type_info(object->type) & CELL2_MASK) {
         case CELL2_EMPTY: break;
         case CELL2_FILE: fclose(object->stream); object->stream = NULL; break;
+        case CELL2_CHARS: free(object->method); object->method = NULL; break;
         case CELL2_OBJECT: pik_decref(vm, object->cell2); object->cell2 = NULL; break;
     }
     switch (type_info(object->type) & CELL3_MASK) {
@@ -1302,6 +1306,25 @@ static int call(pickle_t vm, pik_object_t func, pik_object_t self, pik_object_t 
     }
 }
 
+static int eval_getvar(pickle_t vm, pik_object_t self, pik_object_t getvar, pik_object_t args, pik_object_t scope) {
+    PIK_DEBUG_PRINTF("eval_getvar()\n");
+    return get_var(vm, getvar->chars, args, scope);
+}
+
+static int eval_block(pickle_t vm, pik_object_t self, pik_object_t block, pik_object_t args, pik_object_t scope) {
+    IF_NULL_RETURN(vm) ROK;
+    IF_NULL_RETURN(block) ROK;
+    PIK_DEBUG_PRINTF("eval_block(%u)\n", block->len);
+    if (block->len == 0) PIK_DONE(vm, scope, NULL);
+    for (size_t i = 0; i < block->len; i++) {
+        int code = pik_eval(vm, self, block->items[i], args, scope);
+        PIK_DEBUG_PRINTF("block eval code %i\n", code);
+        if (code != ROK) return code;
+        scope_set(vm, scope, "_", scope->result);
+    }
+    return ROK;
+}
+
 // Eval remainder of expression (items 1...end); return new expression
 static int eval_remainder(pickle_t vm, pik_object_t self, pik_object_t line, pik_object_t args, pik_object_t scope) {
     IF_NULL_RETURN(vm) ROK;
@@ -1320,32 +1343,51 @@ static int eval_remainder(pickle_t vm, pik_object_t self, pik_object_t line, pik
     PIK_DONE(vm, scope, newexpr);
 }
 
-static int eval_getvar(pickle_t vm, pik_object_t self, pik_object_t getvar, pik_object_t args, pik_object_t scope) {
-    PIK_DEBUG_PRINTF("eval_getvar()\n");
-    return get_var(vm, getvar->chars, args, scope);
-}
-
-// Eval different AST nodes
-// Eval block using progn (no TCO yet)
-static int eval_block(pickle_t vm, pik_object_t self, pik_object_t block, pik_object_t args, pik_object_t scope) {
-    IF_NULL_RETURN(vm) ROK;
-    IF_NULL_RETURN(block) ROK;
-    PIK_DEBUG_PRINTF("eval_block(%u)\n", block->len);
-    if (block->len == 0) PIK_DONE(vm, scope, NULL);
-    for (size_t i = 0; i < block->len; i++) {
-        int code = pik_eval(vm, self, block->items[i], args, scope);
-        PIK_DEBUG_PRINTF("block eval code %i\n", code);
-        if (code != ROK) return code;
-        scope_set(vm, scope, "_", scope->result);
+static int operator_precedence(pik_object_t scope, const char* op) {
+    top:
+    for (size_t i = 0; i < scope->len; i++) {
+        pik_object_t oper = scope->items[i];
+        if (streq(oper->name, op)) return oper->precedence;
     }
-    return ROK;
+    if (!scope->classes || !scope->classes->len) return -1;
+    scope = scope->classes->items[0];
+    goto top;
 }
 
-static int reduce_expression(pickle_t vm, pik_object_t self, pik_object_t expr, pik_object_t scope) {
+static const char* operator_method(pik_object_t scope, const char* op) {
+    top:
+    for (size_t i = 0; i < scope->len; i++) {
+        pik_object_t oper = scope->items[i];
+        if (streq(oper->name, op)) return oper->method;
+    }
+    if (!scope->classes || !scope->classes->len) return NULL;
+    scope = scope->classes->items[0];
+    goto top;
+}
+
+static int reduce_expression(pickle_t vm, pik_object_t self, pik_object_t func, pik_object_t expr, pik_object_t args, pik_object_t scope) {
     PIK_DEBUG_PRINTF("reduce_expression(%u)\n", expr->len);
     if (expr->len == 0) PIK_DONE(vm, scope, expr);
     // Call eval_remainder
-    return pik_error(vm, scope, "reduce_expression unimplemented");
+    if (eval_remainder(vm, self, expr, args, scope) == RERROR) return RERROR;
+    pik_object_t remainder = scope->result;
+    reduce:
+    // Find highest leftmost precedence operator
+    int max_precedence = -1, position = -1;
+    bool got_supported_operator = true;
+    for (size_t i = 0; i < expr->len; i++) {
+        if (expr->items[i] && expr->items[i]->type == OPERATOR) {
+            int p = operator_precedence(scope, expr->items[i]->name);
+            if (p > max_precedence) {
+                max_precedence = p;
+                position = i;
+                got_supported_operator = true;
+            }
+        }
+    }
+    // Do something
+    return pik_error(vm, scope, "reduce unfinished");
+    if (got_supported_operator) goto reduce;
 }
 
 static bool is_macro(pik_object_t func) {
@@ -1380,7 +1422,7 @@ static int eval_expression(pickle_t vm, pik_object_t self, pik_object_t expr, pi
         }
     } else {
         PIK_DEBUG_PRINTF("not macro\n");
-        if (reduce_expression(vm, self, expr, scope) == RERROR) return RERROR;
+        if (reduce_expression(vm, self, func, expr, args, scope) == RERROR) return RERROR;
         pik_object_t reduced = scope->result;
         for (size_t i = 1; i < reduced->len - 1; i++) {
             pik_append(call_args, reduced->items[i+1]);
@@ -1511,10 +1553,10 @@ static void dump_ast(pik_object_t code, int indent, FILE* s) {
             fprintf(s, "\n%*s)", indent * 4, "");
             break;
         case OPERATOR:
-            fprintf(s, "operator(%s)", code->chars);
+            fprintf(s, "operator(%s %i -> %s)", code->name, code->precedence, code->method);
             break;
         case GETVAR:
-            fprintf(s, "getvar(%s)", code->chars);
+            fprintf(s, "getvar(%s)", code->name);
             break;
         case EXPRESSION:
             fprintf(s, "expr(\n");
