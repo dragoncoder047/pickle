@@ -27,13 +27,14 @@
 #endif
 
 #if 1
-    #define PIK_DEBUG_PRINTF(...) printf("[DEBUG] " __VA_ARGS__)
+    #define PIK_DEBUG_PRINTF(fmt, ...) printf("[DEBUG %s:%i] " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
     #define PIK_DEBUG_ASSERT(cond, should) __PIK_DEBUG_ASSERT_INNER(cond, should, #cond, __FILE__, __LINE__, __func__)
     void __PIK_DEBUG_ASSERT_INNER(bool cond, const char* should, const char* condstr, const char* filename, size_t line, const char* func) {
         printf("[%s:%zu in %s] Assertion %s: %s\n", filename, line, func, cond ? "succeeded" : "failed", condstr);
         if (cond) return;
         printf("%s\nAbort.", should);
         exit(70);
+        // *((int*)0) = 1; // Segfault fast
     }
 #else
     #define PIK_DEBUG_PRINTF(...)
@@ -64,6 +65,7 @@ class PickleHashmapBucket {
     public:
     ~PickleHashmapBucket();
     void mark();
+    void clear();
     friend class PickleHashmap;
 };
 
@@ -71,18 +73,25 @@ class PickleHashmap {
     private:
     PickleHashmapBucket buckets[256];
     public:
+    PickleHashmap();
     void mark();
+    void clear();
 };
 
-typedef void (*PickleTypefun)(PickleObject*);
+typedef void (*PickleInitfun)(PickleObject*, void*);
+typedef void (*PickleMarkfun)(PickleObject*);
+typedef void (*PickleFreefun)(PickleObject*);
 class PickleType {
     public:
-    PickleTypefun init;
-    PickleTypefun mark;
-    PickleTypefun free;
+    PickleInitfun initfun;
+    PickleMarkfun markfun;
+    PickleFreefun freefun;
     char* name;
-    PickleType(const char* name, const PickleTypefun init, const PickleTypefun mark, const PickleTypefun free);
+    PickleType(const char* name, const PickleInitfun init, const PickleMarkfun mark, const PickleFreefun free);
     ~PickleType();
+    void init(PickleObject* foo, void* arg);
+    void mark(PickleObject* foo);
+    void free(PickleObject* foo);
     operator bool();
 };
 
@@ -114,6 +123,8 @@ class PickleObject {
         };
     };
     private:
+    PickleObject(const PickleType* type, void* arg, const PickleObject* prev);
+    PickleObject(const PickleType* type, void* arg);
     PickleObject(const PickleType* t);
     PickleObject();
     public:
@@ -123,6 +134,7 @@ class PickleObject {
     inline bool tstflag(uint32_t flag);
     inline void incref();
     void decref();
+    PickleObject& operator=(PickleObject& other);
     void finalize();
     void mark();
     operator bool();
@@ -135,7 +147,7 @@ class PickleVM {
     PickleObject* first;
     size_t allocs;
     PickleObject* global_scope;
-    std::vector<PickleType> types;
+    std::vector<PickleType*> types;
     public:
     PickleVM();
     ~PickleVM();
@@ -144,6 +156,11 @@ class PickleVM {
     void sweep_unmarked();
     public:
     void gc();
+    void register_type(PickleType* type);
+    private:
+    PickleType* find_type(const char* type);
+    public:
+    PickleObject* alloc(const char* type, void* arg);
 };
 
 
