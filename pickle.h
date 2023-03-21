@@ -26,6 +26,20 @@
     #define fputchar(s, c) fprintf(s, "%c", c)
 #endif
 
+#if 1
+    #define PIK_DEBUG_PRINTF(...) printf("[DEBUG] " __VA_ARGS__)
+    #define PIK_DEBUG_ASSERT(cond, should) __PIK_DEBUG_ASSERT_INNER(cond, should, #cond, __FILE__, __LINE__, __func__)
+    void __PIK_DEBUG_ASSERT_INNER(bool cond, const char* should, const char* condstr, const char* filename, size_t line, const char* func) {
+        printf("[%s:%zu in %s] Assertion %s: %s\n", filename, line, func, cond ? "succeeded" : "failed", condstr);
+        if (cond) return;
+        printf("%s\nAbort.", should);
+        exit(70);
+    }
+#else
+    #define PIK_DEBUG_PRINTF(...)
+    #define PIK_DEBUG_ASSERT(...)
+#endif
+
 enum {
     PICKLE_MARKBIT,
     PICKLE_FINALIZED
@@ -69,6 +83,7 @@ class PickleType {
     char* name;
     PickleType(const char* name, const PickleTypefun init, const PickleTypefun mark, const PickleTypefun free);
     ~PickleType();
+    operator bool();
 };
 
 class PickleObject {
@@ -103,22 +118,15 @@ class PickleObject {
     PickleObject();
     public:
     ~PickleObject();
-    inline void setflag(uint32_t flag) {
-        this->flags |= 1<<flag;
-    }
-    inline void clrflag(uint32_t flag) {
-        this->flags &= ~(1<<flag);
-    }
-    inline bool tstflag(uint32_t flag) {
-        return this->flags & (1<<flag);
-    }
-    inline void incref() {
-        this->refs++;
-    }
+    inline void setflag(uint32_t flag);
+    inline void clrflag(uint32_t flag);
+    inline bool tstflag(uint32_t flag);
+    inline void incref();
     void decref();
     void finalize();
     void mark();
     operator bool();
+    const char* mytype();
     friend class PickleVM;
 };
 

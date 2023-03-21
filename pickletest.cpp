@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#define PICKLE_TEST
-#define PICKLE_DEBUG
 #include "pickle.h"
 
 void repl(PickleVM vm) {
@@ -56,6 +54,7 @@ void repl(PickleVM vm) {
 }
 
 int main() {
+    printf("Pickle version 0.0.0 (compiler " __VERSION__ ") " __TIMESTAMP__ "\n");
     PickleVM vm;
     repl(vm);
     return 0;
