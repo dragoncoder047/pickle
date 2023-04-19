@@ -23,7 +23,7 @@ editor.getSession().on('change', () => {
             tokens.push(t.nextToken());
         }
         clearOutput();
-        output(JSON.stringify(tokens, null, 4));
+        output(JSON.stringify(tokens, null, 2));
     } catch (e) {
         output(`<span class="error">${e}\n${e.stack}</span>`)
     }

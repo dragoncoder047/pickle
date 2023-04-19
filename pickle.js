@@ -94,18 +94,18 @@ class PickleTokenizer {
         for (var { type, re } of tokenPairs) {
             if (this.testRE(re)) return new PickleToken(type, this.chompRE(re))
         }
-        // Try special ones: literal strings, quoted and block
+        // Try special literal strings, quoted and block
         if (this.testRE(/^{/)) {
-            var j = 0, depth = 0; str = ""
+            var j = 0, depth = 0, string = "";
             do {
                 var ch = this.peek(j);
                 if (ch == "{") depth++;
                 else if (ch == "}") depth--;
-                str += ch;
+                string += ch;
                 j++;
             } while (depth > 0);
             this.i += j;
-            return new PickleToken("string.curly", str);
+            return new PickleToken("string.curly", string.slice(1, -1));
         }
         else if (this.testRE(/^:\s*?\n/)) {
             this.i++;
