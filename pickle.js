@@ -76,6 +76,7 @@ class PickleTokenizer {
         this.string = string;
         this.i = 0;
         this.beginning = null;
+        this.bi = 0;
     }
     lineColumn() {
         var before = this.string.slice(0, this.i);
@@ -110,7 +111,7 @@ class PickleTokenizer {
     errorToken() {
         // always advance to allow more tokenizing
         this.i++;
-        return this.makeToken("error", this.peek(-1));
+        return this.makeToken("error", this.string.slice(this.bi, this.i));
     }
     makeToken(type, content) {
         return new PickleToken(type, content, this.beginning, this.lineColumn());
@@ -118,6 +119,7 @@ class PickleTokenizer {
     nextToken() {
         if (this.done()) return undefined;
         this.beginning = this.lineColumn();
+        this.bi = this.i;
         // Try colon block string, to allow colon in operators
         if (this.testRE(/^:\s*\n/)) {
             var i = this.i;
