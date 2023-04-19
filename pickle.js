@@ -52,12 +52,12 @@ function needsEscape(c) {
 }
 
 class PickleToken {
-    constructor(name, content) {
-        this.name = name;
+    constructor(type, content) {
+        this.type = type;
         this.content = content;
     }
     toJSON() {
-        return { name: this.name, content: this.content };
+        return { type: this.type, content: this.content };
     }
 }
 
@@ -83,16 +83,16 @@ class PickleTokenizer {
     }
     nextToken() {
         const tokenPairs = [
-            { name: "comment.line", re: /^#[^\n]*?/ },
-            { name: "comment.block", re: /^###[\s\S]*###/ },
-            { name: "space", re: /^\s+/ },
-            { name: "symbol", re: /^[a-z_][a-z0-9_]*\??/i },
-            { name: "string.quote", re: /^(["'])(?:\\.|(?!\\|\1).)*\1/ },
-            { name: "operator", re: /^([~`!@$%^&*-+=[\]|\\;,.<>?/]|:(?![ \t]+\n))/ },
-            { name: "paren", re: /^[()]/ },
+            { type: "comment.line", re: /^#[^\n]*?/ },
+            { type: "comment.block", re: /^###[\s\S]*###/ },
+            { type: "space", re: /^\s+/ },
+            { type: "symbol", re: /^[a-z_][a-z0-9_]*\??/i },
+            { type: "string.quote", re: /^(["'])(?:\\.|(?!\\|\1).)*\1/ },
+            { type: "operator", re: /^([~`!@$%^&*-+=[\]|\\;,.<>?/]|:(?![ \t]+\n))/ },
+            { type: "paren", re: /^[()]/ },
         ]
-        for (var { name, re } of tokenPairs) {
-            if (this.testRE(re)) return new PickleToken(name, this.chompRE(re))
+        for (var { type, re } of tokenPairs) {
+            if (this.testRE(re)) return new PickleToken(type, this.chompRE(re))
         }
         // Try special ones: literal strings, quoted and block
         if (this.testRE(/^{/)) {
