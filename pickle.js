@@ -103,6 +103,11 @@ class PickleTokenizer {
             var j = 0, depth = 0, string = "";
             do {
                 var ch = this.peek(j);
+                if (ch == undefined) {
+                    // Reached unexpected EOF
+                    this.i++;
+                    return new PickleToken("error", this.peek(-1));
+                }
                 if (ch == "{") depth++;
                 else if (ch == "}") depth--;
                 string += ch;
