@@ -14,21 +14,19 @@ function clearOutput() {
 
 output("Test output appears here\n");
 
+var activeMarkers = [];
 function highlight(token) {
-    editor.getSession().addMarker(
+    var id = editor.getSession().addMarker(
         new Range(token.start.line - 1, token.start.col, token.end.line - 1, token.end.col),
         token.type,
         "text",
         false);
+    activeMarkers.push(id);
 }
 
 function clearHighlights() {
-    var prevMarkers = editor.getSession().getMarkers();
-    if (prevMarkers) {
-        for (var item of Object.keys(prevMarkers)) {
-            editor.getSession().removeMarker(prevMarkers[item].id);
-        }
-    }
+    for (var id of activeMarkers) editor.getSession.removeMarker(id);
+    activeMarkers = [];
 }
 
 editor.getSession().on('change', () => {
