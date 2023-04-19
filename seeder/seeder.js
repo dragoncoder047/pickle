@@ -24,5 +24,6 @@ editor.getSession().on('change', () => {
         }
     } catch (e) {
         output(`<span class="error">${e}\n${e.stack}</span>`)
+        throw e;
     }
 });

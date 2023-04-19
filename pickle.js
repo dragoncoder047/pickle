@@ -57,7 +57,10 @@ class PickleToken {
         this.content = content;
     }
     toJSON() {
-        return { type: this.type, content: this.content };
+        return {
+            type: this.type,
+            content: this.content
+        };
     }
 }
 
@@ -78,7 +81,7 @@ class PickleTokenizer {
     done() {
         return this.i >= this.string.length;
     }
-    peek(i=0) {
+    peek(i = 0) {
         return this.string[this.i + i];
     }
     nextToken() {
