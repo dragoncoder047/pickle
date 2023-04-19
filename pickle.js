@@ -87,19 +87,20 @@ class PickleTokenizer {
     nextToken() {
         if (this.done()) return undefined;
         const TOKEN_PAIRS = [
-            { type: "comment.line", re: /^#[^\n]*?/ },
-            { type: "comment.block", re: /^###[\s\S]*###/ },
-            { type: "space", re: /^(?!\n)\s+/ },
-            { type: "symbol", re: /^(?<t>[a-z_][a-z0-9_]*\??)/i },
-            { type: "string.quote", re: /^(["'])(?<t>(?:\\.|(?!\\|\1).)*)\1/ },
-            { type: "operator", re: /^(?<t>([~`!@$%^&*-+=[\]|\\;,.<>?/]|:(?![ \t]+\n))*)/ },
-            { type: "paren", re: /^(?<t>[()])/ },
+            { type: "comment.line", re: /^#[^\n]*?/, significant: false },
+            { type: "comment.block", re: /^###[\s\S]*###/, significant: false },
+            { type: "space", re: /^(?!\n)\s+/, significant: false },
+            { type: "eol", re: /^[;\n]/, significant: true, groupNum: 0 },
+            { type: "symbol", re: /^[a-z_][a-z0-9_]*\??/i, significant: true, groupNum: 0 },
+            { type: "string.quote", re: /^(["'])((?:\\.|(?!\\|\1).)*)\1/, significant: true, groupNum: 2 },
+            { type: "operator", re: /^([~`!@$%^&*-+=[\]|\\;,.<>?/]|:(?!\s*?\n))*/, significant: true, groupNum: 0 },
+            { type: "paren", re: /^[()]/, significant: true, groupNum: 0 },
         ]
-        for (var { type, re } of TOKEN_PAIRS) {
+        for (var { type, re, significant, groupNum } of TOKEN_PAIRS) {
             if (this.testRE(re)) {
                 var match = this.chompRE(re);
-                if (match.groups && match.groups.t) return new PickleToken(type, match.groups.t);
-                return this.nextToken();
+                if (significant) return new PickleToken(type, match[groupNum]);
+                else return this.nextToken();
             }
         }
         // Try special literal strings, quoted and block
