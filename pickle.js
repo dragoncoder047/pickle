@@ -86,6 +86,11 @@ class PickleTokenizer {
     }
     nextToken() {
         if (this.done()) return undefined;
+        // Try colon block string, to allow colon in operators
+        if (this.testRE(/^:\s*\n/)) {
+            this.i++;
+            return "foo";
+        }
         const TOKEN_PAIRS = [
             { type: "comment.line", re: /^#[^\n]*?/, significant: false },
             { type: "comment.block", re: /^###[\s\S]*###/, significant: false },
@@ -93,7 +98,7 @@ class PickleTokenizer {
             { type: "eol", re: /^[;\n]/, significant: true, groupNum: 0 },
             { type: "symbol", re: /^[a-z_][a-z0-9_]*\??/i, significant: true, groupNum: 0 },
             { type: "string.quote", re: /^(["'])((?:\\.|(?!\\|\1).)*)\1/, significant: true, groupNum: 2 },
-            { type: "operator", re: /^([~`!@$%^&*-+=[\]|\\;,.<>?/]|:(?!\s*\n))*/, significant: true, groupNum: 0 },
+            { type: "operator", re: /^[-~`!@$%^&*_+=[\]|\\:<>,.?/]*/, significant: true, groupNum: 0 },
             { type: "paren", re: /^[()]/, significant: true, groupNum: 0 },
         ]
         for (var { type, re, significant, groupNum } of TOKEN_PAIRS) {
@@ -120,10 +125,6 @@ class PickleTokenizer {
             } while (depth > 0);
             this.i += j;
             return new PickleToken("string.curly", string.slice(1, -1));
-        }
-        else if (this.testRE(/^:\s*?\n/)) {
-            this.i++;
-            return new PickleToken("foobar", this.peek(-1));
         }
         this.i++;
         return new PickleToken("error", this.peek(-1));
