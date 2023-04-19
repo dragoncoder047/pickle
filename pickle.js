@@ -71,9 +71,9 @@ class PickleTokenizer {
     }
     chompRE(re) {
         if (!this.testRE(re)) return undefined;
-        var string = re.exec(this.string.slice(this.i))[0];
-        this.i += string.length;
-        return string;
+        var match = re.exec(this.string.slice(this.i));
+        this.i += match[0].length;
+        return match;
     }
     empty() {
         return this.i >= this.string.length;
@@ -86,13 +86,17 @@ class PickleTokenizer {
             { type: "comment.line", re: /^#[^\n]*?/ },
             { type: "comment.block", re: /^###[\s\S]*###/ },
             { type: "space", re: /^\s+/ },
-            { type: "symbol", re: /^[a-z_][a-z0-9_]*\??/i },
-            { type: "string.quote", re: /^(["'])(?:\\.|(?!\\|\1).)*\1/ },
-            { type: "operator", re: /^([~`!@$%^&*-+=[\]|\\;,.<>?/]|:(?![ \t]+\n))/ },
-            { type: "paren", re: /^[()]/ },
+            { type: "symbol", re: /^(?<t>[a-z_][a-z0-9_]*\??)/i },
+            { type: "string.quote", re: /^(["'])(?<t>(?:\\.|(?!\\|\1).)*)\1/ },
+            { type: "operator", re: /^(?<t>([~`!@$%^&*-+=[\]|\\;,.<>?/]|:(?![ \t]+\n))*)/ },
+            { type: "paren", re: /^(?<t>[()])/ },
         ]
         for (var { type, re } of tokenPairs) {
-            if (this.testRE(re)) return new PickleToken(type, this.chompRE(re))
+            if (this.testRE(re)) {
+                var match = this.chompRE(re);
+                if (match.groups.t) return new PickleToken(type, match.groups.t);
+                return this.nextToken();
+            }
         }
         // Try special literal strings, quoted and block
         if (this.testRE(/^{/)) {
