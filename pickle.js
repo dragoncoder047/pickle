@@ -141,9 +141,10 @@ class PickleTokenizer {
             }
             return this.makeToken("string.block", lines.join("\n"));
         }
-        const TOKEN_PAIRS = [
+        const TOKEN_REGEXES = [
             { type: "comment.line", re: /^#[^\n]*?/, significant: false },
             { type: "comment.block", re: /^###[\s\S]*###/, significant: false },
+            { type: "paren", re: /^[\(\)]/, significant: true, groupNum: 0 },
             { type: "space", re: /^(?!\n)\s+/, significant: false },
             { type: "eol", re: /^[;\n]/, significant: true, groupNum: 0 },
             { type: "singleton", re: /^(true|false|nil)/, significant: true, groupNum: 0 },
@@ -154,9 +155,8 @@ class PickleTokenizer {
             { type: "symbol", re: /^[a-z_][a-z0-9_]*\??/i, significant: true, groupNum: 0 },
             { type: "string.quote", re: /^(["'])((?:\\.|(?!\\|\1).)*)\1/, significant: true, groupNum: 2 },
             { type: "operator", re: /^[-~`!@$%^&*_+=[\]|\\:<>,.?/]*/, significant: true, groupNum: 0 },
-            { type: "paren", re: /^[\(\)]/, significant: true, groupNum: 0 },
         ]
-        for (var { type, re, significant, groupNum } of TOKEN_PAIRS) {
+        for (var { type, re, significant, groupNum } of TOKEN_REGEXES) {
             if (this.testRE(re)) {
                 var match = this.chompRE(re);
                 if (significant) return this.makeToken(type, match[groupNum]);
