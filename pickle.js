@@ -75,7 +75,7 @@ class PickleTokenizer {
         this.i += match[0].length;
         return match;
     }
-    empty() {
+    done() {
         return this.i >= this.string.length;
     }
     peek(i=0) {

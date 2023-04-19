@@ -15,15 +15,13 @@ for (var i = 0; i < 10; i++) output("Test output appears here\n");
 
 
 editor.getSession().on('change', () => {
+    clearOutput();
     try {
         var text = editor.getValue();
         var t = new PickleTokenizer(text);
-        var tokens = [];
-        while (!t.empty()) {
-            tokens.push(t.nextToken());
+        while (!t.done()) {
+            output(JSON.stringify(t.nextToken()) + "\n");
         }
-        clearOutput();
-        output(JSON.stringify(tokens, null, 2));
     } catch (e) {
         output(`<span class="error">${e}\n${e.stack}</span>`)
     }
