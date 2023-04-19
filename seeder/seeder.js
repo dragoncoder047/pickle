@@ -25,7 +25,7 @@ function highlight(token) {
 }
 
 function clearHighlights() {
-    for (var id of activeMarkers) editor.getSession.removeMarker(id);
+    for (var id of activeMarkers) editor.getSession().removeMarker(id);
     activeMarkers = [];
 }
 
