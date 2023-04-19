@@ -13,36 +13,3 @@
 .outerror {
     color: red;
 }
-
-/* Ace Marker colors */
-.error {
-    background: red;
-}
-
-.comment {
-    background: gray;
-}
-
-.space {
-    background: #9BF;
-}
-
-.eol {
-    background: pink;
-}
-
-.symbol {
-    background: magenta;
-}
-
-.string {
-    background: green;
-}
-
-.operator {
-    background: blue;
-}
-
-.paren {
-    background: yellow;
-}

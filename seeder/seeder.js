@@ -14,23 +14,7 @@ function clearOutput() {
 
 output("Test output appears here\n");
 
-var activeMarkers = [];
-function highlight(token) {
-    var id = editor.getSession().addMarker(
-        new Range(token.start.line - 1, token.start.col, token.end.line - 1, token.end.col),
-        token.type,
-        "text",
-        false);
-    activeMarkers.push(id);
-}
-
-function clearHighlights() {
-    for (var id of activeMarkers) editor.getSession().removeMarker(id);
-    activeMarkers = [];
-}
-
 editor.getSession().on('change', () => {
-    clearHighlights();
     clearOutput();
     try {
         var text = editor.getValue();
