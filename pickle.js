@@ -136,8 +136,8 @@ class PickleTokenizer {
                 lines.push(line[0] || "");
                 if (!this.chomp("\n")) return this.errorToken();
                 if (!this.chomp(indent)) {
-                    var badIndent = this.chompRE(/^((?!\n)\s)*/);
-                    if (badIndent && badIndent[0].length > 0) return this.makeToken("error", badIndent[0]);
+                    var badIndent = this.chompRE(/^((?!\n)\s)*\S/);
+                    if (badIndent && badIndent[1].length > 0) return this.makeToken("error", badIndent[1]);
                     else break;
                 }
             }
