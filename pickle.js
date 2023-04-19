@@ -93,7 +93,7 @@ class PickleTokenizer {
             { type: "eol", re: /^[;\n]/, significant: true, groupNum: 0 },
             { type: "symbol", re: /^[a-z_][a-z0-9_]*\??/i, significant: true, groupNum: 0 },
             { type: "string.quote", re: /^(["'])((?:\\.|(?!\\|\1).)*)\1/, significant: true, groupNum: 2 },
-            { type: "operator", re: /^([~`!@$%^&*-+=[\]|\\;,.<>?/]|:(?!\s*?\n))*/, significant: true, groupNum: 0 },
+            { type: "operator", re: /^([~`!@$%^&*-+=[\]|\\;,.<>?/]|:(?!\s*\n))*/, significant: true, groupNum: 0 },
             { type: "paren", re: /^[()]/, significant: true, groupNum: 0 },
         ]
         for (var { type, re, significant, groupNum } of TOKEN_PAIRS) {
