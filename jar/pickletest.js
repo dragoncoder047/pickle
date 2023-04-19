@@ -7,4 +7,4 @@ function output(x) {
     $("#picklelog").innerHTML += x;
 }
 
-output("Test output appears here");
+// output("Test output appears here");
