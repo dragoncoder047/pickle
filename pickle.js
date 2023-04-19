@@ -17,6 +17,40 @@ class PickleObject {
 
 const EOL_CHARS = ";\n\r";
 
+function unescape(c) {
+    switch (c) {
+        case 'b': return '\b';
+        case 't': return '\t';
+        case 'n': return '\n';
+        case 'v': return '\v';
+        case 'f': return '\f';
+        case 'r': return '\r';
+        case 'a': return '\a';
+        case 'o': return '{';
+        case 'c': return '}';
+        default: return c;
+    }
+}
+
+function escape(c) {
+    switch (c) {
+        case '\b': return 'b';
+        case '\t': return 't';
+        case '\n': return 'n';
+        case '\v': return 'v';
+        case '\f': return 'f';
+        case '\r': return 'r';
+        case '\a': return 'a';
+        case '{': return 'o';
+        case '}': return 'c';
+        default: return c;
+    }
+}
+
+function needsEscape(c) {
+    return "{}\b\t\n\v\f\r\a\\\"".indexOf(c) != -1;
+}
+
 class PickleParser {
     constructor(code) {
         this.code = code;
@@ -78,40 +112,6 @@ class PickleParser {
             if (this.i == start) break;
         }
     }
-}
-
-function unescape(c) {
-    switch (c) {
-        case 'b': return '\b';
-        case 't': return '\t';
-        case 'n': return '\n';
-        case 'v': return '\v';
-        case 'f': return '\f';
-        case 'r': return '\r';
-        case 'a': return '\a';
-        case 'o': return '{';
-        case 'c': return '}';
-        default: return c;
-    }
-}
-
-function escape(c) {
-    switch (c) {
-        case '\b': return 'b';
-        case '\t': return 't';
-        case '\n': return 'n';
-        case '\v': return 'v';
-        case '\f': return 'f';
-        case '\r': return 'r';
-        case '\a': return 'a';
-        case '{': return 'o';
-        case '}': return 'c';
-        default: return c;
-    }
-}
-
-function needsEscape(c) {
-    return "{}\b\t\n\v\f\r\a\\\"".indexOf(c) != -1;
 }
 
 function pickleParse(string) {
