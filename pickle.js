@@ -85,7 +85,7 @@ class PickleTokenizer {
         const TOKEN_PAIRS = [
             { type: "comment.line", re: /^#[^\n]*?/ },
             { type: "comment.block", re: /^###[\s\S]*###/ },
-            { type: "space", re: /^\s+/ },
+            { type: "space", re: /^(?!\n)\s+/ },
             { type: "symbol", re: /^(?<t>[a-z_][a-z0-9_]*\??)/i },
             { type: "string.quote", re: /^(["'])(?<t>(?:\\.|(?!\\|\1).)*)\1/ },
             { type: "operator", re: /^(?<t>([~`!@$%^&*-+=[\]|\\;,.<>?/]|:(?![ \t]+\n))*)/ },
