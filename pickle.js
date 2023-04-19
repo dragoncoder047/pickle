@@ -63,7 +63,7 @@ class PickleToken {
             type: this.type,
             content: this.content,
             start: this.start,
-            end: this.end;
+            end: this.end,
         };
     }
 }
