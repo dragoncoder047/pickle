@@ -51,68 +51,82 @@ function needsEscape(c) {
     return "{}\b\t\n\v\f\r\a\\\"".indexOf(c) != -1;
 }
 
-class PickleParser {
-    constructor(code) {
-        this.code = code;
+class PickleToken {
+    constructor(name, content) {
+        this.name = name;
+        this.content = content;
+    }
+    toJSON() {
+        return { name: this.name, content: this.content };
+    }
+}
+
+class PickleTokenizer {
+    constructor(string) {
+        this.string = string;
         this.i = 0;
     }
-    at() {
-        return this.code[this.i];
+    testRE(re) {
+        return re.test(this.string.slice(this.i));
     }
-    advance(amount=1) {
-        this.i += amount;
+    chompRE(re) {
+        if (!this.testRE(re)) return undefined;
+        var string = re.exec(this.string.slice(this.i))[0];
+        this.i += string.length;
+        return string;
     }
-    save() {
-        return this.i;
+    empty() {
+        return this.i >= this.string.length;
     }
-    restore(i) {
-        this.i = i;
+    at(i=0) {
+        return this.string[this.i + i];
     }
-    eof() {
-        return this.i >= this.code.length;
-    }
-    remaining() {
-        return this.code.slice(this.i);
-    }
-    eol() {
-        return this.eof() || EOL_CHARS.indexOf(this.at()) != -1;
-    }
-    startsWith(string) {
-        return this.remaining().startsWith(string);
-    }
-    nextToken(predicate) {
-        var out = "";
-        while (predicate(this.at())) {
-            out += this.at();
-            this.advance();
+    nextToken() {
+        const tokenPairs = [
+            { name: "comment.line", re: /^#[^\n]*?/ },
+            { name: "comment.block", re: /^###[\s\S]*###/ },
+            { name: "space", re: /^\s+/ },
+            { name: "symbol", re: /^[a-z_][a-z0-9_]*\??/i },
+            { name: "string.quote", re: /^(["'])(?:\\.|(?!\\|\1).)*\1/ },
+            { name: "operator", re: /^([~`!@$%^&*-+=[\]|\\;,.<>?/]|:(?![ \t]+\n))/ },
+            { name: "paren", re: /^[()]/ },
+        ]
+        for (var { name, re } of tokenPairs) {
+            if (this.testRE(re)) return new PickleToken(name, this.chompRE(re))
         }
-        return out;
-    }
-    skipWhitespaceAndComments() {
-        while (true) {
-            var start = this.save();
-            while (!this.eof()) {
-                var ch = this.at();
-                if (ch == "#") {
-                    if (this.startsWith("###")) {
-                        this.advance(2);
-                        while (!this.eof() && !this.startsWith("###")) this.advance();
-                        this.advance(3);
-                    } else {
-                        while (!this.eol()) this.advance();
-                    }
-                }
-                else if (this.eol()) break;
-                else if (/\s/.test(ch)) this.advance();
-                else break;
-            }
-            if (this.i == start) break;
+        // Try special ones: literal strings, quoted and block
+        if (this.testRE(/^{/)) {
+            var j = 0, depth = 0; str = ""
+            do {
+                var ch = this.at(j);
+                if (ch == "{") depth++;
+                else if (ch == "}") depth--;
+                str += ch;
+                j++;
+            } while (depth > 0);
+            this.i += j;
+            return new PickleToken("string.curly", str);
         }
+        else if (this.testRE(/^:\s*?\n/)) {
+            this.i++;
+            return new PickleToken("foobar", this.at(-1));
+        }
+        this.i++;
+        return new PickleToken("error", this.at(-1));
+    }
+}
+
+class PickleParser {
+    constructor(code) {
+        this.tokenizer = new PickleTokenizer(code);
     }
 }
 
 function pickleParse(string) {
-    x = new PickleParser(string);
-    x.skipWhitespaceAndComments();
-    return x.remaining();
+    var x = new PickleParser(string);
+    var out = [];
+    while (!x.tokenizer.empty()) {
+        out.push(x.tokenizer.nextToken());
+    }
+    return out;
 }

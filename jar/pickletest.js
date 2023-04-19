@@ -19,7 +19,7 @@ editor.getSession().on('change', () => {
         var text = editor.getValue();
         var parseResult = pickleParse(text);
         clearOutput();
-        output(JSON.stringify(parseResult));
+        output(parseResult);
     } catch (e) {
         output(`<span class="error">${e}\n${e.stack}</span>`)
     }
