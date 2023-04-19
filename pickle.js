@@ -135,7 +135,7 @@ class PickleTokenizer {
                 if (!this.chomp("\n")) return this.errorToken();
                 if (!this.chomp(indent)) {
                     indent = this.chompRE(/^\s*/);
-                    if (indent) return this.makeToken("error", indent[0]);
+                    if (indent && indent.length > 0) return this.makeToken("error", indent[0]);
                     else break;
                 }
             }
