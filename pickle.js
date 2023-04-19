@@ -78,7 +78,7 @@ class PickleTokenizer {
     empty() {
         return this.i >= this.string.length;
     }
-    at(i=0) {
+    peek(i=0) {
         return this.string[this.i + i];
     }
     nextToken() {
@@ -98,7 +98,7 @@ class PickleTokenizer {
         if (this.testRE(/^{/)) {
             var j = 0, depth = 0; str = ""
             do {
-                var ch = this.at(j);
+                var ch = this.peek(j);
                 if (ch == "{") depth++;
                 else if (ch == "}") depth--;
                 str += ch;
@@ -109,10 +109,10 @@ class PickleTokenizer {
         }
         else if (this.testRE(/^:\s*?\n/)) {
             this.i++;
-            return new PickleToken("foobar", this.at(-1));
+            return new PickleToken("foobar", this.peek(-1));
         }
         this.i++;
-        return new PickleToken("error", this.at(-1));
+        return new PickleToken("error", this.peek(-1));
     }
 }
 
