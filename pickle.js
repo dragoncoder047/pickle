@@ -82,7 +82,7 @@ class PickleTokenizer {
         var before = this.string.slice(0, this.i);
         var doneLines = before.split("\n");
         var line = doneLines.length;
-        var col = doneLines.at(-1).length;
+        var col = doneLines.at(-1).length + 1;
         return { line, col };
     }
     test(string) {
@@ -136,8 +136,8 @@ class PickleTokenizer {
                 lines.push(line[0] || "");
                 if (!this.chomp("\n")) return this.errorToken();
                 if (!this.chomp(indent)) {
-                    indent = this.chompRE(/^\s*/);
-                    if (indent && indent[0].length > 0) return this.makeToken("error", indent[0]);
+                    var badIndent = this.chompRE(/^((?!\n)\s)*/);
+                    if (badIndent && badIndent[0].length > 0) return this.makeToken("error", badIndent[0]);
                     else break;
                 }
             }
