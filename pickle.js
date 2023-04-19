@@ -82,6 +82,7 @@ class PickleTokenizer {
         return this.string[this.i + i];
     }
     nextToken() {
+        if (this.done()) return undefined;
         const TOKEN_PAIRS = [
             { type: "comment.line", re: /^#[^\n]*?/ },
             { type: "comment.block", re: /^###[\s\S]*###/ },
