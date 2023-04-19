@@ -131,7 +131,8 @@ class PickleTokenizer {
             indent = indent[0];
             while (true) {
                 var line = this.chompRE(/^[^\n]*/);
-                if (line) lines.push(line[0]);
+                lines.push(line[0] || "");
+                if (!this.chomp("\n")) return this.errorToken();
                 if (!this.chomp(indent)) {
                     indent = this.chompRE(/^\s*/);
                     if (indent) return this.makeToken("error", indent[0]);
@@ -153,7 +154,7 @@ class PickleTokenizer {
             { type: "symbol", re: /^[a-z_][a-z0-9_]*\??/i, significant: true, groupNum: 0 },
             { type: "string.quote", re: /^(["'])((?:\\.|(?!\\|\1).)*)\1/, significant: true, groupNum: 2 },
             { type: "operator", re: /^[-~`!@$%^&*_+=[\]|\\:<>,.?/]*/, significant: true, groupNum: 0 },
-            { type: "paren", re: /^[()]/, significant: true, groupNum: 0 },
+            { type: "paren", re: /^[\(\)]/, significant: true, groupNum: 0 },
         ]
         for (var { type, re, significant, groupNum } of TOKEN_PAIRS) {
             if (this.testRE(re)) {
@@ -163,7 +164,7 @@ class PickleTokenizer {
             }
         }
         // Try special literal strings, quoted and block
-        if (this.testRE(/^{/)) {
+        if (this.test("{")) {
             var j = 0, depth = 0, string = "";
             do {
                 var ch = this.peek(j);
