@@ -5,6 +5,7 @@ var editor = ace.edit("textarea");
 
 function output(x) {
     $("#output").innerHTML += x;
+    alert(x);
 }
 
 output("testing 123");
