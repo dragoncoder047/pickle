@@ -69,6 +69,14 @@ class PickleTokenizer {
         this.string = string;
         this.i = 0;
     }
+    test(string) {
+        return this.string.slice(this.i).startsWith(string);
+    }
+    chomp(string) {
+        if (!this.test(string)) return undefined;
+        this.i += string.length;
+        return string;
+    }
     testRE(re) {
         return re.test(this.string.slice(this.i));
     }
@@ -84,12 +92,33 @@ class PickleTokenizer {
     peek(i = 0) {
         return this.string[this.i + i];
     }
+    errorchar() {
+        this.i++;
+        return new PickleToken("error", this.peek(-1));
+    }
     nextToken() {
         if (this.done()) return undefined;
         // Try colon block string, to allow colon in operators
         if (this.testRE(/^:\s*\n/)) {
-            this.i++;
-            return "foo";
+            var i = this.i;
+            var lines = [];
+            this.chompRE(/^:\s*\n/);
+            var indent = this.chompRE(/^\s+/);
+            if (!indent) {
+                this.i = i;
+                return new PickleToken("error", this.chompRE(/^:\s*\n/)[0]);
+            }
+            indent = indent[0];
+            while (true) {
+                var line = this.chompRE(/^[^\n]*/);
+                if (line) lines.push(line[0]);
+                if (!this.chomp(indent)) {
+                    indent = this.chompRE(/^\s*/);
+                    if (indent) return new PickleToken("error", indent[0]);
+                    else break;
+                }
+            }
+            return new PickleToken("string.block", lines.join("\n"));
         }
         const TOKEN_PAIRS = [
             { type: "comment.line", re: /^#[^\n]*?/, significant: false },
@@ -113,11 +142,7 @@ class PickleTokenizer {
             var j = 0, depth = 0, string = "";
             do {
                 var ch = this.peek(j);
-                if (ch == undefined) {
-                    // Reached unexpected EOF
-                    this.i++;
-                    return new PickleToken("error", this.peek(-1));
-                }
+                if (ch == undefined) return this.errorchar();
                 if (ch == "{") depth++;
                 else if (ch == "}") depth--;
                 string += ch;
@@ -126,8 +151,7 @@ class PickleTokenizer {
             this.i += j;
             return new PickleToken("string.curly", string.slice(1, -1));
         }
-        this.i++;
-        return new PickleToken("error", this.peek(-1));
+        return this.errorchar();
     }
 }
 
