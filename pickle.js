@@ -52,14 +52,18 @@ function needsEscape(c) {
 }
 
 class PickleToken {
-    constructor(type, content) {
+    constructor(type, content, start, end) {
         this.type = type;
         this.content = content;
+        this.start = start;
+        this.end = end;
     }
     toJSON() {
         return {
             type: this.type,
-            content: this.content
+            content: this.content,
+            start: this.start,
+            end: this.end;
         };
     }
 }
@@ -68,6 +72,14 @@ class PickleTokenizer {
     constructor(string) {
         this.string = string;
         this.i = 0;
+        this.beginning = null;
+    }
+    lineColumn() {
+        var before = this.string.slice(0, this.i);
+        var doneLines = before.split("\n");
+        var line = doneLines.length;
+        var col = doneLines.at(-1).length;
+        return { line, col };
     }
     test(string) {
         return this.string.slice(this.i).startsWith(string);
@@ -92,12 +104,17 @@ class PickleTokenizer {
     peek(i = 0) {
         return this.string[this.i + i];
     }
-    errorchar() {
+    errorToken() {
+        // always advance to allow more tokenizing
         this.i++;
-        return new PickleToken("error", this.peek(-1));
+        return this.makeToken("error", this.peek(-1));
+    }
+    makeToken(type, content) {
+        return new PickleToken(type, content, this.beginning, this.lineColumn());
     }
     nextToken() {
         if (this.done()) return undefined;
+        this.beginning = this.lineColumn();
         // Try colon block string, to allow colon in operators
         if (this.testRE(/^:\s*\n/)) {
             var i = this.i;
@@ -106,7 +123,7 @@ class PickleTokenizer {
             var indent = this.chompRE(/^\s+/);
             if (!indent) {
                 this.i = i;
-                return new PickleToken("error", this.chompRE(/^:\s*\n/)[0]);
+                return this.makeToken("error", this.chompRE(/^:\s*\n/)[0]);
             }
             indent = indent[0];
             while (true) {
@@ -114,11 +131,11 @@ class PickleTokenizer {
                 if (line) lines.push(line[0]);
                 if (!this.chomp(indent)) {
                     indent = this.chompRE(/^\s*/);
-                    if (indent) return new PickleToken("error", indent[0]);
+                    if (indent) return this.makeToken("error", indent[0]);
                     else break;
                 }
             }
-            return new PickleToken("string.block", lines.join("\n"));
+            return this.makeToken("string.block", lines.join("\n"));
         }
         const TOKEN_PAIRS = [
             { type: "comment.line", re: /^#[^\n]*?/, significant: false },
@@ -133,7 +150,7 @@ class PickleTokenizer {
         for (var { type, re, significant, groupNum } of TOKEN_PAIRS) {
             if (this.testRE(re)) {
                 var match = this.chompRE(re);
-                if (significant) return new PickleToken(type, match[groupNum]);
+                if (significant) return this.makeToken(type, match[groupNum]);
                 else return this.nextToken();
             }
         }
@@ -142,16 +159,16 @@ class PickleTokenizer {
             var j = 0, depth = 0, string = "";
             do {
                 var ch = this.peek(j);
-                if (ch == undefined) return this.errorchar();
+                if (ch == undefined) return this.errorToken();
                 if (ch == "{") depth++;
                 else if (ch == "}") depth--;
                 string += ch;
                 j++;
             } while (depth > 0);
             this.i += j;
-            return new PickleToken("string.curly", string.slice(1, -1));
+            return this.makeToken("string.curly", string.slice(1, -1));
         }
-        return this.errorchar();
+        return this.errorToken();
     }
 }
 
