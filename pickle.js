@@ -59,11 +59,8 @@ class PickleParser {
     at() {
         return this.code[this.i];
     }
-    advance(amount) {
+    advance(amount=1) {
         this.i += amount;
-    }
-    next() {
-        this.advance(1);
     }
     save() {
         return this.i;
@@ -87,7 +84,7 @@ class PickleParser {
         var out = "";
         while (predicate(this.at())) {
             out += this.at();
-            this.next();
+            this.advance();
         }
         return out;
     }
@@ -99,14 +96,14 @@ class PickleParser {
                 if (ch == "#") {
                     if (this.startsWith("###")) {
                         this.advance(2);
-                        while (!this.eof() && !this.startsWith("###")) this.next();
+                        while (!this.eof() && !this.startsWith("###")) this.advance();
                         this.advance(3);
                     } else {
-                        while (!this.eol()) this.next();
+                        while (!this.eol()) this.advance();
                     }
                 }
                 else if (this.eol()) break;
-                else if (/\s/.test(ch)) this.next();
+                else if (/\s/.test(ch)) this.advance();
                 else break;
             }
             if (this.i == start) break;
@@ -115,5 +112,7 @@ class PickleParser {
 }
 
 function pickleParse(string) {
-
+    x = new PickleParser(string);
+    x.skipWhitespaceAndComments();
+    return x.remaining();
 }
