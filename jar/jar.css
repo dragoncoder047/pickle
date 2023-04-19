@@ -9,7 +9,3 @@
     display: flex;
     flex-direction: row;
 }
-
-.output {
-    font-family: monospace;
-}
