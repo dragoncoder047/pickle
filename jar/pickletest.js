@@ -7,4 +7,4 @@ function output(x) {
     $("#picklelog").innerHTML += x;
 }
 
-// output("Test output appears here");
+for (var i = 0; i < 10; i++) output("Test output appears here\n");
