@@ -30,6 +30,7 @@ function clearHighlights() {
 }
 
 editor.getSession().on('change', () => {
+    clearHighlights();
     clearOutput();
     try {
         var text = editor.getValue();
