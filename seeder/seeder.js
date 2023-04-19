@@ -22,7 +22,6 @@ editor.getSession().on('change', () => {
         while (!t.done()) {
             var tok = t.nextToken();
             if (!tok) continue;
-            highlight(tok);
             output(`[${tok.start.line}:${tok.start.col} - ${tok.end.line}:${tok.end.col}] ${[tok.type].concat(tok.subtypes).join(".")} ${JSON.stringify(tok.content)}\n`);
         }
     } catch (e) {
