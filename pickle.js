@@ -53,7 +53,9 @@ function needsEscape(c) {
 
 class PickleToken {
     constructor(type, content, start, end) {
-        this.type = type;
+        var types = type.split(".");
+        this.type = types[0];
+        this.subtypes = types.slice(1);
         this.content = content;
         this.start = start;
         this.end = end;
@@ -61,6 +63,7 @@ class PickleToken {
     toJSON() {
         return {
             type: this.type,
+            subtypes: this.subtypes,
             content: this.content,
             start: this.start,
             end: this.end,
