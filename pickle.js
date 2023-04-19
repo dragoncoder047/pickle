@@ -82,7 +82,7 @@ class PickleTokenizer {
         return this.string[this.i + i];
     }
     nextToken() {
-        const tokenPairs = [
+        const TOKEN_PAIRS = [
             { type: "comment.line", re: /^#[^\n]*?/ },
             { type: "comment.block", re: /^###[\s\S]*###/ },
             { type: "space", re: /^\s+/ },
@@ -91,10 +91,10 @@ class PickleTokenizer {
             { type: "operator", re: /^(?<t>([~`!@$%^&*-+=[\]|\\;,.<>?/]|:(?![ \t]+\n))*)/ },
             { type: "paren", re: /^(?<t>[()])/ },
         ]
-        for (var { type, re } of tokenPairs) {
+        for (var { type, re } of TOKEN_PAIRS) {
             if (this.testRE(re)) {
                 var match = this.chompRE(re);
-                if (match.groups.t) return new PickleToken(type, match.groups.t);
+                if (match.groups && match.groups.t) return new PickleToken(type, match.groups.t);
                 return this.nextToken();
             }
         }
