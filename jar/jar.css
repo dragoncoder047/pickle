@@ -1,0 +1,10 @@
+#textarea {
+    position: absolute;
+    width: 100%;
+    height: 20em;
+}
+
+.flex-fow {
+    display: flex;
+    flex-direction: column;
+}
