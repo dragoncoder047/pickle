@@ -109,7 +109,9 @@ class PickleTokenizer {
         return this.i >= this.string.length;
     }
     peek(i = 0) {
-        return this.string[this.i + i];
+        var j = this.i + i;
+        if (j >= this.string.length) return undefined;
+        return this.string[j];
     }
     errorToken(message = "") {
         // always advance to allow more tokenizing
