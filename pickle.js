@@ -149,7 +149,7 @@ class PickleTokenizer {
                 if (!this.chomp(indent)) {
                     var b = this.lineColumn();
                     var bi = this.i;
-                    var badIndent = this.chomp(/^((?!\n)\s)*(?=\S)/);
+                    var badIndent = this.chomp(/^(((?!\n)\s)*)(?=\S)/);
                     if (badIndent) {
                         if (badIndent[1].length > 0) {
                             this.beginning = b;
