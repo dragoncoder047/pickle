@@ -149,16 +149,16 @@ class PickleTokenizer {
             return this.makeToken("string.block", lines.join("\n"));
         }
         const TOKEN_REGEXES = [
-            { type: "comment.line", re: /^#[^\n]*?/, significant: false },
-            { type: "comment.block", re: /^###[\s\S]*###/, significant: false },
+            { type: "comment.line", re: /^#[^\n]*/, significant: false },
+            { type: "comment.block", re: /^###.*###/s, significant: false },
             { type: "paren", re: /^[\(\)\[\]]/, significant: true, groupNum: 0 },
             { type: "space", re: /^(?!\n)\s+/, significant: false },
             { type: "eol", re: /^[;\n]/, significant: true, groupNum: 0 },
             { type: "singleton", re: /^(true|false|nil)/, significant: true, groupNum: 0 },
-            { type: "number.complex", re: /^[+-]?[0-9]+(\.[0-9]+)?e[+-]\d+[+-][0-9]+(\.[0-9]+)?e[+-]\d+j/, significant: true, groupNum: 0 },
-            { type: "number.rational", re: /^[+-]?[0-9]+\/[0-9]+/, significant: true, groupNum: 0 },
-            { type: "number.float", re: /^[+-]?[0-9]+(\.[0-9]+)?e[+-]\d+/i, significant: true, groupNum: 0 },
-            { type: "number.integer", re: /^[+-]?([1-9][0-9]*|0x[0-9a-f]+|0b[01]+)/i, significant: true, groupNum: 0 },
+            { type: "number.complex", re: /^-?[0-9]+(\.[0-9]+)?e[+-]\d+[+-][0-9]+(\.[0-9]+)?e[+-]\d+j/, significant: true, groupNum: 0 },
+            { type: "number.rational", re: /^-?[0-9]+\/[0-9]+/, significant: true, groupNum: 0 },
+            { type: "number.float", re: /^-?[0-9]+(\.[0-9]+)?(e[+-]\d+)?/i, significant: true, groupNum: 0 },
+            { type: "number.integer", re: /^-?([1-9][0-9]*|0x[0-9a-f]+|0b[01]+)/i, significant: true, groupNum: 0 },
             { type: "symbol", re: /^[a-z_][a-z0-9_]*\??/i, significant: true, groupNum: 0 },
             { type: "string.quote", re: /^(["'])((\\.|(?!\1)[^\\])*)\1/, significant: true, groupNum: 2 },
             { type: "operator", re: /^[-~`!@$%^&*_+=[\]|\\:<>,.?/]*/, significant: true, groupNum: 0 },
