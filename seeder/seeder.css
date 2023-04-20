@@ -16,7 +16,6 @@
 
 .debug {
     color: green;
-    text-decoration: underline;
 }
 
 .debug::before {
