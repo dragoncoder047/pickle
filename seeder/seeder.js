@@ -31,7 +31,7 @@ editor.getSession().on('change', () => {
             annotations.push({
                 row: error.start.line - 1,
                 column: error.start.col,
-                text: error.message,
+                text: error.message + (error.content ? `: ${error.content}` : ""),
                 type: "error",
             });
         }

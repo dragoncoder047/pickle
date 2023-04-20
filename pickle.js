@@ -139,9 +139,15 @@ class PickleTokenizer {
                 lines.push(line[0] || "");
                 if (!this.chomp("\n")) break;
                 if (!this.chomp(indent)) {
-                    var badIndent = this.chomp(/^((?!\n)\s)*\S/);
+                    var b = this.lineColumn();
+                    var bi = this.i;
+                    var badIndent = this.chomp(/^((?!\n)\s)*(?=\S)/);
                     if (badIndent) {
-                        if (badIndent[1].length > 0) return this.makeToken("error", badIndent[1]);
+                        if (badIndent[1].length > 0) {
+                            this.beginning = b;
+                            this.bi = bi;
+                            return this.makeToken("error", badIndent[1], "unexpected unindent");
+                        }
                         else break;
                     }
                 }
