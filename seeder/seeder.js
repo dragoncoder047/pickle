@@ -24,13 +24,13 @@ output("Tokens appear here");
 //     output(`<span class="debug">${args.map(mystringify).join(" ")}</span>\n`);
 // }
 
-var tokenizer = null;
-var annotations = [];
-var animationID = undefined;
-var gotErrors = false;
-function tokenizeAnimation() {
+editor.getSession().on('change', () => {
+    var tokenizer = new PickleTokenizer(editor.getValue());
+    var annotations = [];
+    clearOutput();
     try {
-        if (!tokenizer.done()) {
+        while (!tokenizer.done()) {
+            var oldi = tokenizer.i;
             var tok = tokenizer.nextToken();
             if (tok) {
                 if (tok.type == "error") {
@@ -41,28 +41,14 @@ function tokenizeAnimation() {
                         text: tok.message + (tok.content ? `: ${tok.content}` : ""),
                         type: "error",
                     });
-                    editor.getSession().setAnnotations(annotations);
                 }
-                output(`[${tok.start.line}:${tok.start.col} - ${tok.end.line}:${tok.end.col}]\t${tok.type} ${tok.subtypes ? "(" + tok.subtypes.join(",") + ")": ""}\t${JSON.stringify(tok.content)}\t${tok.message}\n`);
+                output(`[${tok.start.line}:${tok.start.col} - ${tok.end.line}:${tok.end.col}]\t${tok.type} ${tok.subtypes ? "(" + tok.subtypes.join(",") + ")" : ""}\t${JSON.stringify(tok.content)}\t${tok.message}\n`);
             }
-            animationID = requestAnimationFrame(tokenizeAnimation);
-        } else {
-            if (!gotErrors) {
-                editor.getSession().setAnnotations([]);
-                annotations = [];
-            }
+            if (tokenizer.i == oldi) throw new Error("Tokenizer error");
         }
     } catch (e) {
         output(`<span class="outerror">${e}\n${e.stack}</span>`)
         console.error(e);
     }
-}
-
-editor.getSession().on('change', () => {
-    if (animationID) cancelAnimationFrame(animationID);
-    tokenizer = new PickleTokenizer(editor.getValue());
-    annotations = [];
-    gotErrors = false;
-    clearOutput();
-    tokenizeAnimation();
+    editor.getSession().setAnnotations(annotations);
 });
