@@ -116,7 +116,7 @@ class PickleTokenizer {
     errorToken(message = "") {
         console.debug("errorToken()", message);
         // always advance to allow more tokenizing
-        this.i++;
+        if (this.bi == this.i) this.i++;
         return this.makeToken("error", this.string.slice(this.bi, this.i), message || `unexpected ${this.peek(-1)}`);
     }
     makeToken(type, content, message = "") {
@@ -208,7 +208,10 @@ class PickleTokenizer {
                 var ch = this.peek(j);
                 console.debug("peek", ch);
                 // newlines must be backslash escaped
-                if (ch == undefined || ch == "\n") return this.errorToken("unterminated string");
+                if (ch == undefined || ch == "\n") {
+                    this.i += j;
+                    return this.errorToken("unterminated string");
+                }
                 else if (ch == "\\") {
                     ch = unescape(this.peek(j + 1));
                     j++;
