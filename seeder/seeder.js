@@ -20,7 +20,7 @@ function mystringify(x) {
     return x.toString();
 }
 
-console.debug = (...args) => {
+console.debug = function patched(...args) {
     output(`<span class="debug">${args.map(mystringify).join(" ")}</span>\n`);
 }
 
