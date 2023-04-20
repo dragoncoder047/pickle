@@ -7,11 +7,30 @@ class PickleError extends Error {
 
 class PickleParseError extends PickleError { }
 
+class PickleSourceLocation {
+    constructor(filename, line, col) {
+        this.filename = filename;
+        this.line = line;
+        this.col = col;
+    }
+    toString() {
+        return `File ${this.filename}, line ${this.line}`;
+    }
+    toJSON() {
+        return {
+            filename: this.filename,
+            line: this.line,
+            col: this.col,
+        };
+    }
+}
+
 class PickleObject {
     constructor() {
         this.properties = new Map();
         this.operators = new Map();
         this.prototypes = new Map();
+        this.source = null;
     }
 }
 
