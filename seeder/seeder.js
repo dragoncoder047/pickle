@@ -43,7 +43,7 @@ function tokenizeAnimation() {
                     });
                     editor.getSession().setAnnotations(annotations);
                 }
-                output(`[${tok.start.line}:${tok.start.col} - ${tok.end.line}:${tok.end.col}]\t${[tok.type].concat(tok.subtypes).join(".")}\t${JSON.stringify(tok.content)}\t${tok.message}\n`);
+                output(`[${tok.start.line}:${tok.start.col} - ${tok.end.line}:${tok.end.col}]\t${tok.type} ${tok.subtypes ? "(" + tok.subtypes.join(",") + ")": ""}\t${JSON.stringify(tok.content)}\t${tok.message}\n`);
             }
             animationID = requestAnimationFrame(tokenizeAnimation);
         } else {

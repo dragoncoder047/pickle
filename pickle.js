@@ -28,6 +28,7 @@ function unescape(c) {
         case 'a': return '\a';
         case 'o': return '{';
         case 'c': return '}';
+        case '\n': return '';
         default: return c;
     }
 }
@@ -174,7 +175,7 @@ class PickleTokenizer {
             { type: "number.integer", re: /^-?([1-9][0-9]*|0x[0-9a-f]+|0b[01]+)/i, significant: true, groupNum: 0 },
             { type: "number.float", re: /^-?[0-9]+(\.[0-9]+)?(e[+-]\d+)?/i, significant: true, groupNum: 0 },
             { type: "symbol", re: /^[a-z_][a-z0-9_]*\??/i, significant: true, groupNum: 0 },
-            { type: "operator", re: /^[-~`!@$%^&*_+=[\]|\\:<>,.?/]+/, significant: true, groupNum: 0 },
+            { type: "symbol.operator", re: /^[-~`!@$%^&*_+=[\]|\\:<>,.?/]+/, significant: true, groupNum: 0 },
         ]
         for (var { type, re, significant, groupNum } of TOKEN_REGEXES) {
             console.debug("trying", type);
