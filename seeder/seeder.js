@@ -12,7 +12,7 @@ function clearOutput() {
     $("#picklelog").innerHTML = "";
 }
 
-output("Test output appears here\n");
+output("Tokens appear here");
 
 editor.getSession().on('change', () => {
     clearOutput();
