@@ -21,8 +21,7 @@
 
 .debug::before {
     display: inline;
-    margin-left: 10em;
-    margin-right: 2em;
+    margin-right: 2ch;
     color: white;
     background: green;
     content: "DEBUG";

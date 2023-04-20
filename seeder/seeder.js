@@ -18,30 +18,37 @@ console.debug = (...args) => {
     output(`<span class="debug">${args.map(x => x.toString()).join(" ")}</span>\n`);
 }
 
-editor.getSession().on('change', () => {
-    clearOutput();
+var tokenizer = null;
+var annotations = [];
+var animationID = undefined;
+function tokenizeAnimation() {
     try {
-        var text = editor.getValue();
-        var t = new PickleTokenizer(text);
-        var errors = [];
-        while (!t.done()) {
-            var tok = t.nextToken();
-            if (!tok) continue;
-            if (tok.type == "error") errors.push(tok);
-            output(`[${tok.start.line}:${tok.start.col} - ${tok.end.line}:${tok.end.col}]\t${[tok.type].concat(tok.subtypes).join(".")}\t${JSON.stringify(tok.content)}\t${tok.message}\n`);
+        if (!tokenizer.done()) {
+            var tok = tokenizer.nextToken();
+            if (tok) {
+                if (tok.type == "error") {
+                    annotations.push({
+                        row: tok.start.line - 1,
+                        column: tok.start.col,
+                        text: tok.message + (tok.content ? `: ${tok.content}` : ""),
+                        type: "error",
+                    });
+                    editor.getSession().setAnnotations(annotations);
+                }
+                output(`[${tok.start.line}:${tok.start.col} - ${tok.end.line}:${tok.end.col}]\t${[tok.type].concat(tok.subtypes).join(".")}\t${JSON.stringify(tok.content)}\t${tok.message}\n`);
+            }
+            animationID = requestAnimationFrame(tokenizeAnimation);
         }
-        var annotations = [];
-        for (var error of errors) {
-            annotations.push({
-                row: error.start.line - 1,
-                column: error.start.col,
-                text: error.message + (error.content ? `: ${error.content}` : ""),
-                type: "error",
-            });
-        }
-        editor.getSession().setAnnotations(annotations);
     } catch (e) {
         output(`<span class="outerror">${e}\n${e.stack}</span>`)
         console.error(e);
     }
+}
+
+editor.getSession().on('change', () => {
+    if (animationID) cancelAnimationFrame(animationID);
+    tokenizer = new PickleTokenizer(editor.getValue());
+    annotations = [];
+    clearOutput();
+    tokenizeAnimation();
 });
