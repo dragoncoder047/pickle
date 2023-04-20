@@ -22,7 +22,7 @@ editor.getSession().on('change', () => {
         while (!t.done()) {
             var tok = t.nextToken();
             if (!tok) continue;
-            output(`[${tok.start.line}:${tok.start.col} - ${tok.end.line}:${tok.end.col}]\t${[tok.type].concat(tok.subtypes).join(".")}\t${JSON.stringify(tok.content)}\n`);
+            output(`[${tok.start.line}:${tok.start.col} - ${tok.end.line}:${tok.end.col}]\t${[tok.type].concat(tok.subtypes).join(".")}\t${JSON.stringify(tok.content)}\t${tok.message}\n`);
         }
     } catch (e) {
         output(`<span class="outerror">${e}\n${e.stack}</span>`)
