@@ -16,11 +16,13 @@
 
 .debug {
     color: green;
+    text-decoration: underline;
 }
 
 .debug::before {
     display: inline;
     margin-left: 10em;
+    margin-right: 2em;
     color: white;
     background: green;
     content: "DEBUG";

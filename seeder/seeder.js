@@ -15,7 +15,7 @@ function clearOutput() {
 output("Tokens appear here");
 
 console.debug = (...args) => {
-    output(`<span class="debug">${args.map(x => x.toString()).join(" ")}</span>`);
+    output(`<span class="debug">${args.map(x => x.toString()).join(" ")}</span>\n`);
 }
 
 editor.getSession().on('change', () => {
