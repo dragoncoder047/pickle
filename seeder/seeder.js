@@ -12,8 +12,6 @@ function clearOutput() {
     $("#picklelog").innerHTML = "";
 }
 
-output("Tokens appear here");
-
 // function mystringify(x) {
 //     if (x === undefined) return "UNDEFINED";
 //     if (x === null) return "NULL";
@@ -24,7 +22,8 @@ output("Tokens appear here");
 //     output(`<span class="debug">${args.map(mystringify).join(" ")}</span>\n`);
 // }
 
-editor.getSession().on('change', () => {
+
+function foobar() {
     var tokenizer = new PickleTokenizer(editor.getValue());
     var annotations = [];
     clearOutput();
@@ -51,4 +50,7 @@ editor.getSession().on('change', () => {
         console.error(e);
     }
     editor.getSession().setAnnotations(annotations);
-});
+}
+
+editor.getSession().on('change', foobar);
+foobar();
