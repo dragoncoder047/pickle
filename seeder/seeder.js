@@ -14,15 +14,15 @@ function clearOutput() {
 
 output("Tokens appear here");
 
-function mystringify(x) {
-    if (x === undefined) return "UNDEFINED";
-    if (x === null) return "NULL";
-    return x.toString().replaceAll("\n", "\\n");
-}
+// function mystringify(x) {
+//     if (x === undefined) return "UNDEFINED";
+//     if (x === null) return "NULL";
+//     return x.toString().replaceAll("\n", "\\n");
+// }
 
-console.debug = function patched(...args) {
-    output(`<span class="debug">${args.map(mystringify).join(" ")}</span>\n`);
-}
+// console.debug = function patched(...args) {
+//     output(`<span class="debug">${args.map(mystringify).join(" ")}</span>\n`);
+// }
 
 var tokenizer = null;
 var annotations = [];
