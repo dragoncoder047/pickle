@@ -24,7 +24,7 @@ editor.getSession().on('change', () => {
             var tok = t.nextToken();
             if (!tok) continue;
             if (tok.type == "error") errors.push(tok);
-            else output(`[${tok.start.line}:${tok.start.col} - ${tok.end.line}:${tok.end.col}]\t${[tok.type].concat(tok.subtypes).join(".")}\t${JSON.stringify(tok.content)}\t${tok.message}\n`);
+            output(`[${tok.start.line}:${tok.start.col} - ${tok.end.line}:${tok.end.col}]\t${[tok.type].concat(tok.subtypes).join(".")}\t${JSON.stringify(tok.content)}\t${tok.message}\n`);
         }
         var annotations = [];
         for (var error of errors) {
