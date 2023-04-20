@@ -87,19 +87,19 @@ class PickleTokenizer {
         var col = doneLines.at(-1).length + 1;
         return { line, col };
     }
-    test(string) {
-        if (typeof string === "string") return this.string.slice(this.i).startsWith(string);
-        else if (string instanceof RegExp) return string.test(this.string.slice(this.i));
+    test(what) {
+        if (typeof what === "string") return this.string.slice(this.i).startsWith(what);
+        else if (what instanceof RegExp) return what.test(this.string.slice(this.i));
         else return false;
     }
-    chomp(string) {
-        if (!this.test(string)) return undefined;
-        if (typeof string === "string") {
-            this.i += string.length;
-            return string;
+    chomp(what) {
+        if (!this.test(what)) return undefined;
+        if (typeof what === "string") {
+            this.i += what.length;
+            return what;
         }
-        else if (string instanceof RegExp) {
-            var match = string.exec(this.string.slice(this.i));
+        else if (what instanceof RegExp) {
+            var match = what.exec(this.string.slice(this.i));
             this.i += match[0].length;
             return match;
         }
@@ -111,10 +111,10 @@ class PickleTokenizer {
     peek(i = 0) {
         return this.string[this.i + i];
     }
-    errorToken() {
+    errorToken(message = "") {
         // always advance to allow more tokenizing
         this.i++;
-        return this.makeToken("error", this.string.slice(this.bi, this.i), `unexpected ${this.peek(-1)}`);
+        return this.makeToken("error", this.string.slice(this.bi, this.i), message || `unexpected ${this.peek(-1)}`);
     }
     makeToken(type, content, message = "") {
         return new PickleToken(type, content, this.beginning, this.lineColumn(), message);
@@ -174,7 +174,7 @@ class PickleTokenizer {
             var j = 0, depth = 0, string = "";
             do {
                 var ch = this.peek(j);
-                if (ch == undefined) return this.errorToken();
+                if (ch == undefined) return this.errorToken("unclosed {");
                 if (ch == "{") depth++;
                 else if (ch == "}") depth--;
                 string += ch;
@@ -188,12 +188,12 @@ class PickleTokenizer {
             var j = 0, string = "";
             while (true) {
                 var ch = this.peek(j);
-                if (ch == undefined) return this.errorToken();
+                // newlines must be backslash escaped
+                if (ch == undefined || ch == "\n") return this.errorToken("unterminated string");
                 else if (ch == "\\") {
-                    ch = unescape(this.peek(j+1));
+                    ch = unescape(this.peek(j + 1));
                     j++;
                 }
-                else if (ch == "\n") return this.errorToken(); // newlines must be backslash escaped
                 else if (ch == q) break;
                 string += ch;
                 j++;
