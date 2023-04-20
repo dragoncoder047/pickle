@@ -150,17 +150,15 @@ class PickleTokenizer {
         }
         const TOKEN_REGEXES = [
             { type: "comment.line", re: /^#[^\n]*/, significant: false },
-            { type: "comment.block", re: /^###.*###/s, significant: false },
+            { type: "comment.block", re: /^###[\s\S]*###/, significant: false },
             { type: "paren", re: /^[\(\)\[\]]/, significant: true, groupNum: 0 },
             { type: "space", re: /^(?!\n)\s+/, significant: false },
             { type: "eol", re: /^[;\n]/, significant: true, groupNum: 0 },
-            { type: "string.quote.double", re: /^"((\\.|[^\\"])*)"/, significant: true, groupNum: 1 },
-            { type: "string.quote.single", re: /^'((\\.|[^\\'])*)'/, significant: true, groupNum: 1 },
             { type: "singleton", re: /^(true|false|nil)/, significant: true, groupNum: 0 },
             { type: "number.complex", re: /^-?[0-9]+(\.[0-9]+)?e[+-]\d+[+-][0-9]+(\.[0-9]+)?e[+-]\d+j/, significant: true, groupNum: 0 },
             { type: "number.rational", re: /^-?[0-9]+\/[0-9]+/, significant: true, groupNum: 0 },
-            { type: "number.float", re: /^-?[0-9]+(\.[0-9]+)?(e[+-]\d+)?/i, significant: true, groupNum: 0 },
             { type: "number.integer", re: /^-?([1-9][0-9]*|0x[0-9a-f]+|0b[01]+)/i, significant: true, groupNum: 0 },
+            { type: "number.float", re: /^-?[0-9]+(\.[0-9]+)?(e[+-]\d+)?/i, significant: true, groupNum: 0 },
             { type: "symbol", re: /^[a-z_][a-z0-9_]*\??/i, significant: true, groupNum: 0 },
             { type: "operator", re: /^[-~`!@$%^&*_+=[\]|\\:<>,.?/]*/, significant: true, groupNum: 0 },
         ]
@@ -171,7 +169,7 @@ class PickleTokenizer {
                 else return this.nextToken();
             }
         }
-        // Try special literal strings, quoted and block
+        // Try strings
         if (this.test("{")) {
             var j = 0, depth = 0, string = "";
             do {
@@ -184,6 +182,24 @@ class PickleTokenizer {
             } while (depth > 0);
             this.i += j;
             return this.makeToken("string.curly", string.slice(1, -1));
+        }
+        else if (this.test(/^['"]/)) {
+            var q = this.chomp(/^['"]/)[0];
+            var j = 0, string = "";
+            while (true) {
+                var ch = this.peek(j);
+                if (ch == undefined) return this.errorToken();
+                else if (ch == "\\") {
+                    ch = unescape(this.peek(j+1));
+                    j++;
+                }
+                else if (ch == "\n") return this.errorToken(); // newlines must be backslash escaped
+                else if (ch == q) break;
+                string += ch;
+                j++;
+            }
+            this.i += j;
+            return this.makeToken("string.quote", string);
         }
         return this.errorToken();
     }
