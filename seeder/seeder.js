@@ -17,7 +17,7 @@ output("Tokens appear here");
 function mystringify(x) {
     if (x === undefined) return "UNDEFINED";
     if (x === null) return "NULL";
-    return x.toString();
+    return x.toString().replace("\n", "\\n");
 }
 
 console.debug = function patched(...args) {
