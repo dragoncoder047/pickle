@@ -15,7 +15,8 @@ class PickleError extends Error {
 }
 
 /**
- * Object representing the location a particular object was defined in.
+ * Object representing the location (filename, line, column)
+ * a particular object was originally defined in.
  */
 class PickleSourceLocation {
     /**
@@ -53,7 +54,12 @@ class PickleSourceLocation {
  * All objects in Pickle are instances of this.
  */
 class PickleObject {
-    constructor() {
+    /**
+     * Create a new Pickle object.
+     * @param {string} typeName
+     * @param {any} data
+     */
+    constructor(typeName, data) {
         /**
          * @type {Map<string, PickleObject>}
          */
@@ -70,6 +76,14 @@ class PickleObject {
          * @type {PickleSourceLocation?}
          */
         this.source = null;
+        /**
+         * @type {string}
+         */
+        this.type = typeName;
+        /**
+         * @type {any}
+         */
+        this.data = data;
     }
     /**
      * Returns true if the object has a property on itself (not a prototype)
@@ -171,9 +185,10 @@ class PickleToken {
      * @param {string} content
      * @param {LineColumn} start
      * @param {LineColumn} end
+     * @param {string} [filename=""]
      * @param {string} [message=""]
      */
-    constructor(type, content, start, end, message = "") {
+    constructor(type, content, start, end, filename = "", message = "") {
         var types = type.split(".");
         /**
          * @type {string}
@@ -196,6 +211,10 @@ class PickleToken {
          */
         this.end = end;
         /**
+         * @type {string{
+         */
+        this.filename = filename;
+        /**
          * @type {string}
          */
         this.message = message;
@@ -207,6 +226,7 @@ class PickleToken {
             content: this.content,
             start: this.start,
             end: this.end,
+            filename: this.filename,
             message: this.message
         };
     }
@@ -219,8 +239,9 @@ class PickleTokenizer {
     /**
      * Create a new `PickleTokenizer`.
      * @param {string} string The stream
+     * @param {string } filename
      */
-    constructor(string) {
+    constructor(string, filename) {
         /**
          * @type {string}
          */
@@ -237,6 +258,10 @@ class PickleTokenizer {
          * @type {number}
          */
         this.bi = 0;
+        /**
+         * @type {string}
+         */
+        this.filename = filename;
     }
     /**
      * Get the current line and column the tokenizer is sitting on.
@@ -313,7 +338,7 @@ class PickleTokenizer {
      * @returns {PickleToken}
      */
     makeToken(type, content, message = "") {
-        return new PickleToken(type, content, this.beginning, this.lineColumn(), message);
+        return new PickleToken(type, content, this.beginning, this.lineColumn(), this.filename, message);
     }
     /**
      * Advances the tokenizer and returns the next token, or undefined if the tokenizer is empty.
@@ -431,11 +456,16 @@ class PickleParser {
     /**
      * Create a new parser.
      * @param {string} code
+     * @param {string} filename
      */
-    constructor(code) {
+    constructor(code, filename) {
         /**
          * @type {PickleTokenizer}
          */
         this.tokenizer = new PickleTokenizer(code);
+        /**
+         * @type {string}
+         */
+        this.filename = filename;
     }
 }
