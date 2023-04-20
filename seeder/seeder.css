@@ -19,6 +19,7 @@
 }
 
 .debug::before {
+    user-select: all;
     display: inline;
     margin-right: 2ch;
     color: white;
