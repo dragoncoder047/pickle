@@ -138,7 +138,9 @@ class PickleTokenizer {
                 return this.makeToken("error", this.chomp(/^:\s*\n/)[0], "expected indent after colon");
             }
             indent = indent[0];
-            console.debug("indent is", indent);
+            var ensure_same = /^([\t ])\1*/.exec(indent);
+            if (!ensure_same) return this.makeToken("error", indent, "mix of tabs and spaces indenting block");
+            console.debug("indent is", indent.length, indent[0] == "\t" ? "tabs" : "spaces");
             while (true) {
                 var line = this.chomp(/^[^\n]*/);
                 lines.push(line[0] || "");
