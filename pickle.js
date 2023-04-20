@@ -15,8 +15,6 @@ class PickleObject {
     }
 }
 
-const EOL_CHARS = ";\n\r";
-
 function unescape(c) {
     switch (c) {
         case 'b': return '\b';

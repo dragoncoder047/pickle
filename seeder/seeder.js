@@ -42,7 +42,7 @@ editor.getSession().on('change', () => {
                         type: "error",
                     });
                 }
-                output(`[${tok.start.line}:${tok.start.col} - ${tok.end.line}:${tok.end.col}]\t${tok.type} ${tok.subtypes ? "(" + tok.subtypes.join(",") + ")" : ""}\t${JSON.stringify(tok.content)}\t${tok.message}\n`);
+                output(`[${tok.start.line}:${tok.start.col} - ${tok.end.line}:${tok.end.col}]\t${tok.type} ${tok.subtypes.length > 0 ? "(" + tok.subtypes.join(",") + ")" : ""}\t${JSON.stringify(tok.content)}\t${tok.message}\n`);
             }
             if (tokenizer.i == oldi) throw new Error("Tokenizer error");
         }
