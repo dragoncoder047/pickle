@@ -13,3 +13,15 @@
 .outerror {
     color: red;
 }
+
+.debug {
+    color: green;
+}
+
+.debug::before {
+    display: inline;
+    margin-left: 10em;
+    color: white;
+    background: green;
+    content: "DEBUG";
+}
