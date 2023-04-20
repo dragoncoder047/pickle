@@ -217,7 +217,7 @@ class PickleTokenizer {
                 string += ch;
                 j++;
             }
-            this.i += j;
+            this.i += j + 1;
             return this.makeToken("string.quote", string);
         }
         return this.errorToken();
