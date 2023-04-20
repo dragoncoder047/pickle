@@ -99,7 +99,7 @@ class PickleTokenizer {
             return string;
         }
         else if (string instanceof RegExp) {
-            var match = re.exec(this.string.slice(this.i));
+            var match = string.exec(this.string.slice(this.i));
             this.i += match[0].length;
             return match;
         }
