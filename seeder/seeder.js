@@ -14,8 +14,14 @@ function clearOutput() {
 
 output("Tokens appear here");
 
+function mystringify(x) {
+    if (x === undefined) return "UNDEFINED";
+    if (x === null) return "NULL";
+    return x.toString();
+}
+
 console.debug = (...args) => {
-    output(`<span class="debug">${args.map(x => x.toString()).join(" ")}</span>\n`);
+    output(`<span class="debug">${args.map(mystringify).join(" ")}</span>\n`);
 }
 
 var tokenizer = null;
