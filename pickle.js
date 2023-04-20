@@ -1,16 +1,40 @@
+/**
+ * Error raised by a Pickle program.
+ */
 class PickleError extends Error {
+    /**
+     * @param {string} message Error message
+     */
     constructor(message) {
         super(message);
+        /**
+         * @type {string}
+         */
         this.name = this.constructor.name;
     }
 }
 
-class PickleParseError extends PickleError { }
-
+/**
+ * Object representing the location a particular object was defined in.
+ */
 class PickleSourceLocation {
+    /**
+     * @param {string} filename
+     * @param {number} line
+     * @param {number} col
+     */
     constructor(filename, line, col) {
+        /**
+         * @type {string}
+         */
         this.filename = filename;
+        /**
+         * @type {number}
+         */
         this.line = line;
+        /**
+         * @type {number}
+         */
         this.col = col;
     }
     toString() {
@@ -25,16 +49,68 @@ class PickleSourceLocation {
     }
 }
 
+/**
+ * All objects in Pickle are instances of this.
+ */
 class PickleObject {
     constructor() {
+        /**
+         * @type {Map<string, PickleObject>}
+         */
         this.properties = new Map();
+        /**
+         * @type {Map<string, PickleObject>}
+         */
         this.operators = new Map();
-        this.prototypes = new Map();
+        /**
+         * @type {PickleObject[]}
+         */
+        this.prototypes = [];
+        /**
+         * @type {PickleSourceLocation?}
+         */
         this.source = null;
+    }
+    /**
+     * Returns true if the object has a property on itself (not a prototype)
+     * with the specified name.
+     * @param {string} pname Property name
+     * @returns {boolean}
+     */
+    hasOwnProperty(pname) {
+        return this.properties.has(pname)
+    }
+    /**
+     * Get the specified property, recursing up the prototype tree.
+     * Returns `null` if the property does not exist on this object.
+     * @param {string} pname
+     * @returns {PickleObject?}
+     */
+    getProperty(pname) {
+        if (this.properties.has(pname)) return this.properties.get(pname);
+        var fun = x => [x].concat(x.prototypes.map(fun));
+        var allProtos = fun(this).flat(Infinity);
+        for (var p of allProtos) {
+            if (p.hasOwnProperty(pname)) return p.getProperty(pname);
+        }
+        return null;
+    }
+    /**
+     * Set the property. If `value` is `null`, the property is deleted.
+     * @param {string} pname
+     * @param {PickleObject?} value
+     */
+    setProperty(pname, value) {
+        throw 'todo';
     }
 }
 
-function unescape(c) {
+/**
+ * Unescapes a character found immediately after a \\ escape.
+ * @param {string} c A character
+ * @returns {string}
+ */
+function pickleUnescapeChar(c) {
     switch (c) {
         case 'b': return '\b';
         case 't': return '\t';
@@ -50,7 +126,12 @@ function unescape(c) {
     }
 }
 
-function escape(c) {
+/**
+ * Returns the escape character to be placed after a \\, to escape the character.
+ * @param {string} c A character
+ * @returns {string}
+ */
+function pickleEscapeChar(c) {
     switch (c) {
         case '\b': return 'b';
         case '\t': return 't';
@@ -65,18 +146,58 @@ function escape(c) {
     }
 }
 
-function needsEscape(c) {
+/**
+ * Returns true if the character needs to be escaped.
+ * @param {string} c A character
+ * @returns {boolean}
+ */
+function pickleNeedsEscape(c) {
     return "{}\b\t\n\v\f\r\a\\\"".indexOf(c) != -1;
 }
 
+/**
+ * @typedef {Object} LineColumn
+ * @prop {number} line
+ * @prop {number} col
+ */
+
+/**
+ * One token in a Pickle parse stream.
+ */
 class PickleToken {
+    /**
+     * Create a new `PickleToken`.
+     * @param {string} type
+     * @param {string} content
+     * @param {LineColumn} start
+     * @param {LineColumn} end
+     * @param {string} [message=""]
+     */
     constructor(type, content, start, end, message = "") {
         var types = type.split(".");
+        /**
+         * @type {string}
+         */
         this.type = types[0];
+        /**
+         * @type {string[]}
+         */
         this.subtypes = types.slice(1);
+        /**
+         * @type {string}
+         */
         this.content = content;
+        /**
+         * @type {LineColumn}
+         */
         this.start = start;
+        /**
+         * @type {LineColumn}
+         */
         this.end = end;
+        /**
+         * @type {string}
+         */
         this.message = message;
     }
     toJSON() {
@@ -91,13 +212,36 @@ class PickleToken {
     }
 }
 
+/**
+ * An object that yields `PickleToken`s from a string.
+ */
 class PickleTokenizer {
+    /**
+     * Create a new `PickleTokenizer`.
+     * @param {string} string The stream
+     */
     constructor(string) {
+        /**
+         * @type {string}
+         */
         this.string = string;
+        /**
+         * @type {number}
+         */
         this.i = 0;
+        /**
+         * @type {LineColumn?}
+         */
         this.beginning = null;
+        /**
+         * @type {number}
+         */
         this.bi = 0;
     }
+    /**
+     * Get the current line and column the tokenizer is sitting on.
+     * @returns {LineColumn}
+     */
     lineColumn() {
         var before = this.string.slice(0, this.i);
         var doneLines = before.split("\n");
@@ -105,11 +249,21 @@ class PickleTokenizer {
         var col = doneLines.at(-1).length + 1;
         return { line, col };
     }
+    /**
+     * Test if the current position in the stream starts with 
+     * @param {string | RegExp} what The prefix to check.
+     * @returns {boolean}
+     */
     test(what) {
         if (typeof what === "string") return this.string.slice(this.i).startsWith(what);
         else if (what instanceof RegExp) return what.test(this.string.slice(this.i));
         else return false;
     }
+    /**
+     * Chomps the prefix off, advances the stream, and returns what was chomped.
+     * @param {string | RegExp} what The prefix to chomp.
+     * @returns {what instanceof RegExp ? RegExpExecArray : string}
+     */
     chomp(what) {
         if (!this.test(what)) return undefined;
         if (typeof what === "string") {
@@ -123,23 +277,48 @@ class PickleTokenizer {
         }
         else return undefined;
     }
+    /**
+     * Returns true if the tokenizer is empty.
+     * @returns {boolean}
+     */
     done() {
         return this.i >= this.string.length;
     }
+    /**
+     * Gets the `i`-th character after where the tokenizer is sitting on. 
+     * @param {number} [i=0]
+     * @returns {string?}
+     */
     peek(i = 0) {
         var j = this.i + i;
         if (j >= this.string.length) return undefined;
         return this.string[j];
     }
+    /**
+     * Creates an error token, and if the tokenizer has not advanced yet, advances it one character.
+     * @param {string} [message=""] 
+     * @returns {PickleToken}
+     */
     errorToken(message = "") {
         console.debug("errorToken()", message);
         // always advance to allow more tokenizing
         if (this.bi == this.i) this.i++;
         return this.makeToken("error", this.string.slice(this.bi, this.i), message || `unexpected ${this.peek(-1)}`);
     }
+    /**
+     * Makes a new token, with the beginnning and end parameters filled in.
+     * @param {string} type
+     * @param {string} content
+     * @param {string} [message=""]
+     * @returns {PickleToken}
+     */
     makeToken(type, content, message = "") {
         return new PickleToken(type, content, this.beginning, this.lineColumn(), message);
     }
+    /**
+     * Advances the tokenizer and returns the next token, or undefined if the tokenizer is empty.
+     * @returns {PickleToken?}
+     */
     nextToken() {
         if (this.done()) return undefined;
         this.beginning = this.lineColumn();
@@ -231,7 +410,7 @@ class PickleTokenizer {
                     return this.errorToken("unterminated string");
                 }
                 else if (ch == "\\") {
-                    ch = unescape(this.peek(j + 1));
+                    ch = pickleUnescapeChar(this.peek(j + 1));
                     j++;
                 }
                 else if (ch == q) break;
@@ -245,13 +424,18 @@ class PickleTokenizer {
     }
 }
 
+/**
+ * An object that parses Pickle code into an abstract syntax tree.
+ */
 class PickleParser {
+    /**
+     * Create a new parser.
+     * @param {string} code
+     */
     constructor(code) {
+        /**
+         * @type {PickleTokenizer}
+         */
         this.tokenizer = new PickleTokenizer(code);
     }
-}
-
-function pickleParse(string) {
-    var x = new PickleParser(string);
-    throw 'todo';
 }
