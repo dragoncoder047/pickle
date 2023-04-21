@@ -33,7 +33,6 @@ function foobar() {
             var tok = tokenizer.nextToken();
             if (tok) {
                 if (tok.type == "error") {
-                    gotErrors = true;
                     annotations.push({
                         row: tok.start.line - 1,
                         column: tok.start.col,
