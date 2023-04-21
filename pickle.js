@@ -385,8 +385,8 @@ class PickleTokenizer {
             return this.makeToken("string.block", lines.join("\n"));
         }
         const TOKEN_REGEXES = [
+            { type: "comment.block", re: /^(?<!#)(###+)(?!#)[\s\S\n\r]*?(?<!#)\1(?!#)/, significant: false },
             { type: "comment.line", re: /^#[^\n]*/, significant: false },
-            { type: "comment.block", re: /^###[\s\S]*###/, significant: false },
             { type: "paren", re: /^[\(\)\[\]]/, significant: true, groupNum: 0 },
             { type: "space", re: /^(?!\n)\s+/, significant: false },
             { type: "eol", re: /^[;\n]/, significant: true, groupNum: 0 },
