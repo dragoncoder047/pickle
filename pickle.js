@@ -211,7 +211,7 @@ class PickleToken {
          */
         this.end = end;
         /**
-         * @type {string{
+         * @type {string}
          */
         this.filename = filename;
         /**
