@@ -51,75 +51,6 @@ class PickleSourceLocation {
 }
 
 /**
- * All objects in Pickle are instances of this.
- */
-class PickleObject {
-    /**
-     * Create a new Pickle object.
-     * @param {string} typeName
-     * @param {any} data
-     */
-    constructor(typeName, data) {
-        /**
-         * @type {Map<string, PickleObject>}
-         */
-        this.properties = new Map();
-        /**
-         * @type {Map<string, PickleObject>}
-         */
-        this.operators = new Map();
-        /**
-         * @type {PickleObject[]}
-         */
-        this.prototypes = [];
-        /**
-         * @type {PickleSourceLocation?}
-         */
-        this.source = null;
-        /**
-         * @type {string}
-         */
-        this.type = typeName;
-        /**
-         * @type {any}
-         */
-        this.data = data;
-    }
-    /**
-     * Returns true if the object has a property on itself (not a prototype)
-     * with the specified name.
-     * @param {string} pname Property name
-     * @returns {boolean}
-     */
-    hasOwnProperty(pname) {
-        return this.properties.has(pname)
-    }
-    /**
-     * Get the specified property, recursing up the prototype tree.
-     * Returns `null` if the property does not exist on this object.
-     * @param {string} pname
-     * @returns {PickleObject?}
-     */
-    getProperty(pname) {
-        if (this.properties.has(pname)) return this.properties.get(pname);
-        var fun = x => [x].concat(x.prototypes.map(fun));
-        var allProtos = fun(this).flat(Infinity);
-        for (var p of allProtos) {
-            if (p.hasOwnProperty(pname)) return p.getProperty(pname);
-        }
-        return null;
-    }
-    /**
-     * Set the property. If `value` is `null`, the property is deleted.
-     * @param {string} pname
-     * @param {PickleObject?} value
-     */
-    setProperty(pname, value) {
-        throw 'todo';
-    }
-}
-
-/**
  * Unescapes a character found immediately after a \\ escape.
  * @param {string} c A character
  * @returns {string}
@@ -446,6 +377,187 @@ class PickleTokenizer {
             return this.makeToken("string.quote", string);
         }
         return this.errorToken();
+    }
+}
+
+
+/**
+ * All objects in Pickle are instances of this.
+ */
+class PickleObject {
+    /**
+     * The printable name of the type of the object.
+     * @type {string}
+     */
+    static typeName = "baseobject";
+    /**
+     * Create a new Pickle object.
+     * @param {...PickleObject} prototypes
+     */
+    constructor(...prototypes) {
+        /**
+         * @type {Map<string, PickleObject>}
+         */
+        this.properties = new Map();
+        /**
+         * @type {Map<string, PickleObject>}
+         */
+        this.operators = new Map();
+        /**
+         * @type {PickleObject[]}
+         */
+        this.prototypes = prototypes;
+        /**
+         * @type {PickleSourceLocation?}
+         */
+        this.source = null;
+    }
+    /**
+     * Returns the method resolution order for this object's prototype chain.
+     * @returns {PickleObject[]}
+     */
+    getMRO() {
+        var fun = x => [x].concat(x.prototypes.map(fun));
+        return fun(this).flat(Infinity).filter((x, i, a) => a.slice(0, i).indexOf(x) == -1);
+    }
+    /**
+     * Returns true if the object has a property on itself (not a prototype)
+     * with the specified name.
+     * @param {string} pname Property name
+     * @returns {boolean}
+     */
+    hasOwnProperty(pname) {
+        return this.properties.has(pname)
+    }
+    /**
+     * Get the specified property, recursing up the prototype tree.
+     * Returns `null` if the property does not exist on this object.
+     * @param {string} pname
+     * @returns {PickleObject?}
+     */
+    getProperty(pname) {
+        if (this.hasOwnProperty(pname)) return this.properties.get(pname);
+        for (var p of this.getMRO()) {
+            if (p.hasOwnProperty(pname)) return p.getProperty(pname);
+        }
+        return null;
+    }
+    /**
+     * Set the property. If `value` is `null`, the property is deleted.
+     * @param {string} pname
+     * @param {PickleObject?} value
+     */
+    setProperty(pname, value) {
+        throw 'todo';
+    }
+}
+
+class PickleSymbol extends PickleObject {
+    static typeName = "symbol";
+    /**
+     * @type {Map<string, PickleSymbol>}
+     */
+    static _interned = new Map();
+    /**
+     * @param {string} sym The symbol content
+     * @param  {...PickleObject} prototypes
+     */
+    constructor(sym, ...prototypes) {
+        super(...prototypes);
+        if (PickleSymbol._interned.has(sym)) return PickleSymbol._interned.get(sym);
+        /**
+         * @type {string}
+         */
+        this.sym = sym;
+        PickleSymbol._interned.set(sym, this);
+    }
+    toString() {
+        return this.sym;
+    }
+    valueOf() {
+        return this.sym;
+    }
+}
+
+class PickleString extends PickleObject {
+    static typeName = "string";
+    /**
+     * @type {Map<string, PickleString>}
+     */
+    static _interned = new Map();
+    /**
+     * @param {string} str The symbol content
+     * @param  {...PickleObject} prototypes
+     */
+    constructor(str, ...prototypes) {
+        super(...prototypes);
+        if (PickleString._interned.has(str)) return PickleString._interned.get(str);
+        /**
+         * @type {string}
+         */
+        this.str = str;
+        PickleString._interned.set(str, this);
+    }
+    toString() {
+        return this.str;
+    }
+    valueOf() {
+        return this.str;
+    }
+}
+
+class PickleFloat extends PickleObject {
+    static typeName = "float";
+    /**
+     * @type {Map<number, PickleFloat>}
+     */
+    static _interned = new Map();
+    /**
+     * @param {number} num The symbol content
+     * @param  {...PickleObject} prototypes
+     */
+    constructor(num, ...prototypes) {
+        super(...prototypes);
+        if (PickleFloat._interned.has(num)) return PickleFloat._interned.get(num);
+        /**
+         * @type {number}
+         */
+        this.num = num;
+        PickleFloat._interned.set(num, this);
+    }
+    toString(base) {
+        return this.num.toString(base);
+    }
+    valueOf() {
+        return this.num;
+    }
+}
+
+
+class PickleInteger extends PickleObject {
+    static typeName = "integer";
+    /**
+     * @type {Map<BigInt, PickleInteger>}
+     */
+    static _interned = new Map();
+    /**
+     * @param {BigInt} num The symbol content
+     * @param  {...PickleObject} prototypes
+     */
+    constructor(num, ...prototypes) {
+        super(...prototypes);
+        if (PickleInteger._interned.has(num)) return PickleInteger._interned.get(num);
+        /**
+         * @type {BigInt}
+         */
+        this.num = num;
+        PickleInteger._interned.set(num, this);
+    }
+    toString(base) {
+        return this.num.toString(base);
+    }
+    valueOf() {
+        return this.num;
     }
 }
 
