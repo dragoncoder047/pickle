@@ -371,6 +371,41 @@ class PickleTokenizer {
     }
 }
 
+class PickleOperator {
+    /**
+     * @type {Map<string, PickleOperator>}
+     */
+    static _interned = new Map();
+    /**
+     * Create a new operator data.
+     * @param {string} symbol
+     * @param {"prefix" | "right" | "left" | "postfix"} associativity
+     * @param {number?} precedence
+     */
+    constructor(symbol, associativity, precedence = 1) {
+        /**
+         * @type {string}
+         */
+        this.symbol = symbol;
+        /**
+         * @type {"prefix" | "right" | "left" | "postfix"}
+         */
+        this.associativity = associativity;
+        /**
+         * @type {number}
+         */
+        this.precedence = precedence;
+        if (PickleOperator._interned.has(this.toString())) return PickleOperator._interned.get(this.toString());
+        PickleOperator._interned.set(this.toString(), this);
+    }
+    toString() {
+        return JSON.stringify({
+            symbol: this.symbol,
+            associativity: this.associativity,
+            precedence: this.precedence
+        });
+    }
+}
 
 /**
  * All objects in Pickle are instances of this.
@@ -380,7 +415,7 @@ class PickleObject {
      * The printable name of the type of the object.
      * @type {string}
      */
-    static typeName = "baseobject";
+    static typeName = "object";
     /**
      * Create a new Pickle object.
      * @param {...PickleObject} prototypes
@@ -391,7 +426,7 @@ class PickleObject {
          */
         this.properties = new Map();
         /**
-         * @type {Map<string, PickleObject>}
+         * @type {Map<PickleOperator, PickleObject>}
          */
         this.operators = new Map();
         /**
@@ -457,6 +492,55 @@ class PickleObject {
     }
 }
 
+/**
+ * @param {string | number | BigInt | PickleBuiltinFunctionCallback} it
+ * @returns {PickleObject}
+ */
+function toPickle(it) {
+    switch (typeof it) {
+        case "string":
+            return new PickleString(it);
+        case "number":
+            return new PickleFloat(it);
+        case "function":
+            return new PickleBuiltinFunction(it);
+        default:
+            if (it instanceof BigInt) return new PickleInteger(it);
+    }
+    throw "can't convert " + typeof it;
+}
+
+/**
+ * Create an object with the specified properties.
+ * @param {{properties: string | number | BigInt | function, operators: [PickleOperator, string | number | BigInt | function][]}} data 
+ * @param {...PickleObject} prototypes
+ */
+function newPickleObject(data, ...prototypes) {
+    var o = new PickleObject(...prototypes);
+    for (var pname of Object.getOwnPropertyNames(data.properties)) {
+        o.properties.set(pname, toPickle(data.properties[pname]));
+    }
+    for (var [op, payload] of data.operators) {
+        o.operators.set(op, toPickle(payload));
+    }
+    return o;
+}
+
+const PickleSymbolPrototype = newPickleObject({
+    operators: [
+        [new PickleOperator("$", "prefix", 100), function (args, scope) {
+            var x;
+            for (var s of this.getMRO())
+                if (s instanceof PickleScope && (x = s.bindings.find(this.sym)))
+                    return x;
+            throw new PickleError(`undefined variable ${this.sym}`);
+        }],
+        [new PickleOperator("=", "left", -1), function (args, scope) {
+            return new PicklePropertySetter(this, args.get(0));
+        }]
+    ]
+});
+
 class PickleSymbol extends PickleObject {
     static typeName = "symbol";
     /**
@@ -465,16 +549,18 @@ class PickleSymbol extends PickleObject {
     static _interned = new Map();
     /**
      * @param {string} sym The symbol content
-     * @param  {...PickleObject} prototypes
      */
-    constructor(sym, ...prototypes) {
-        super(...prototypes);
+    constructor(sym) {
+        super(PickleSymbolPrototype);
         if (PickleSymbol._interned.has(sym)) return PickleSymbol._interned.get(sym);
         /**
          * @type {string}
          */
         this.sym = sym;
         PickleSymbol._interned.set(sym, this);
+    }
+    get length() {
+        return this.sym.length;
     }
 }
 
@@ -486,16 +572,18 @@ class PickleString extends PickleObject {
     static _interned = new Map();
     /**
      * @param {string} str The string content
-     * @param  {...PickleObject} prototypes
      */
-    constructor(str, ...prototypes) {
-        super(...prototypes);
+    constructor(str) {
+        super(FOO);
         if (PickleString._interned.has(str)) return PickleString._interned.get(str);
         /**
          * @type {string}
          */
         this.str = str;
         PickleString._interned.set(str, this);
+    }
+    get length() {
+        return this.str.length;
     }
 }
 
@@ -507,10 +595,9 @@ class PickleFloat extends PickleObject {
     static _interned = new Map();
     /**
      * @param {number} num The number
-     * @param  {...PickleObject} prototypes
      */
-    constructor(num, ...prototypes) {
-        super(...prototypes);
+    constructor(num) {
+        super(FOO);
         if (PickleFloat._interned.has(num)) return PickleFloat._interned.get(num);
         /**
          * @type {number}
@@ -521,14 +608,16 @@ class PickleFloat extends PickleObject {
 }
 
 class PickleComplex extends PickleObject {
+    static typeName = "complex";
     constructor(...x) {
-        throw 'not supported yet';
+        throw new PickleError('not supported yet');
     }
 }
 
 class PickleRational extends PickleObject {
+    static typeName = "rational";
     constructor(...x) {
-        throw 'not supported yet';
+        throw new PickleError('not supported yet');
     }
 }
 
@@ -540,10 +629,9 @@ class PickleInteger extends PickleObject {
     static _interned = new Map();
     /**
      * @param {BigInt} num The number
-     * @param  {...PickleObject} prototypes
      */
-    constructor(num, ...prototypes) {
-        super(...prototypes);
+    constructor(num) {
+        super(FOO);
         if (PickleInteger._interned.has(num)) return PickleInteger._interned.get(num);
         /**
          * @type {BigInt}
@@ -557,10 +645,9 @@ class PickleErrorObject extends PickleObject {
     static typeName = "error";
     /**
      * @param {PickleError} error The thrown error
-     * @param  {...PickleObject} prototypes
      */
-    constructor(error, ...prototypes) {
-        super(...prototypes);
+    constructor(error) {
+        super(FOO);
         /**
          * @type {PickleError}
          */
@@ -573,10 +660,9 @@ class PickleFunction extends PickleObject {
     /**
      * @param {PickleCollection} args The signature
      * @param {PickleString} body The code of the function
-     * @param  {...PickleObject} prototypes
      */
-    constructor(args, body, ...prototypes) {
-        super(...prototypes);
+    constructor(args, body) {
+        super(FOO);
         /**
          * @type {PickleCollection}
          */
@@ -596,10 +682,9 @@ class PickleBuiltinFunction extends PickleObject {
     static typeName = "builtin_function";
     /**
      * @param {PickleBuiltinFunctionCallback} fun The callable interface
-     * @param  {...PickleObject} prototypes
      */
-    constructor(fun, ...prototypes) {
-        super(...prototypes);
+    constructor(fun) {
+        super(FOO);
         /**
          * @type {PickleBuiltinFunctionCallback}
          */
@@ -610,11 +695,10 @@ class PickleBuiltinFunction extends PickleObject {
 class PickleStream extends PickleObject {
     static typeName = "stream";
     /**
-     * @param {stream} s The stream
-     * @param  {...PickleObject} prototypes
+     * @param {stream} stream The stream
      */
-    constructor(s, ...prototypes) {
-        super(...prototypes);
+    constructor(stream) {
+        super(FOO);
         /**
          * @type {stream}
          */
@@ -627,10 +711,9 @@ class PickleCollectionEntry extends PickleObject {
     /**
      * @param {PickleObject?} key The key value
      * @param {PickleObject} value The value at the key
-     * @param  {...PickleObject} prototypes
      */
-    constructor(key, value, ...prototypes) {
-        super(...prototypes);
+    constructor(key, value) {
+        super(FOO);
         /**
          * @type {PickleObject}
          */
@@ -646,14 +729,32 @@ class PickleCollection extends PickleObject {
     static typeName = "collection";
     /**
      * @param {PickleCollectionEntry[]} items The entries
-     * @param  {...PickleObject} prototypes
      */
-    constructor(items, ...prototypes) {
-        super(...prototypes);
+    constructor(items) {
+        super(FOO);
         /**
          * @type {PickleCollectionEntry[]}
          */
         this.items = items;
+    }
+    /**
+     * Get the item at this index
+     * @param {number} index 
+     * @returns {PickleObject}
+     */
+    get(index) {
+        return this.items[index].value;
+    }
+    /**
+     * Finds the value for this key.
+     * @param {PickleObject} key
+     * @returns {PickleObject?}
+     */
+    find(key) {
+        for (var kvp of this.items) {
+            if (kvp.key === key) return kvp.value;
+        }
+        return null;
     }
 }
 
@@ -663,10 +764,9 @@ class PickleExpression extends PickleInternalObject {
     static typeName = "expression";
     /**
      * @param {PickleObject[]} items The items to be evaluated
-     * @param  {...PickleObject} prototypes
      */
-    constructor(items, ...prototypes) {
-        super(...prototypes);
+    constructor(items) {
+        super(FOO);
         /**
          * @type {PickleObject[]}
          */
@@ -678,10 +778,9 @@ class PickleScope extends PickleInternalObject {
     static typeName = "scope";
     /**
      * @param {PickleCollection} bindings The bindings
-     * @param  {...PickleObject} prototypes
      */
-    constructor(bindings, ...prototypes) {
-        super(...prototypes);
+    constructor(bindings) {
+        super(FOO);
         /**
          * @type {PickleCollection}
          */
@@ -701,10 +800,9 @@ class PickleExpando extends PickleInternalObject {
     static typeName = "expando";
     /**
      * @param {PickleCollection} expanded The expanded items
-     * @param  {...PickleObject} prototypes
      */
-    constructor(expanded, ...prototypes) {
-        super(...prototypes);
+    constructor(expanded) {
+        super(FOO);
         /**
          * @type {PickleCollection}
          */
@@ -717,10 +815,9 @@ class PickleBoundProperty extends PickleInternalObject {
     /**
      * @param {PickleObject} thisArg The object bound to
      * @param {PickleSymbol} property The property key
-     * @param  {...PickleObject} prototypes
      */
-    constructor(thisArg, property, ...prototypes) {
-        super(...prototypes);
+    constructor(thisArg, property) {
+        super(FOO);
         /**
          * @type {PickleObject}
          */
@@ -737,10 +834,9 @@ class PicklePropertySetter extends PickleInternalObject {
     /**
      * @param {PickleSymbol} property The property key
      * @param {PickleObject} value The value to set to
-     * @param  {...PickleObject} prototypes
      */
-    constructor(property, value, ...prototypes) {
-        super(...prototypes);
+    constructor(property, value) {
+        super(FOO);
         /**
          * @type {PickleSymbol}
          */
