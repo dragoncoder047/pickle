@@ -24,7 +24,7 @@ function clearOutput() {
 
 
 function foobar() {
-    var tokenizer = new PickleTokenizer(editor.getValue());
+    var tokenizer = new PickleTokenizer(editor.getValue(), "<editor>");
     var annotations = [];
     clearOutput();
     try {
