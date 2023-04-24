@@ -256,7 +256,6 @@ class PickleTokenizer {
      * @returns {PickleToken}
      */
     errorToken(message = "") {
-        console.debug("errorToken()", message);
         // always advance to allow more tokenizing
         if (this.bi == this.i) this.i++;
         return this.makeToken("error", this.string.slice(this.bi, this.i), message || `unexpected ${this.peek(-1)}`);
@@ -281,7 +280,6 @@ class PickleTokenizer {
         this.bi = this.i;
         // Try colon block string, to allow colon in operators
         if (this.test(/^:\s*\n/)) {
-            console.debug("trying colon string");
             var i = this.i;
             var lines = [];
             this.chomp(/^:\s*\n/);
@@ -293,11 +291,9 @@ class PickleTokenizer {
             indent = indent[0];
             var ensure_same = /^([\t ])\1*/.exec(indent);
             if (!ensure_same) return this.makeToken("error", indent, "mix of tabs and spaces indenting block");
-            console.debug("indent is", indent.length, indent[0] == "\t" ? "tabs" : "spaces");
             while (true) {
                 var line = this.chomp(/^[^\n]*/);
                 lines.push(line[0] || "");
-                console.debug("got line", line[0]);
                 if (!this.chomp("\n")) break;
                 if (!this.chomp(indent)) {
                     var b = this.lineColumn();
@@ -330,7 +326,6 @@ class PickleTokenizer {
             { type: "symbol.operator", re: /^[-~`!@#$%^&*_+=[\]|\\:<>,.?/]+/, significant: true, groupNum: 0 },
         ]
         for (var { type, re, significant, groupNum } of TOKEN_REGEXES) {
-            console.debug("trying", type);
             if (this.test(re)) {
                 var match = this.chomp(re);
                 if (significant) return this.makeToken(type, match[groupNum]);
@@ -339,11 +334,9 @@ class PickleTokenizer {
         }
         // Try strings
         if (this.test("{")) {
-            console.debug("trying brace string");
             var j = 0, depth = 0, string = "";
             do {
                 var ch = this.peek(j);
-                console.debug("peek", ch, "depth=", depth);
                 if (ch == undefined) return this.errorToken("unclosed {");
                 if (ch == "{") depth++;
                 else if (ch == "}") depth--;
@@ -354,12 +347,10 @@ class PickleTokenizer {
             return this.makeToken("string.curly", string.slice(1, -1));
         }
         else if (this.test(/^['"]/)) {
-            console.debug("trying quote string");
             var q = this.chomp(/^['"]/)[0];
             var j = 0, string = "";
             while (true) {
                 var ch = this.peek(j);
-                console.debug("peek", ch);
                 // newlines must be backslash escaped
                 if (ch == undefined || ch == "\n") {
                     this.i += j;
