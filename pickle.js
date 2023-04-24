@@ -316,8 +316,8 @@ class PickleTokenizer {
             return this.makeToken("string.block", lines.join("\n"));
         }
         const TOKEN_REGEXES = [
-            { type: "comment.block", re: /^(?<!#)(###+)(?!#)[\s\S\n\r]*?(?<!#)\1(?!#)/, significant: false },
-            { type: "comment.line", re: /^#[^\n]*/, significant: false },
+            { type: "comment.block", re: /^(?<!#)(###\S*?###)(?!#)[\s\S\n\r]*?(?<!#)\1(?!#)/, significant: false },
+            { type: "comment.line", re: /^##[^\n]*/, significant: false },
             { type: "paren", re: /^[\(\)\[\]]/, significant: true, groupNum: 0 },
             { type: "space", re: /^(?!\n)\s+/, significant: false },
             { type: "eol", re: /^[;\n]+/, significant: true, groupNum: 0 },
@@ -327,7 +327,7 @@ class PickleTokenizer {
             { type: "number.integer", re: /^-?([1-9][0-9]*|0x[0-9a-f]+|0b[01]+)/i, significant: true, groupNum: 0 },
             { type: "number.float", re: /^-?[0-9]+(\.[0-9]+)?(e[+-]\d+)?/i, significant: true, groupNum: 0 },
             { type: "symbol", re: /^[a-z_][a-z0-9_]*\??/i, significant: true, groupNum: 0 },
-            { type: "symbol.operator", re: /^[-~`!@$%^&*_+=[\]|\\:<>,.?/]+/, significant: true, groupNum: 0 },
+            { type: "symbol.operator", re: /^[-~`!@#$%^&*_+=[\]|\\:<>,.?/]+/, significant: true, groupNum: 0 },
         ]
         for (var { type, re, significant, groupNum } of TOKEN_REGEXES) {
             console.debug("trying", type);
@@ -412,6 +412,9 @@ class PickleObject {
          */
         this.source = null;
     }
+    get typeName() {
+        return this.constructor.typeName;
+    }
     /**
      * Returns the method resolution order for this object's prototype chain.
      * @returns {PickleObject[]}
@@ -449,6 +452,17 @@ class PickleObject {
      */
     setProperty(pname, value) {
         throw 'todo';
+    }
+    /**
+     * Call the object with the specified parameters.
+     * @param {PickleCollection} args
+     * @param {PickleScope} scope
+     * @param {PickleObject?} thisArg
+     * @returns {PickleObject}
+     */
+    call(args, scope, thisArg = this) {
+        if (args.length > 0) throw new PickleError(`can't call ${this.typeName}`);
+        return thisArg;
     }
 }
 
@@ -704,6 +718,46 @@ class PickleExpando extends PickleInternalObject {
          * @type {PickleCollection}
          */
         this.expanded = expanded;
+    }
+}
+
+class PickleBoundProperty extends PickleInternalObject {
+    static typeName = "bound_property_or_function";
+    /**
+     * @param {PickleObject} thisArg The object bound to
+     * @param {PickleSymbol} property The property key
+     * @param  {...PickleObject} prototypes
+     */
+    constructor(thisArg, property, ...prototypes) {
+        super(...prototypes);
+        /**
+         * @type {PickleObject}
+         */
+        this.thisArg = thisArg;
+        /**
+         * @type {PickleSymbol}
+         */
+        this.property = property;
+    }
+}
+
+class PicklePropertySetter extends PickleInternalObject {
+    static typeName = "setter";
+    /**
+     * @param {PickleSymbol} property The property key
+     * @param {PickleObject} value The value to set to
+     * @param  {...PickleObject} prototypes
+     */
+    constructor(property, value, ...prototypes) {
+        super(...prototypes);
+        /**
+         * @type {PickleSymbol}
+         */
+        this.property = property;
+        /**
+         * @type {PickleObject}
+         */
+        this.value = value;
     }
 }
 
