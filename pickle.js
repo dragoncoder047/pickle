@@ -320,7 +320,7 @@ class PickleTokenizer {
             { type: "comment.line", re: /^#[^\n]*/, significant: false },
             { type: "paren", re: /^[\(\)\[\]]/, significant: true, groupNum: 0 },
             { type: "space", re: /^(?!\n)\s+/, significant: false },
-            { type: "eol", re: /^[;\n]/, significant: true, groupNum: 0 },
+            { type: "eol", re: /^[;\n]+/, significant: true, groupNum: 0 },
             { type: "singleton", re: /^(true|false|nil)/, significant: true, groupNum: 0 },
             { type: "number.complex", re: /^-?[0-9]+(\.[0-9]+)?e[+-]\d+[+-][0-9]+(\.[0-9]+)?e[+-]\d+j/, significant: true, groupNum: 0 },
             { type: "number.rational", re: /^-?[0-9]+\/[0-9]+/, significant: true, groupNum: 0 },
@@ -471,12 +471,6 @@ class PickleSymbol extends PickleObject {
         this.sym = sym;
         PickleSymbol._interned.set(sym, this);
     }
-    toString() {
-        return this.sym;
-    }
-    valueOf() {
-        return this.sym;
-    }
 }
 
 class PickleString extends PickleObject {
@@ -498,12 +492,6 @@ class PickleString extends PickleObject {
         this.str = str;
         PickleString._interned.set(str, this);
     }
-    toString() {
-        return this.str;
-    }
-    valueOf() {
-        return this.str;
-    }
 }
 
 class PickleFloat extends PickleObject {
@@ -524,12 +512,6 @@ class PickleFloat extends PickleObject {
          */
         this.num = num;
         PickleFloat._interned.set(num, this);
-    }
-    toString(base) {
-        return this.num.toString(base);
-    }
-    valueOf() {
-        return this.num;
     }
 }
 
@@ -564,12 +546,6 @@ class PickleInteger extends PickleObject {
         this.num = num;
         PickleInteger._interned.set(num, this);
     }
-    toString(base) {
-        return this.num.toString(base);
-    }
-    valueOf() {
-        return this.num;
-    }
 }
 
 class PickleErrorObject extends PickleObject {
@@ -584,12 +560,6 @@ class PickleErrorObject extends PickleObject {
          * @type {PickleError}
          */
         this.error = error;
-    }
-    toString() {
-        return this.error.message;
-    }
-    valueOf() {
-        return this.error;
     }
 }
 
@@ -611,32 +581,24 @@ class PickleFunction extends PickleObject {
          */
         this.body = body;
     }
-    toString() {
-        return this.body.toString();
-    }
-    valueOf() {
-        return this.body;
-    }
 }
+
+/**
+ * @typedef {(args: PickleObject[], scope: PickleScope) => PickleObject} PickleBuiltinFunctionCallback
+ */
 
 class PickleBuiltinFunction extends PickleObject {
     static typeName = "builtin_function";
     /**
-     * @param {(args: PickleObject[]) => PickleObject} fun The callable interface
+     * @param {PickleBuiltinFunctionCallback} fun The callable interface
      * @param  {...PickleObject} prototypes
      */
     constructor(fun, ...prototypes) {
         super(...prototypes);
         /**
-         * @type {(args: PickleObject[]) => PickleObject}
+         * @type {PickleBuiltinFunctionCallback}
          */
         this.fun = fun;
-    }
-    toString() {
-        return this.fun.toString();
-    }
-    valueOf() {
-        return this.fun;
     }
 }
 
@@ -652,12 +614,6 @@ class PickleStream extends PickleObject {
          * @type {stream}
          */
         this.stream = stream;
-    }
-    toString() {
-        return this.stream.toString();
-    }
-    valueOf() {
-        return this.stream;
     }
 }
 
@@ -679,18 +635,12 @@ class PickleCollectionEntry extends PickleObject {
          */
         this.value = value;
     }
-    toString() {
-        return this.value.toString();
-    }
-    valueOf() {
-        return this.value;
-    }
 }
 
 class PickleCollection extends PickleObject {
     static typeName = "collection";
     /**
-     * @param {PickleCollectionEntry[]} items The symbol content
+     * @param {PickleCollectionEntry[]} items The entries
      * @param  {...PickleObject} prototypes
      */
     constructor(items, ...prototypes) {
@@ -700,11 +650,60 @@ class PickleCollection extends PickleObject {
          */
         this.items = items;
     }
-    toString() {
-        return this.items.toString();
+}
+
+class PickleInternalObject extends PickleObject { }
+
+class PickleExpression extends PickleInternalObject {
+    static typeName = "expression";
+    /**
+     * @param {PickleObject[]} items The items to be evaluated
+     * @param  {...PickleObject} prototypes
+     */
+    constructor(items, ...prototypes) {
+        super(...prototypes);
+        /**
+         * @type {PickleObject[]}
+         */
+        this.items = items;
     }
-    valueOf() {
-        return this.items;
+}
+
+class PickleScope extends PickleInternalObject {
+    static typeName = "scope";
+    /**
+     * @param {PickleCollection} bindings The bindings
+     * @param  {...PickleObject} prototypes
+     */
+    constructor(bindings, ...prototypes) {
+        super(...prototypes);
+        /**
+         * @type {PickleCollection}
+         */
+        this.bindings = bindings;
+        /**
+         * @type {PickleObject}
+         */
+        this.returnValue = null;
+        /**
+         * @type {PickleObject}
+         */
+        this.lastValue = null;
+    }
+}
+
+class PickleExpando extends PickleInternalObject {
+    static typeName = "expando";
+    /**
+     * @param {PickleCollection} expanded The expanded items
+     * @param  {...PickleObject} prototypes
+     */
+    constructor(expanded, ...prototypes) {
+        super(...prototypes);
+        /**
+         * @type {PickleCollection}
+         */
+        this.expanded = expanded;
     }
 }
 
@@ -721,7 +720,7 @@ class PickleParser {
         /**
          * @type {PickleTokenizer}
          */
-        this.tokenizer = new PickleTokenizer(code);
+        this.tokenizer = new PickleTokenizer(code, filename);
         /**
          * @type {string}
          */
