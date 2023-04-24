@@ -486,7 +486,7 @@ class PickleString extends PickleObject {
      */
     static _interned = new Map();
     /**
-     * @param {string} str The symbol content
+     * @param {string} str The string content
      * @param  {...PickleObject} prototypes
      */
     constructor(str, ...prototypes) {
@@ -513,7 +513,7 @@ class PickleFloat extends PickleObject {
      */
     static _interned = new Map();
     /**
-     * @param {number} num The symbol content
+     * @param {number} num The number
      * @param  {...PickleObject} prototypes
      */
     constructor(num, ...prototypes) {
@@ -533,6 +533,17 @@ class PickleFloat extends PickleObject {
     }
 }
 
+class PickleComplex extends PickleObject {
+    constructor(...x) {
+        throw 'not supported yet';
+    }
+}
+
+class PickleRational extends PickleObject {
+    constructor(...x) {
+        throw 'not supported yet';
+    }
+}
 
 class PickleInteger extends PickleObject {
     static typeName = "integer";
@@ -541,7 +552,7 @@ class PickleInteger extends PickleObject {
      */
     static _interned = new Map();
     /**
-     * @param {BigInt} num The symbol content
+     * @param {BigInt} num The number
      * @param  {...PickleObject} prototypes
      */
     constructor(num, ...prototypes) {
@@ -558,6 +569,142 @@ class PickleInteger extends PickleObject {
     }
     valueOf() {
         return this.num;
+    }
+}
+
+class PickleErrorObject extends PickleObject {
+    static typeName = "error";
+    /**
+     * @param {PickleError} error The thrown error
+     * @param  {...PickleObject} prototypes
+     */
+    constructor(error, ...prototypes) {
+        super(...prototypes);
+        /**
+         * @type {PickleError}
+         */
+        this.error = error;
+    }
+    toString() {
+        return this.error.message;
+    }
+    valueOf() {
+        return this.error;
+    }
+}
+
+class PickleFunction extends PickleObject {
+    static typeName = "function";
+    /**
+     * @param {PickleCollection} args The signature
+     * @param {PickleString} body The code of the function
+     * @param  {...PickleObject} prototypes
+     */
+    constructor(args, body, ...prototypes) {
+        super(...prototypes);
+        /**
+         * @type {PickleCollection}
+         */
+        this.arguments = args;
+        /**
+         * @type {PickleString}
+         */
+        this.body = body;
+    }
+    toString() {
+        return this.body.toString();
+    }
+    valueOf() {
+        return this.body;
+    }
+}
+
+class PickleBuiltinFunction extends PickleObject {
+    static typeName = "builtin_function";
+    /**
+     * @param {(args: PickleObject[]) => PickleObject} fun The callable interface
+     * @param  {...PickleObject} prototypes
+     */
+    constructor(fun, ...prototypes) {
+        super(...prototypes);
+        /**
+         * @type {(args: PickleObject[]) => PickleObject}
+         */
+        this.fun = fun;
+    }
+    toString() {
+        return this.fun.toString();
+    }
+    valueOf() {
+        return this.fun;
+    }
+}
+
+class PickleStream extends PickleObject {
+    static typeName = "stream";
+    /**
+     * @param {stream} s The stream
+     * @param  {...PickleObject} prototypes
+     */
+    constructor(s, ...prototypes) {
+        super(...prototypes);
+        /**
+         * @type {stream}
+         */
+        this.stream = stream;
+    }
+    toString() {
+        return this.stream.toString();
+    }
+    valueOf() {
+        return this.stream;
+    }
+}
+
+class PickleCollectionEntry extends PickleObject {
+    static typeName = "colle_entryction";
+    /**
+     * @param {PickleObject?} key The key value
+     * @param {PickleObject} value The value at the key
+     * @param  {...PickleObject} prototypes
+     */
+    constructor(key, value, ...prototypes) {
+        super(...prototypes);
+        /**
+         * @type {PickleObject}
+         */
+        this.key = key;
+        /**
+         * @type {PickleObject}
+         */
+        this.value = value;
+    }
+    toString() {
+        return this.value.toString();
+    }
+    valueOf() {
+        return this.value;
+    }
+}
+
+class PickleCollection extends PickleObject {
+    static typeName = "collection";
+    /**
+     * @param {PickleCollectionEntry[]} items The symbol content
+     * @param  {...PickleObject} prototypes
+     */
+    constructor(items, ...prototypes) {
+        super(...prototypes);
+        /**
+         * @type {PickleCollectionEntry[]}
+         */
+        this.items = items;
+    }
+    toString() {
+        return this.items.toString();
+    }
+    valueOf() {
+        return this.items;
     }
 }
 
