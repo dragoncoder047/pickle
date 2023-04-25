@@ -860,14 +860,16 @@ function newPickleObject() {
      */
     var data = prototypes.pop();
     var o = new PickleObject(...prototypes);
-    if (data.properties)
+    if (data.properties) {
         for (var pname of Object.getOwnPropertyNames(data.properties)) {
             o.properties.set(pname, toPickle(data.properties[pname]));
         }
-    if (data.operators)
+    }
+    if (data.operators) {
         for (var [op, payload] of data.operators) {
             o.operators.set(op, toPickle(payload));
         }
+    }
     return o;
 }
 
