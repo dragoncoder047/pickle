@@ -525,12 +525,14 @@ function newPickleObject() {
      */
     var data = prototypes.pop();
     var o = new PickleObject(...prototypes);
-    for (var pname of Object.getOwnPropertyNames(data.properties)) {
-        o.properties.set(pname, toPickle(data.properties[pname]));
-    }
-    for (var [op, payload] of data.operators) {
-        o.operators.set(op, toPickle(payload));
-    }
+    if (data.properties)
+        for (var pname of Object.getOwnPropertyNames(data.properties)) {
+            o.properties.set(pname, toPickle(data.properties[pname]));
+        }
+    if (data.operators)
+        for (var [op, payload] of data.operators) {
+            o.operators.set(op, toPickle(payload));
+        }
     return o;
 }
 
@@ -625,7 +627,7 @@ class PickleString extends PickleObject {
     }
 }
 
-class PickleScalar extends PickleObject {}
+class PickleScalar extends PickleObject { }
 
 class PickleFloat extends PickleScalar {
     static typeName = "float";
