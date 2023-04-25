@@ -871,6 +871,11 @@ function newPickleObject() {
     return o;
 }
 
+/**
+ * @type {PickleObject}
+ */
+var PickleFunctionPrototype = {};
+
 const PickleObjectPrototype = newPickleObject({
     operators: [
         [new PickleOperator(".", "left", 100), function (args, scope) {
@@ -879,24 +884,35 @@ const PickleObjectPrototype = newPickleObject({
                 if ((x = p.properties.find(prop)))
                     return new PickleBoundProperty(this, x);
             throw new PickleError(`no ${p.sym} in ${this.typeName} object`);
+        }],
+        [new PickleOperator("==", "left", 2), function (args, scope) {
+            return new PickleBoolean(this === args.get(0));
         }]
     ]
 });
+
+var foobar = newPickleObject(PickleObjectPrototype, {
+    operators: [
+        [new PickleOperator("|>", "right", 2), function (args, scope) {
+            return this.call(args.get(0));
+        }],
+    ]
+});
+// reference loop kludge
+Object.assign(PickleFunctionPrototype, foobar);
+Object.setPrototypeOf(PickleFunctionPrototype, PickleObject);
 
 const PickleSymbolPrototype = newPickleObject(PickleObjectPrototype, {
     operators: [
         [new PickleOperator("$", "prefix", 100), function (args, scope) {
             var x;
-            for (var s of this.getMRO())
+            for (var s of scope.getMRO())
                 if (s instanceof PickleScope && (x = s.bindings.find(this.sym)))
                     return x;
             throw new PickleError(`undefined variable ${this.sym}`);
         }],
         [new PickleOperator("=", "left", -1), function (args, scope) {
             return new PicklePropertySetter(this, args.get(0));
-        }],
-        [new PickleOperator("==", "left", 2), function (args, scope) {
-            return new PickleBoolean(this === args.get(0));
         }],
     ]
 });
@@ -913,14 +929,6 @@ const PickleStringPrototype = newPickleObject(PickleObjectPrototype, {
             if (!(other instanceof PickleScalar)) throw new PickleError(`can't repeat string by ${other.typeName}`);
             return new PickleString(this.str.repeat(other.num));
         }]
-    ]
-});
-
-const PickleFunctionPrototype = newPickleObject(PickleObjectPrototype, {
-    operators: [
-        [new PickleOperator("|>", "right", 2), function (args, scope) {
-            return this.call(args.get(0));
-        }],
     ]
 });
 
