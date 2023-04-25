@@ -550,7 +550,7 @@ class PickleFloat extends PickleScalar {
      * @param {number} num The number
      */
     constructor(num) {
-        super(FOO);
+        super(FAIL);
         if (PickleFloat._interned.has(num)) return PickleFloat._interned.get(num);
         /**
          * @type {number}
@@ -584,7 +584,7 @@ class PickleInteger extends PickleScalar {
      * @param {BigInt} num The number
      */
     constructor(num) {
-        super(FOO);
+        super(FAIL);
         if (PickleInteger._interned.has(num)) return PickleInteger._interned.get(num);
         /**
          * @type {BigInt}
@@ -604,7 +604,7 @@ class PickleBoolean extends PickleInteger {
      * @param {boolean} num The number
      */
     constructor(b) {
-        super(FOO);
+        super(FAIL);
         if (PickleBoolean._interned.has(num)) return PickleBoolean._interned.get(num);
         /**
          * @type {boolean}
@@ -620,7 +620,7 @@ class PickleErrorObject extends PickleObject {
      * @param {PickleError} error The thrown error
      */
     constructor(error) {
-        super(FOO);
+        super(FAIL);
         /**
          * @type {PickleError}
          */
@@ -635,7 +635,7 @@ class PickleFunction extends PickleObject {
      * @param {PickleString} body The code of the function
      */
     constructor(args, body) {
-        super(FOO);
+        super(PickleFunctionPrototype);
         /**
          * @type {PickleCollection}
          */
@@ -657,11 +657,15 @@ class PickleBuiltinFunction extends PickleObject {
      * @param {PickleBuiltinFunctionCallback} fun The callable interface
      */
     constructor(fun) {
-        super(FOO);
+        super(PickleFunctionPrototype);
         /**
          * @type {PickleBuiltinFunctionCallback}
          */
         this.fun = fun;
+    }
+
+    call(args, scope) {
+        return this.fun(args, scope);
     }
 }
 
@@ -671,7 +675,7 @@ class PickleStream extends PickleObject {
      * @param {stream} stream The stream
      */
     constructor(stream) {
-        super(FOO);
+        super(FAIL);
         /**
          * @type {stream}
          */
@@ -686,7 +690,7 @@ class PickleCollectionEntry extends PickleObject {
      * @param {PickleObject} value The value at the key
      */
     constructor(key, value) {
-        super(FOO);
+        super(FAIL);
         /**
          * @type {PickleObject}
          */
@@ -704,7 +708,7 @@ class PickleCollection extends PickleObject {
      * @param {PickleCollectionEntry[]} items The entries
      */
     constructor(items) {
-        super(FOO);
+        super(FAIL);
         /**
          * @type {PickleCollectionEntry[]}
          */
@@ -739,7 +743,7 @@ class PickleExpression extends PickleInternalObject {
      * @param {PickleObject[]} items The items to be evaluated
      */
     constructor(items) {
-        super(FOO);
+        super(FAIL);
         /**
          * @type {PickleObject[]}
          */
@@ -753,7 +757,7 @@ class PickleScope extends PickleInternalObject {
      * @param {PickleCollection} bindings The bindings
      */
     constructor(bindings) {
-        super(FOO);
+        super(FAIL);
         /**
          * @type {PickleCollection}
          */
@@ -775,7 +779,7 @@ class PickleExpando extends PickleInternalObject {
      * @param {PickleCollection} expanded The expanded items
      */
     constructor(expanded) {
-        super(FOO);
+        super(FAIL);
         /**
          * @type {PickleCollection}
          */
@@ -790,7 +794,7 @@ class PickleBoundProperty extends PickleInternalObject {
      * @param {PickleSymbol} property The property key
      */
     constructor(thisArg, property) {
-        super(FOO);
+        super(FAIL);
         /**
          * @type {PickleObject}
          */
@@ -809,7 +813,7 @@ class PicklePropertySetter extends PickleInternalObject {
      * @param {PickleObject} value The value to set to
      */
     constructor(property, value) {
-        super(FOO);
+        super(FAIL);
         /**
          * @type {PickleSymbol}
          */
@@ -899,16 +903,24 @@ const PickleSymbolPrototype = newPickleObject(PickleObjectPrototype, {
 
 const PickleStringPrototype = newPickleObject(PickleObjectPrototype, {
     operators: [
-        [new PickleOperator("+", "left", 100), function (args, scope) {
+        [new PickleOperator("+", "left", 3), function (args, scope) {
             var other = args.get(0);
             if (!(other instanceof PickleString)) throw new PickleError(`can't add string to ${other.typeName}`);
             return new PickleString(this.str + other.str);
         }]
-        [new PickleOperator("*", "left", 100), function (args, scope) {
+        [new PickleOperator("*", "left", 4), function (args, scope) {
             var other = args.get(0);
             if (!(other instanceof PickleScalar)) throw new PickleError(`can't repeat string by ${other.typeName}`);
             return new PickleString(this.str.repeat(other.num));
         }]
+    ]
+});
+
+const PickleFunctionPrototype = newPickleObject(PickleObjectPrototype, {
+    operators: [
+        [new PickleOperator("|>", "right", 2), function (args, scope) {
+            return this.call(args.get(0));
+        }],
     ]
 });
 
