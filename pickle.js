@@ -492,80 +492,6 @@ class PickleObject {
     }
 }
 
-/**
- * @param {string | number | BigInt | PickleBuiltinFunctionCallback} it
- * @returns {PickleObject}
- */
-function toPickle(it) {
-    switch (typeof it) {
-        case "string":
-            return new PickleString(it);
-        case "number":
-            return new PickleFloat(it);
-        case "function":
-            return new PickleBuiltinFunction(it);
-        default:
-            if (it instanceof BigInt) return new PickleInteger(it);
-    }
-    throw new PickleError(`can't convert ${typeof it}`);
-}
-
-/**
- * Create an object with the specified properties.
- * @param {...PickleObject} prototypes
- * @param {{properties: string | number | BigInt | function, operators: [PickleOperator, string | number | BigInt | function][]}} data 
- */
-function newPickleObject() {
-    /**
-     * @type {PickleObject[]}
-     */
-    var prototypes = [].slice.call(arguments);
-    /**
-     * @type {{properties: string | number | BigInt | function, operators: [PickleOperator, string | number | BigInt | function][]}}
-     */
-    var data = prototypes.pop();
-    var o = new PickleObject(...prototypes);
-    if (data.properties)
-        for (var pname of Object.getOwnPropertyNames(data.properties)) {
-            o.properties.set(pname, toPickle(data.properties[pname]));
-        }
-    if (data.operators)
-        for (var [op, payload] of data.operators) {
-            o.operators.set(op, toPickle(payload));
-        }
-    return o;
-}
-
-const PickleObjectPrototype = newPickleObject({
-    operators: [
-        [new PickleOperator(".", "left", 100), function (args, scope) {
-            var x, prop = args.get(0);
-            for (var p of this.getMRO())
-                if ((x = p.properties.find(prop)))
-                    return new PickleBoundProperty(this, x);
-            throw new PickleError(`no ${p.sym} in ${this.typeName} object`);
-        }]
-    ]
-});
-
-const PickleSymbolPrototype = newPickleObject(PickleObjectPrototype, {
-    operators: [
-        [new PickleOperator("$", "prefix", 100), function (args, scope) {
-            var x;
-            for (var s of this.getMRO())
-                if (s instanceof PickleScope && (x = s.bindings.find(this.sym)))
-                    return x;
-            throw new PickleError(`undefined variable ${this.sym}`);
-        }],
-        [new PickleOperator("=", "left", -1), function (args, scope) {
-            return new PicklePropertySetter(this, args.get(0));
-        }],
-        [new PickleOperator("==", "left", 2), function (args, scope) {
-            return new PickleBoolean(this === args.get(0));
-        }],
-    ]
-});
-
 class PickleSymbol extends PickleObject {
     static typeName = "symbol";
     /**
@@ -588,21 +514,6 @@ class PickleSymbol extends PickleObject {
         return this.sym.length;
     }
 }
-
-const PickleStringPrototype = newPickleObject(PickleObjectPrototype, {
-    operators: [
-        [new PickleOperator("+", "left", 100), function (args, scope) {
-            var other = args.get(0);
-            if (!(other instanceof PickleString)) throw new PickleError(`can't add string to ${other.typeName}`);
-            return new PickleString(this.str + other.str);
-        }]
-        [new PickleOperator("*", "left", 100), function (args, scope) {
-            var other = args.get(0);
-            if (!(other instanceof PickleScalar)) throw new PickleError(`can't repeat string by ${other.typeName}`);
-            return new PickleString(this.str.repeat(other.num));
-        }]
-    ]
-});
 
 class PickleString extends PickleObject {
     static typeName = "string";
@@ -909,6 +820,97 @@ class PicklePropertySetter extends PickleInternalObject {
         this.value = value;
     }
 }
+
+/**
+ * @param {string | number | BigInt | PickleBuiltinFunctionCallback} it
+ * @returns {PickleObject}
+ */
+function toPickle(it) {
+    switch (typeof it) {
+        case "string":
+            return new PickleString(it);
+        case "number":
+            return new PickleFloat(it);
+        case "function":
+            return new PickleBuiltinFunction(it);
+        case "boolean":
+            return new PickleBoolean(it);
+        default:
+            if (it instanceof BigInt) return new PickleInteger(it);
+    }
+    throw new PickleError(`can't convert ${typeof it}`);
+}
+
+/**
+ * Create an object with the specified properties.
+ * @param {...PickleObject} prototypes
+ * @param {{properties: string | number | BigInt | function, operators: [PickleOperator, string | number | BigInt | function][]}} data 
+ */
+function newPickleObject() {
+    /**
+     * @type {PickleObject[]}
+     */
+    var prototypes = [].slice.call(arguments);
+    /**
+     * @type {{properties: string | number | BigInt | function, operators: [PickleOperator, string | number | BigInt | function][]}}
+     */
+    var data = prototypes.pop();
+    var o = new PickleObject(...prototypes);
+    if (data.properties)
+        for (var pname of Object.getOwnPropertyNames(data.properties)) {
+            o.properties.set(pname, toPickle(data.properties[pname]));
+        }
+    if (data.operators)
+        for (var [op, payload] of data.operators) {
+            o.operators.set(op, toPickle(payload));
+        }
+    return o;
+}
+
+const PickleObjectPrototype = newPickleObject({
+    operators: [
+        [new PickleOperator(".", "left", 100), function (args, scope) {
+            var x, prop = args.get(0);
+            for (var p of this.getMRO())
+                if ((x = p.properties.find(prop)))
+                    return new PickleBoundProperty(this, x);
+            throw new PickleError(`no ${p.sym} in ${this.typeName} object`);
+        }]
+    ]
+});
+
+const PickleSymbolPrototype = newPickleObject(PickleObjectPrototype, {
+    operators: [
+        [new PickleOperator("$", "prefix", 100), function (args, scope) {
+            var x;
+            for (var s of this.getMRO())
+                if (s instanceof PickleScope && (x = s.bindings.find(this.sym)))
+                    return x;
+            throw new PickleError(`undefined variable ${this.sym}`);
+        }],
+        [new PickleOperator("=", "left", -1), function (args, scope) {
+            return new PicklePropertySetter(this, args.get(0));
+        }],
+        [new PickleOperator("==", "left", 2), function (args, scope) {
+            return new PickleBoolean(this === args.get(0));
+        }],
+    ]
+});
+
+const PickleStringPrototype = newPickleObject(PickleObjectPrototype, {
+    operators: [
+        [new PickleOperator("+", "left", 100), function (args, scope) {
+            var other = args.get(0);
+            if (!(other instanceof PickleString)) throw new PickleError(`can't add string to ${other.typeName}`);
+            return new PickleString(this.str + other.str);
+        }]
+        [new PickleOperator("*", "left", 100), function (args, scope) {
+            var other = args.get(0);
+            if (!(other instanceof PickleScalar)) throw new PickleError(`can't repeat string by ${other.typeName}`);
+            return new PickleString(this.str.repeat(other.num));
+        }]
+    ]
+});
 
 /**
  * An object that parses Pickle code into an abstract syntax tree.
