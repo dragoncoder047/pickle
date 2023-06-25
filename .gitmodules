@@ -1,0 +1,3 @@
+[submodule "cpp/tinobsy"]
+	path = cpp/tinobsy
+	url = https://github.com/dragoncoder047/tinobsy
