@@ -13,8 +13,7 @@ char escape(char c);
 char unescape(char c);
 bool needs_escape(char c);
 
-class loc {
-    loc(size_t line, size_t col);
+class location {
     public:
     size_t line;
     size_t col;
@@ -31,13 +30,13 @@ typedef enum {
 } token_type;
 
 class token {
-    token(token_type type, char* content, loc start, loc end, char* filename, char* message);
+    token(token_type type, char* content, location start, location end, char* filename, char* message);
 
     public:
     token_type type;
     char* content;
-    loc start;
-    loc end;
+    location start;
+    location end;
     char* filename;
     char* message;
 
@@ -48,6 +47,7 @@ class token {
 
 // Tokenizer
 class tokenizer {
+    location offset;
     size_t bi;
     size_t i;
     size_t len;
@@ -59,7 +59,6 @@ class tokenizer {
 
     token* error_token(char* message = NULL);
     token* make_token(token_type type, char* message);
-    loc current_loc();
     bool test_str(char* what);
     bool test_any(char* what);
     bool test(char what);
@@ -82,7 +81,7 @@ class tokenizer {
     char* filename;
     char* stream;
 
-    tokenizer(const char* stream, const char* filename = "");
+    tokenizer(const char* stream, const char* filename = "", location offset = {0, 0});
     ~tokenizer();
 
     token* next_token();
