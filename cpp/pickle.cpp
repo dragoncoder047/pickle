@@ -205,6 +205,7 @@ void tokenizer::try_colon_block() {
         do this->append_to_buffer(this->at()), this->advance(); while (this->at() != '\n');
         // At beg of next line: check to see if there is an unindent
         if (!this->test_str(indent)) {
+            free(indent);
             if (isspace(this->at())) this->error(NULL, "unindent does not match previous indent");
             break;
         }
