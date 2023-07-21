@@ -18,7 +18,6 @@ class Pattern:
     handler: Callable[[dict[Symbol, Any]], Any]
     right: bool = False
     macro: bool = False
-    greedy: bool = True
 
     def __lt__(self, other):
         if isinstance(other, Pattern):
@@ -29,6 +28,9 @@ class Pattern:
         if isinstance(other, Pattern):
             return other.precedence == self.precedence
         return NotImplemented
+
+    def __len__(self):
+        return len(self.pattern)
 
 
 @dataclass
@@ -46,10 +48,16 @@ class Space:
 
 
 @dataclass
-class Optional:
-    """Value used in patterns to indicate the element is optional."""
-    what: Any
+class Repeat:
+    """Value used in patterns to indicate the element can be repeated."""
+    what: list[Any]
+    min: int
+    max: int | None
     greedy: bool = True
+
+    def __post_init__(self):
+        if self.max is not None:
+            assert self.max >= self.min
 
 
 @dataclass
