@@ -32,6 +32,9 @@ class Pattern:
     def __len__(self):
         return len(self.pattern)
 
+    def __iter__(self):
+        yield from self.pattern
+
 
 @dataclass
 class Var:
