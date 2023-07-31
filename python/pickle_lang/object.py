@@ -10,36 +10,9 @@ class Symbol:
 
 
 @dataclass
-@functools.total_ordering
-class Pattern:
-    """The core object that manages pattern-matching."""
-    precedence: int
-    pattern: list
-    handler: Callable[[dict[Symbol, Any]], Any]
-    right: bool = False
-    macro: bool = False
-
-    def __lt__(self, other):
-        if isinstance(other, Pattern):
-            return other.precedence < self.precedence
-        return NotImplemented
-
-    def __eq__(self, other):
-        if isinstance(other, Pattern):
-            return other.precedence == self.precedence
-        return NotImplemented
-
-    def __len__(self):
-        return len(self.pattern)
-
-    def __iter__(self):
-        yield from self.pattern
-
-
-@dataclass
 class Var:
     """Something that isn't a literal in a pattern, that binds to a variable"""
-    var: Symbol
+    var: Symbol | None
     cls: type
     use_cls: bool = True
 
@@ -61,9 +34,41 @@ class Repeat:
     def __post_init__(self):
         if self.max is not None:
             assert self.max >= self.min
+        assert self.what
 
 
 @dataclass
 class Alternate:
     """Value used in patterns to indicate multiple options."""
     options: list[Any]
+
+    def __post_init__(self):
+        assert self.options
+
+
+@dataclass
+@functools.total_ordering
+class Pattern:
+    """The core object that manages pattern-matching."""
+    precedence: int
+    pattern: list[Var | Space | Repeat | Alternate]
+    handler: Callable[[dict[Symbol, Any]], Any]
+    right: bool = False
+    macro: bool = False
+    greedy: bool = True
+
+    def __lt__(self, other):
+        if isinstance(other, Pattern):
+            return other.precedence < self.precedence
+        return NotImplemented
+
+    def __eq__(self, other):
+        if isinstance(other, Pattern):
+            return other.precedence == self.precedence
+        return NotImplemented
+
+    def __len__(self):
+        return len(self.pattern)
+
+    def __iter__(self):
+        yield from self.pattern
