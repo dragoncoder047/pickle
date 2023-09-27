@@ -1,5 +1,7 @@
 .PHONY: test64 builtest64 valgrind64 clean test32 buildtest32 valgrind32 deps show checkleaks
 
+test: buildtest64 valgrind64 buildtest32 valgrind32 clean
+
 buildtest64:
 	g++ --std=c++11 pickle_test.cpp -g -o pickletest64
 
