@@ -20,21 +20,48 @@ bool needs_escape(char c);
 class location {
     public:
     location();
-    location(size_t line, size_t col);
+    location(const location* other);
+    location(size_t line, size_t col, const char* name);
+    ~location();
     size_t line = 1;
     size_t col = 1;
+    char* name = NULL;
 };
 
 class pickle : public tinobsy::vm;
 
 typedef void (*func_ptr)(pickle* runner, object* args, object* env, object* cont, object* fail_cont);
 
-
 extern const object_schema metadata_type;
 extern const object_schema cons_type;
 extern const object_schema partial_type;
 extern const object_schema c_function_type;
 extern const object_schema string_type;
+
+class pickle {
+    public:
+    using tinobsy::vm::vm, tinobsy::vm::~vm;
+    object* queue_head = NULL;
+    object* queue_tail = NULL;
+    object* cons_list(size_t len, ...);
+    object* append(object* l1, object* l2);
+    void set_retval(object* args, object* env, object* cont, object* fail_cont);
+    void set_failure(object* type, object* details, object* env, object* cont, object* fail_cont);
+    void do_later(object* thunk);
+    void do_next(object* thunk);
+    void run_next_thunk();
+    object* wrap_func(func_ptr f);
+    object* wrap_string(const char* s);
+    private:
+    void mark_globals();
+}
+
+
+namespace funcs {
+    void parse(pickle* runner, object* args, object* env, object* cont, object* fail_cont);
+    void eval(pickle* runner, object* args, object* env, object* cont, object* fail_cont);
+    void splice_match(pickle* runner, object* args, object* env, object* cont, object* fail_cont);
+}
 
 }
 
