@@ -6,10 +6,8 @@ Currently vaporware. The ideas behind the implementation are detailed in [this b
 
 There are three partial implementations here:
 
-* C++
-* Python
-* Javascript
+* C++ -- this branch
+* Python -- `python_pm` branch
+* Javascript -- `js_prototype` branch
 
 all in varying degrees of incompleteness.
-
-The javascript implementation can be accessed at https://dragoncoder047.github.io/pickle/.
