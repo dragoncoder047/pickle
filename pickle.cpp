@@ -111,7 +111,7 @@ static void del_string(object* self) {
 const object_schema metadata_type("object_metadata", init_metadata, NULL, mark_metadata, finalize_metadata);
 const object_schema cons_type("cons", tinobsy::schema_functions::init_cons, cmp_c_function, tinobsy::schema_functions::mark_cons, tinobsy::schema_functions::finalize_cons);
 const object_schema partial_type("function_partial", init_function_partial, NULL, NULL, tinobsy::schema_functions::finalize_cons);
-const object_schema c_c_function_type("c_function", init_c_function, NULL, NULL, NULL);
+const object_schema c_function_type("c_function", init_c_function, NULL, NULL, NULL);
 const object_schema string_type("string", init_string, cmp_string, mark_string, del_string);
 
 object* pickle::cons_list(size_t len, ...) {
@@ -198,7 +198,7 @@ void pickle::mark_globals() {
 }
 
 object* pickle::wrap_func(func_ptr f) {
-    return this->allocate(&c_c_function_type, f);
+    return this->allocate(&c_function_type, f);
 }
 
 object* pickle::wrap_string(const char* chs) {
