@@ -46,7 +46,7 @@ location::location(size_t line, size_t col, const char* name)
   col(col),
   name(name != NULL ? strdup(name) : NULL) {}
 
-location(const location* other)
+location::location(const location* other)
 : line(other != NULL ? other->line : 1),
   col(other != NULL ? other->col : 1),
   name(other != NULL && other->name != NULL ? strdup(other->name) : NULL) {}
@@ -73,7 +73,7 @@ static void init_c_function(object* self, va_list args) {
     self->as_ptr = (void*)va_arg(args, func_ptr);
 }
 
-static int cmp_c_function(object* a, object* b); {
+static int cmp_c_function(object* a, object* b) {
     return (uintptr_t)a->as_ptr - (uintptr_t)b->as_ptr;
 }
 
@@ -111,10 +111,10 @@ static void del_string(object* self) {
 const object_schema metadata_type("object_metadata", init_metadata, NULL, mark_metadata, finalize_metadata);
 const object_schema cons_type("cons", tinobsy::schema_functions::init_cons, cmp_c_function, tinobsy::schema_functions::mark_cons, tinobsy::schema_functions::finalize_cons);
 const object_schema partial_type("function_partial", init_function_partial, NULL, NULL, tinobsy::schema_functions::finalize_cons);
-const object_schema c_function_type("c_function", init_c_function, NULL, NULL, NULL);
+const object_schema c_c_function_type("c_function", init_c_function, NULL, NULL, NULL);
 const object_schema string_type("string", init_string, cmp_string, mark_string, del_string);
 
-void pickle::cons_list(size_t len, ...) {
+object* pickle::cons_list(size_t len, ...) {
     va_list args;
     va_start(args, len);
     object* head;
@@ -129,11 +129,12 @@ void pickle::cons_list(size_t len, ...) {
     return head;
 }
 
-void pickle::append(object* l1, object* l2) {
+object* pickle::append(object* l1, object* l2) {
     object* head;
     object* tail;
     // Clone l1
-    for (object* c1 = l1; c1 != NULL; c1 = cdr(c1)) {
+    size_t i = 0;
+    for (object* c1 = l1; c1 != NULL; c1 = cdr(c1), i++) {
         object* elem = car(c1);
         object* pair = this->allocate(&cons_type, elem, NULL);
         if (i == 0) head = tail = pair;
@@ -152,8 +153,8 @@ void pickle::set_retval(object* args, object* env, object* cont, object* fail_co
 
 void pickle::set_failure(object* type, object* details, object* env, object* cont, object* fail_cont) {
     if (fail_cont == NULL) return; // No failure continuation -> ignore the error
-    object* ll = this->cons_list(3, type, details, cont);
-    object* thunk = this->allocate(&partial_type, failure->cells[0].as_obj, this->append(failure->cells[1].as_obj, args), env, failure->cells[3].as_obj, failure->cells[4].as_obj);
+    object* args = this->cons_list(3, type, details, cont);
+    object* thunk = this->allocate(&partial_type, fail_cont->cells[0].as_obj, this->append(fail_cont->cells[1].as_obj, args), env, fail_cont->cells[3].as_obj, fail_cont->cells[4].as_obj);
     this->do_later(thunk);
 }
 
@@ -172,8 +173,8 @@ void pickle::run_next_thunk() {
     object* thunk = car(this->queue_head);
     this->queue_head = cdr(this->queue_head);
     object* func = thunk->cells[0].as_obj;
-    if (func->type == &function_type) {
-        func->cells[0].as_func_ptr(
+    if (func->schema == &c_function_type) {
+        ((func_ptr)(func->cells[0].as_ptr))(
             this,
             thunk->cells[1].as_obj,
             thunk->cells[2].as_obj,
@@ -196,12 +197,12 @@ void pickle::mark_globals() {
     this->queue_tail->mark(); // in case queue gets detached
 }
 
-void pickle::wrap_func(func_ptr f) {
-    return this->allocate(&c_function_type, f);
+object* pickle::wrap_func(func_ptr f) {
+    return this->allocate(&c_c_function_type, f);
 }
 
-void pickle::wrap_string(const char* s) {
-    object* s = this->allocate(&string_type, s);
+object* pickle::wrap_string(const char* chs) {
+    object* s = this->allocate(&string_type, chs);
     if (s->cells[1].as_obj == NULL) // Not already pre-parsed
         this->do_later(this->allocate(
             &partial_type,

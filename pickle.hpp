@@ -10,7 +10,8 @@
 
 namespace pickle {
 
-using tinobsy::object, tinobsy::object_schema;
+using tinobsy::object;
+using tinobsy::object_schema;
 
 char escape(char c);
 char unescape(char c);
@@ -28,7 +29,7 @@ class location {
     char* name = NULL;
 };
 
-class pickle : public tinobsy::vm;
+class pickle;
 
 typedef void (*func_ptr)(pickle* runner, object* args, object* env, object* cont, object* fail_cont);
 
@@ -38,9 +39,8 @@ extern const object_schema partial_type;
 extern const object_schema c_function_type;
 extern const object_schema string_type;
 
-class pickle {
+class pickle : public tinobsy::vm {
     public:
-    using tinobsy::vm::vm, tinobsy::vm::~vm;
     object* queue_head = NULL;
     object* queue_tail = NULL;
     object* cons_list(size_t len, ...);
@@ -54,7 +54,7 @@ class pickle {
     object* wrap_string(const char* s);
     private:
     void mark_globals();
-}
+};
 
 
 namespace funcs {
