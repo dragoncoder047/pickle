@@ -21,7 +21,7 @@ jobs:
         make test >> .tempfile 2>&1 || true
         cat .tempfile
         cat .tempfile | grep "Error 74" >/dev/null
-        if test $? -ne 0; then echo "todo=true" >> "$GITHUB_OUTPUT"; fi
+        if test $? -eq 0; then echo "todo=true" >> "$GITHUB_OUTPUT"; fi
         rm .tempfile
     - name: show files
       run: make show
