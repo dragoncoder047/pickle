@@ -6,13 +6,13 @@ buildtest64:
 	g++ --std=c++11 pickle_test.cpp -g -o pickletest64
 
 valgrind64: buildtest64
-	sh -c "valgrind --track-origins=yes --leak-check=full --show-leak-kinds=all ./pickletest64 > test/out64.txt 2> test/valgrind64.txt" || (if test $$? -eq 74; then echo "64: todo" >>.todo; echo "TODO failure code!"; fi)
+	valgrind --track-origins=yes --leak-check=full --show-leak-kinds=all ./pickletest64 > test/out64.txt 2> test/valgrind64.txt
 
 buildtest32:
 	g++ --std=c++11 -m32 pickle_test.cpp -g -o pickletest32
 
 valgrind32: buildtest32
-	sh -c "valgrind --track-origins=yes --leak-check=full --show-leak-kinds=all ./pickletest32 > test/out32.txt 2> test/valgrind32.txt" || (if test $$? -eq 74; then echo "32: todo" >>.todo; echo "TODO failure code!"; fi)
+	valgrind --track-origins=yes --leak-check=full --show-leak-kinds=all ./pickletest32 > test/out32.txt 2> test/valgrind32.txt
 
 clean:
 	rm -f pickletest64
@@ -35,6 +35,5 @@ show:
 	cat test/valgrind32.txt
 
 checkleaks:
-	cat .todo || cat test/valgrind64.txt | grep "no leaks are possible"
-	cat .todo || cat test/valgrind32.txt | grep "no leaks are possible"
-	rm .todo
+	cat test/valgrind64.txt | grep "no leaks are possible" >/dev/null
+	cat test/valgrind32.txt | grep "no leaks are possible" >/dev/null

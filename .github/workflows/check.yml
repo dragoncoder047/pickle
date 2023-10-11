@@ -16,8 +16,15 @@ jobs:
     - name: install dependencies
       run: make deps
     - name: test
-      run: make test
+      id: test
+      run: |
+        make test >> .tempfile
+        cat .tempfile
+        cat .tempfile | grep "Error 74" >/dev/null
+        if test $? -ne 0; then echo "todo=true" >> "$GITHUB_OUTPUT"; fi
+        rm .tempfile
     - name: show files
       run: make show
     - name: check for leaks
       run: make checkleaks
+      if: ${{ steps.test.outputs.todo }}
