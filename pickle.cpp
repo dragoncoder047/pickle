@@ -126,6 +126,7 @@ const object_schema partial_type("function_partial", init_function_partial, NULL
 const object_schema c_function_type("c_function", init_c_function, NULL, NULL, NULL);
 const object_schema string_type("string", init_string, cmp_string, mark_string, del_string);
 const object_schema symbol_type("symbol", tinobsy::schema_functions::init_str, tinobsy::schema_functions::cmp_str, NULL, tinobsy::schema_functions::finalize_str);
+const object_schema error_type("error", NULL, NULL, NULL, NULL);
 
 object* pickle::cons_list(size_t len, ...) {
     va_list args;

@@ -1,106 +1,106 @@
-==62181== Memcheck, a memory error detector
-==62181== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
-==62181== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
-==62181== Command: ./pickletest64
-==62181== 
+==73782== Memcheck, a memory error detector
+==73782== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==73782== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==73782== Command: ./pickletest64
+==73782== 
 parse: Function not implemented
-==62181== 
-==62181== HEAP SUMMARY:
-==62181==     in use at exit: 354 bytes in 11 blocks
-==62181==   total heap usage: 13 allocs, 2 frees, 77,154 bytes allocated
-==62181== 
-==62181== 16 bytes in 1 blocks are still reachable in loss record 1 of 11
-==62181==    at 0x483C583: operator new[](unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
-==62181==    by 0x10A89A: pickle::init_string(tinobsy::object*, __va_list_tag*) (pickle.cpp:104)
-==62181==    by 0x1094B1: tinobsy::object::object(tinobsy::object_schema const*, tinobsy::object*, __va_list_tag*) (tinobsy.cpp:17)
-==62181==    by 0x1097D6: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
-==62181==    by 0x10B188: pickle::pickle::wrap_string(char const*) (pickle.cpp:222)
-==62181==    by 0x10B74A: main (pickle_test.cpp:24)
-==62181== 
-==62181== 16 bytes in 1 blocks are still reachable in loss record 2 of 11
-==62181==    at 0x483C583: operator new[](unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
-==62181==    by 0x109D17: tinobsy::schema_functions::init_cons(tinobsy::object*, __va_list_tag*) (tinobsy.cpp:111)
-==62181==    by 0x1094B1: tinobsy::object::object(tinobsy::object_schema const*, tinobsy::object*, __va_list_tag*) (tinobsy.cpp:17)
-==62181==    by 0x1097D6: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
-==62181==    by 0x10BB15: pickle::pickle::cons(tinobsy::object*, tinobsy::object*) (pickle.hpp:67)
-==62181==    by 0x10AB12: pickle::pickle::cons_list(unsigned long, ...) (pickle.cpp:137)
-==62181==    by 0x10B1E9: pickle::pickle::wrap_string(char const*) (pickle.cpp:225)
-==62181==    by 0x10B74A: main (pickle_test.cpp:24)
-==62181== 
-==62181== 16 bytes in 1 blocks are still reachable in loss record 3 of 11
-==62181==    at 0x483C583: operator new[](unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
-==62181==    by 0x109D17: tinobsy::schema_functions::init_cons(tinobsy::object*, __va_list_tag*) (tinobsy.cpp:111)
-==62181==    by 0x1094B1: tinobsy::object::object(tinobsy::object_schema const*, tinobsy::object*, __va_list_tag*) (tinobsy.cpp:17)
-==62181==    by 0x1097D6: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
-==62181==    by 0x10BB15: pickle::pickle::cons(tinobsy::object*, tinobsy::object*) (pickle.hpp:67)
-==62181==    by 0x10AE37: pickle::pickle::do_later(tinobsy::object*) (pickle.cpp:176)
-==62181==    by 0x10B234: pickle::pickle::wrap_string(char const*) (pickle.cpp:225)
-==62181==    by 0x10B74A: main (pickle_test.cpp:24)
-==62181== 
-==62181== 26 bytes in 1 blocks are still reachable in loss record 4 of 11
-==62181==    at 0x483B7F3: malloc (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
-==62181==    by 0x4AF138E: strdup (strdup.c:42)
-==62181==    by 0x10A8FB: pickle::init_string(tinobsy::object*, __va_list_tag*) (pickle.cpp:105)
-==62181==    by 0x1094B1: tinobsy::object::object(tinobsy::object_schema const*, tinobsy::object*, __va_list_tag*) (tinobsy.cpp:17)
-==62181==    by 0x1097D6: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
-==62181==    by 0x10B188: pickle::pickle::wrap_string(char const*) (pickle.cpp:222)
-==62181==    by 0x10B74A: main (pickle_test.cpp:24)
-==62181== 
-==62181== 40 bytes in 1 blocks are still reachable in loss record 5 of 11
-==62181==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
-==62181==    by 0x10B701: main (pickle_test.cpp:23)
-==62181== 
-==62181== 40 bytes in 1 blocks are still reachable in loss record 6 of 11
-==62181==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
-==62181==    by 0x1097AF: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
-==62181==    by 0x10B188: pickle::pickle::wrap_string(char const*) (pickle.cpp:222)
-==62181==    by 0x10B74A: main (pickle_test.cpp:24)
-==62181== 
-==62181== 40 bytes in 1 blocks are still reachable in loss record 7 of 11
-==62181==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
-==62181==    by 0x1097AF: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
-==62181==    by 0x10BB15: pickle::pickle::cons(tinobsy::object*, tinobsy::object*) (pickle.hpp:67)
-==62181==    by 0x10AB12: pickle::pickle::cons_list(unsigned long, ...) (pickle.cpp:137)
-==62181==    by 0x10B1E9: pickle::pickle::wrap_string(char const*) (pickle.cpp:225)
-==62181==    by 0x10B74A: main (pickle_test.cpp:24)
-==62181== 
-==62181== 40 bytes in 1 blocks are still reachable in loss record 8 of 11
-==62181==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
-==62181==    by 0x1097AF: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
-==62181==    by 0x10BA7B: pickle::pickle::wrap_func(void (*)(pickle::pickle*, tinobsy::object*, tinobsy::object*, tinobsy::object*, tinobsy::object*)) (pickle.hpp:57)
-==62181==    by 0x10B1FF: pickle::pickle::wrap_string(char const*) (pickle.cpp:225)
-==62181==    by 0x10B74A: main (pickle_test.cpp:24)
-==62181== 
-==62181== 40 bytes in 1 blocks are still reachable in loss record 9 of 11
-==62181==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
-==62181==    by 0x1097AF: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
-==62181==    by 0x10BAD6: pickle::pickle::make_partial(tinobsy::object*, tinobsy::object*, tinobsy::object*, tinobsy::object*, tinobsy::object*) (pickle.hpp:60)
-==62181==    by 0x10B222: pickle::pickle::wrap_string(char const*) (pickle.cpp:225)
-==62181==    by 0x10B74A: main (pickle_test.cpp:24)
-==62181== 
-==62181== 40 bytes in 1 blocks are still reachable in loss record 10 of 11
-==62181==    at 0x483C583: operator new[](unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
-==62181==    by 0x10A682: pickle::init_function_partial(tinobsy::object*, __va_list_tag*) (pickle.cpp:91)
-==62181==    by 0x1094B1: tinobsy::object::object(tinobsy::object_schema const*, tinobsy::object*, __va_list_tag*) (tinobsy.cpp:17)
-==62181==    by 0x1097D6: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
-==62181==    by 0x10BAD6: pickle::pickle::make_partial(tinobsy::object*, tinobsy::object*, tinobsy::object*, tinobsy::object*, tinobsy::object*) (pickle.hpp:60)
-==62181==    by 0x10B222: pickle::pickle::wrap_string(char const*) (pickle.cpp:225)
-==62181==    by 0x10B74A: main (pickle_test.cpp:24)
-==62181== 
-==62181== 40 bytes in 1 blocks are still reachable in loss record 11 of 11
-==62181==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
-==62181==    by 0x1097AF: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
-==62181==    by 0x10BB15: pickle::pickle::cons(tinobsy::object*, tinobsy::object*) (pickle.hpp:67)
-==62181==    by 0x10AE37: pickle::pickle::do_later(tinobsy::object*) (pickle.cpp:176)
-==62181==    by 0x10B234: pickle::pickle::wrap_string(char const*) (pickle.cpp:225)
-==62181==    by 0x10B74A: main (pickle_test.cpp:24)
-==62181== 
-==62181== LEAK SUMMARY:
-==62181==    definitely lost: 0 bytes in 0 blocks
-==62181==    indirectly lost: 0 bytes in 0 blocks
-==62181==      possibly lost: 0 bytes in 0 blocks
-==62181==    still reachable: 354 bytes in 11 blocks
-==62181==         suppressed: 0 bytes in 0 blocks
-==62181== 
-==62181== For lists of detected and suppressed errors, rerun with: -s
-==62181== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+==73782== 
+==73782== HEAP SUMMARY:
+==73782==     in use at exit: 354 bytes in 11 blocks
+==73782==   total heap usage: 13 allocs, 2 frees, 77,154 bytes allocated
+==73782== 
+==73782== 16 bytes in 1 blocks are still reachable in loss record 1 of 11
+==73782==    at 0x483C583: operator new[](unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==73782==    by 0x10A89A: pickle::init_string(tinobsy::object*, __va_list_tag*) (pickle.cpp:104)
+==73782==    by 0x1094B1: tinobsy::object::object(tinobsy::object_schema const*, tinobsy::object*, __va_list_tag*) (tinobsy.cpp:17)
+==73782==    by 0x1097D6: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
+==73782==    by 0x10B188: pickle::pickle::wrap_string(char const*) (pickle.cpp:223)
+==73782==    by 0x10B74A: main (pickle_test.cpp:24)
+==73782== 
+==73782== 16 bytes in 1 blocks are still reachable in loss record 2 of 11
+==73782==    at 0x483C583: operator new[](unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==73782==    by 0x109D17: tinobsy::schema_functions::init_cons(tinobsy::object*, __va_list_tag*) (tinobsy.cpp:111)
+==73782==    by 0x1094B1: tinobsy::object::object(tinobsy::object_schema const*, tinobsy::object*, __va_list_tag*) (tinobsy.cpp:17)
+==73782==    by 0x1097D6: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
+==73782==    by 0x10BB57: pickle::pickle::cons(tinobsy::object*, tinobsy::object*) (pickle.hpp:67)
+==73782==    by 0x10AB12: pickle::pickle::cons_list(unsigned long, ...) (pickle.cpp:138)
+==73782==    by 0x10B1E9: pickle::pickle::wrap_string(char const*) (pickle.cpp:226)
+==73782==    by 0x10B74A: main (pickle_test.cpp:24)
+==73782== 
+==73782== 16 bytes in 1 blocks are still reachable in loss record 3 of 11
+==73782==    at 0x483C583: operator new[](unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==73782==    by 0x109D17: tinobsy::schema_functions::init_cons(tinobsy::object*, __va_list_tag*) (tinobsy.cpp:111)
+==73782==    by 0x1094B1: tinobsy::object::object(tinobsy::object_schema const*, tinobsy::object*, __va_list_tag*) (tinobsy.cpp:17)
+==73782==    by 0x1097D6: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
+==73782==    by 0x10BB57: pickle::pickle::cons(tinobsy::object*, tinobsy::object*) (pickle.hpp:67)
+==73782==    by 0x10AE37: pickle::pickle::do_later(tinobsy::object*) (pickle.cpp:177)
+==73782==    by 0x10B234: pickle::pickle::wrap_string(char const*) (pickle.cpp:226)
+==73782==    by 0x10B74A: main (pickle_test.cpp:24)
+==73782== 
+==73782== 26 bytes in 1 blocks are still reachable in loss record 4 of 11
+==73782==    at 0x483B7F3: malloc (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==73782==    by 0x4AF138E: strdup (strdup.c:42)
+==73782==    by 0x10A8FB: pickle::init_string(tinobsy::object*, __va_list_tag*) (pickle.cpp:105)
+==73782==    by 0x1094B1: tinobsy::object::object(tinobsy::object_schema const*, tinobsy::object*, __va_list_tag*) (tinobsy.cpp:17)
+==73782==    by 0x1097D6: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
+==73782==    by 0x10B188: pickle::pickle::wrap_string(char const*) (pickle.cpp:223)
+==73782==    by 0x10B74A: main (pickle_test.cpp:24)
+==73782== 
+==73782== 40 bytes in 1 blocks are still reachable in loss record 5 of 11
+==73782==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==73782==    by 0x10B701: main (pickle_test.cpp:23)
+==73782== 
+==73782== 40 bytes in 1 blocks are still reachable in loss record 6 of 11
+==73782==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==73782==    by 0x1097AF: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
+==73782==    by 0x10B188: pickle::pickle::wrap_string(char const*) (pickle.cpp:223)
+==73782==    by 0x10B74A: main (pickle_test.cpp:24)
+==73782== 
+==73782== 40 bytes in 1 blocks are still reachable in loss record 7 of 11
+==73782==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==73782==    by 0x1097AF: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
+==73782==    by 0x10BB57: pickle::pickle::cons(tinobsy::object*, tinobsy::object*) (pickle.hpp:67)
+==73782==    by 0x10AB12: pickle::pickle::cons_list(unsigned long, ...) (pickle.cpp:138)
+==73782==    by 0x10B1E9: pickle::pickle::wrap_string(char const*) (pickle.cpp:226)
+==73782==    by 0x10B74A: main (pickle_test.cpp:24)
+==73782== 
+==73782== 40 bytes in 1 blocks are still reachable in loss record 8 of 11
+==73782==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==73782==    by 0x1097AF: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
+==73782==    by 0x10BABD: pickle::pickle::wrap_func(void (*)(pickle::pickle*, tinobsy::object*, tinobsy::object*, tinobsy::object*, tinobsy::object*)) (pickle.hpp:57)
+==73782==    by 0x10B1FF: pickle::pickle::wrap_string(char const*) (pickle.cpp:226)
+==73782==    by 0x10B74A: main (pickle_test.cpp:24)
+==73782== 
+==73782== 40 bytes in 1 blocks are still reachable in loss record 9 of 11
+==73782==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==73782==    by 0x1097AF: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
+==73782==    by 0x10BB18: pickle::pickle::make_partial(tinobsy::object*, tinobsy::object*, tinobsy::object*, tinobsy::object*, tinobsy::object*) (pickle.hpp:60)
+==73782==    by 0x10B222: pickle::pickle::wrap_string(char const*) (pickle.cpp:226)
+==73782==    by 0x10B74A: main (pickle_test.cpp:24)
+==73782== 
+==73782== 40 bytes in 1 blocks are still reachable in loss record 10 of 11
+==73782==    at 0x483C583: operator new[](unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==73782==    by 0x10A682: pickle::init_function_partial(tinobsy::object*, __va_list_tag*) (pickle.cpp:91)
+==73782==    by 0x1094B1: tinobsy::object::object(tinobsy::object_schema const*, tinobsy::object*, __va_list_tag*) (tinobsy.cpp:17)
+==73782==    by 0x1097D6: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
+==73782==    by 0x10BB18: pickle::pickle::make_partial(tinobsy::object*, tinobsy::object*, tinobsy::object*, tinobsy::object*, tinobsy::object*) (pickle.hpp:60)
+==73782==    by 0x10B222: pickle::pickle::wrap_string(char const*) (pickle.cpp:226)
+==73782==    by 0x10B74A: main (pickle_test.cpp:24)
+==73782== 
+==73782== 40 bytes in 1 blocks are still reachable in loss record 11 of 11
+==73782==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==73782==    by 0x1097AF: tinobsy::vm::allocate(tinobsy::object_schema const*, ...) (tinobsy.cpp:35)
+==73782==    by 0x10BB57: pickle::pickle::cons(tinobsy::object*, tinobsy::object*) (pickle.hpp:67)
+==73782==    by 0x10AE37: pickle::pickle::do_later(tinobsy::object*) (pickle.cpp:177)
+==73782==    by 0x10B234: pickle::pickle::wrap_string(char const*) (pickle.cpp:226)
+==73782==    by 0x10B74A: main (pickle_test.cpp:24)
+==73782== 
+==73782== LEAK SUMMARY:
+==73782==    definitely lost: 0 bytes in 0 blocks
+==73782==    indirectly lost: 0 bytes in 0 blocks
+==73782==      possibly lost: 0 bytes in 0 blocks
+==73782==    still reachable: 354 bytes in 11 blocks
+==73782==         suppressed: 0 bytes in 0 blocks
+==73782== 
+==73782== For lists of detected and suppressed errors, rerun with: -s
+==73782== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

@@ -16,17 +16,8 @@ jobs:
     - name: install dependencies
       run: make deps
     - name: test
-      run: |
-        make test
-        CODE=$?
-        if [[ $CODE -eq 74 ]] then
-            echo ":watch: Test indicated TODO failure."
-            touch .todo_failure
-            exit 0
-        fi
+      run: make test
     - name: show files
       run: make show
     - name: check for leaks
-      run: |
-        if test -f .todo_failure; then exit 0; fi
-        make checkleaks
+      run: make checkleaks
