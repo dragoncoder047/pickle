@@ -120,13 +120,25 @@ static void del_string(object* self) {
     delete[] self->cells;
 }
 
+static void init_error(object* self, va_list args) {
+    DBG("Creating an error");
+    self->cells = new cell[3];
+    self->cells[0].as_obj = va_arg(args, object*);
+    self->cells[1].as_obj = va_arg(args, object*);
+    self->cells[2].as_obj = va_arg(args, object*);
+}
+
+static void mark_error(object* self) {
+    for (int i = 0; i < 3; i++) self->cells[i].as_obj->mark();
+}
+
 const object_schema metadata_type("object_metadata", init_metadata, NULL, mark_metadata, finalize_metadata);
 const object_schema cons_type("cons", tinobsy::schema_functions::init_cons, cmp_c_function, tinobsy::schema_functions::mark_cons, tinobsy::schema_functions::finalize_cons);
 const object_schema partial_type("function_partial", init_function_partial, NULL, NULL, tinobsy::schema_functions::finalize_cons);
 const object_schema c_function_type("c_function", init_c_function, NULL, NULL, NULL);
 const object_schema string_type("string", init_string, cmp_string, mark_string, del_string);
 const object_schema symbol_type("symbol", tinobsy::schema_functions::init_str, tinobsy::schema_functions::cmp_str, NULL, tinobsy::schema_functions::finalize_str);
-const object_schema error_type("error", NULL, NULL, NULL, NULL);
+const object_schema error_type("error", init_error, NULL, mark_error, tinobsy::schema_functions::finalize_cons);
 
 object* pickle::cons_list(size_t len, ...) {
     va_list args;
@@ -165,10 +177,9 @@ void pickle::set_retval(object* args, object* env, object* cont, object* fail_co
     this->do_later(thunk);
 }
 
-void pickle::set_failure(object* type, object* details, object* env, object* cont, object* fail_cont) {
+void pickle::set_failure(object* err, object* env, object* cont, object* fail_cont) {
     if (fail_cont == NULL) return; // No failure continuation -> ignore the error
-    object* args = this->cons_list(3, type, details, cont);
-    object* thunk = this->make_partial(fail_cont->cells[0].as_obj, this->append(fail_cont->cells[1].as_obj, args), env, fail_cont->cells[3].as_obj, fail_cont->cells[4].as_obj);
+    object* thunk = this->make_partial(fail_cont->cells[0].as_obj, this->append(fail_cont->cells[1].as_obj, this->cons(err, NULL)), env, fail_cont->cells[3].as_obj, fail_cont->cells[4].as_obj);
     this->do_later(thunk);
 }
 
@@ -241,15 +252,17 @@ void funcs::parse(pickle* runner, object* args, object* env, object* cont, objec
     const char* str = (const char*)(s->cells[0].as_chars);
     object* result = s->cells[1].as_obj;
     if (result != NULL) { // Saved preparse
-        goto success;
+        if (result->schema == &error_type) goto failure;
+        else goto success;
     }
     TODO;
+    // result = runner->make_error(runner->wrap_symbol("SyntaxError"), runner->cons_list(1, result), cont)
     success:
     runner->set_retval(runner->cons_list(1, result), env, cont, fail_cont);
     s->cells[1].as_obj = result; // Save parse for later if constantly reparsing string (i.e. a loop)
     return;
     failure:
-    runner->set_failure(runner->wrap_symbol("SyntaxError"), runner->cons_list(1, result), env, cont, fail_cont);
+    runner->set_failure(result, env, cont, fail_cont);
     // TODO: copy error as cached parse result
 }
 

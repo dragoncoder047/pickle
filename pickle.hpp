@@ -49,7 +49,7 @@ class pickle : public tinobsy::vm {
     object* cons_list(size_t len, ...);
     object* append(object* l1, object* l2);
     void set_retval(object* args, object* env, object* cont, object* fail_cont);
-    void set_failure(object* type, object* details, object* env, object* cont, object* fail_cont);
+    void set_failure(object* err, object* env, object* cont, object* fail_cont);
     void do_later(object* thunk);
     void do_next(object* thunk);
     void run_next_thunk();
@@ -65,6 +65,9 @@ class pickle : public tinobsy::vm {
     }
     inline object* cons(object* car, object* cdr) {
         return this->allocate(&cons_type, car, cdr);
+    }
+    inline object* make_error(object* type, object* details, object* continuation) {
+        return this->allocate(&error_type, type, details, continuation);
     }
     private:
     void mark_globals();
