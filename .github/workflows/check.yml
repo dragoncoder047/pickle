@@ -27,4 +27,4 @@ jobs:
       run: make show
     - name: check for leaks
       run: make checkleaks
-      if: ${{ steps.test.outputs.todo }}
+      if: ${{ !steps.test.outputs.todo }}
