@@ -18,7 +18,7 @@ jobs:
     - name: test
       id: test
       run: |
-        make test >> .tempfile 2>&1
+        make test >> .tempfile 2>&1 || true
         cat .tempfile
         cat .tempfile | grep "Error 74" >/dev/null
         if test $? -ne 0; then echo "todo=true" >> "$GITHUB_OUTPUT"; fi
