@@ -38,6 +38,9 @@ extern const object_schema cons_type;
 extern const object_schema partial_type;
 extern const object_schema c_function_type;
 extern const object_schema string_type;
+extern const object_schema symbol_type;
+extern const object_schema stream_type;
+extern const object_schema error_type;
 
 class pickle : public tinobsy::vm {
     public:
@@ -50,8 +53,19 @@ class pickle : public tinobsy::vm {
     void do_later(object* thunk);
     void do_next(object* thunk);
     void run_next_thunk();
-    object* wrap_func(func_ptr f);
-    object* wrap_string(const char* s);
+    inline object* wrap_func(func_ptr f) {
+        return this->allocate(&c_function_type, f);
+    }
+    inline object* make_partial(object* func, object* args, object* env, object* continuation, object* failure_continuation) {
+        return this->allocate(&partial_type, func, args, env, continuation, failure_continuation);
+    }
+    object* wrap_string(const char* chs);
+    inline object* wrap_symbol(const char* symbol) {
+        return this->allocate(&symbol_type, symbol);
+    }
+    inline object* cons(object* car, object* cdr) {
+        return this->allocate(&cons_type, car, cdr);
+    }
     private:
     void mark_globals();
 };
@@ -67,6 +81,12 @@ namespace funcs {
 
 #define car(x) ((x)->cells[0].as_obj)
 #define cdr(x) ((x)->cells[1].as_obj)
+
+#ifdef TINOBSY_DEBUG
+#define TODO do { DBG("%s: %s", __func__, strerror(ENOSYS)); errno = ENOSYS; perror(__func__); exit(74); } while (0)
+#else
+#define TODO
+#endif
 
 #include "pickle.cpp"
 

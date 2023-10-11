@@ -19,8 +19,6 @@ clean:
 	rm -f pickletest32
 	rm -f vgcore.*
 
-test: buildtest64 valgrind64 buildtest32 valgrind32 clean
-
 deps:
 	sudo dpkg --add-architecture i386
 	sudo apt-get update

@@ -1,1 +1,29 @@
-hello world
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a string
+[pickle.cpp:106-init_string] init_string: thisWillCauseASyntaxError
+[tinobsy/tinobsy.cpp:38-allocate] Trying to intern a string
+[tinobsy/tinobsy.cpp:47-allocate] New string not interned
+[pickle.cpp:224-wrap_string] Starting task to parse string thisWillCauseASyntaxError
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a cons
+[tinobsy/tinobsy.cpp:110-init_cons] 
+[tinobsy/tinobsy.cpp:38-allocate] Trying to intern a cons
+[tinobsy/tinobsy.cpp:47-allocate] New cons not interned
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a c_function
+[pickle.cpp:82-init_c_function] Function is eval(): false
+[pickle.cpp:83-init_c_function] Function is parse(): true
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a function_partial
+[pickle.cpp:175-do_later] do_later: Adding cons to tail
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a cons
+[tinobsy/tinobsy.cpp:110-init_cons] 
+[tinobsy/tinobsy.cpp:38-allocate] Trying to intern a cons
+[tinobsy/tinobsy.cpp:47-allocate] New cons not interned
+[pickle.cpp:188-run_next_thunk] run_next_thunk
+[pickle.cpp:191-run_next_thunk] Have thunk
+[pickle.cpp:195-run_next_thunk] Have func
+[pickle.cpp:197-run_next_thunk] Native function
+[pickle.cpp:238-parse] parsing
+[pickle.cpp:245-parse] parse: Function not implemented

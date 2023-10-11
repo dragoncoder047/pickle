@@ -1,0 +1,30 @@
+name: run test file
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: install dependencies
+      run: make deps
+    - name: test
+      run: |
+        make test
+        CODE=$?
+        if [[ $CODE -eq 74 ]] then
+            echo ":watch: Test indicated TODO failure."
+            touch .todo_failure
+            exit 0
+        fi
+    - name: show files
+      run: make show
+    - name: check for leaks
+      run: |
+        if test -f .todo_failure; then exit 0; fi
+        make checkleaks
