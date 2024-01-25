@@ -1,3 +1,5 @@
+# need to set up AFL once parser is written https://medium.com/@ayushpriya10/fuzzing-applications-with-american-fuzzy-lop-afl-54facc65d102
+
 .PHONY: test64 builtest64 valgrind64 clean test32 buildtest32 valgrind32 deps show checkleaks
 
 test: buildtest64 valgrind64 buildtest32 valgrind32 clean checkleaks

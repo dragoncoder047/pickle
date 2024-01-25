@@ -42,17 +42,14 @@ bool needs_escape(char c) {
 
 static void init_metadata(object* self, va_list args) {
     self->cells = new cell[4];
-    self->cells[0].as_ptr = va_arg(args, object*);
-    self->cells[1].as_obj = va_arg(args, object*);
-    self->cells[2].as_obj = va_arg(args, object*);
-    self->cells[3].as_obj = va_arg(args, object*);
+    self->cells[0].as_obj = va_arg(args, object*); // line
+    self->cells[1].as_obj = va_arg(args, object*); // column
+    self->cells[2].as_obj = va_arg(args, object*); // file
+    self->cells[3].as_obj = va_arg(args, object*); // prototypes list
 }
 
-static void mark_metadata(object* self) {
-    self->cells[0].as_obj->mark();
-    self->cells[1].as_obj->mark();
-    self->cells[2].as_obj->mark();
-    self->cells[3].as_obj->mark();
+static void mark4(object* self) {
+    for (int i = 0; i < 3; i++) self->cells[i].as_obj->mark();
 }
 
 static void init_c_function(object* self, va_list args) {
@@ -106,19 +103,33 @@ static void init_error(object* self, va_list args) {
     self->cells[2].as_obj = va_arg(args, object*);
 }
 
-static void mark_error(object* self) {
-    for (int i = 0; i < 3; i++) self->cells[i].as_obj->mark();
+static void init_int(object* self, va_list args) {
+    self->as_big_int = va_arg(args, int64_t);
 }
 
-const object_schema metadata_type("object_metadata", init_metadata, NULL, mark_metadata, tinobsy::schema_functions::finalize_cons);
-const object_schema cons_type("cons", tinobsy::schema_functions::init_cons, cmp_c_function, tinobsy::schema_functions::mark_cons, tinobsy::schema_functions::finalize_cons);
+static int cmp_int(object* a, object* b) {
+    return a->as_big_int - b->as_big_int;
+}
+
+static void init_float(object* self, va_list args) {
+    self->as_double = va_arg(args, double);
+}
+
+static int cmp_float(object* a, object* b) {
+    return (int)(a->as_double - b->as_double);
+}
+
+const object_schema metadata_type("object_metadata", init_metadata, NULL, mark4, tinobsy::schema_functions::finalize_cons);
+const object_schema cons_type("cons", tinobsy::schema_functions::init_cons, NULL, tinobsy::schema_functions::mark_cons, tinobsy::schema_functions::finalize_cons);
 const object_schema partial_type("function_partial", init_function_partial, NULL, NULL, tinobsy::schema_functions::finalize_cons);
-const object_schema c_function_type("c_function", init_c_function, NULL, NULL, NULL);
 const object_schema string_type("string", init_string, cmp_string, mark_string, del_string);
 const object_schema symbol_type("symbol", tinobsy::schema_functions::init_str, tinobsy::schema_functions::cmp_str, NULL, tinobsy::schema_functions::finalize_str);
-const object_schema error_type("error", init_error, NULL, mark_error, tinobsy::schema_functions::finalize_cons);
+const object_schema c_function_type("c_function", init_c_function, cmp_c_function, NULL, NULL);
+const object_schema error_type("error", init_error, NULL, mark4, tinobsy::schema_functions::finalize_cons);
+const object_schema integer_type("int", init_int, cmp_int, NULL, NULL);
+const object_schema float_type("float", init_float, cmp_float, NULL, NULL);
 
-object* pickle::cons_list(size_t len, ...) {
+object* pickle::list(size_t len, ...) {
     va_list args;
     va_start(args, len);
     object* head;
@@ -195,7 +206,7 @@ void pickle::run_next_thunk() {
         DBG("Data function");
         object* current_cont = this->make_partial(
             this->wrap_func(funcs::eval),
-            this->cons_list(1, func), // args is ignored because they should already be added to env
+            this->list(1, func), // args is ignored because they should already be added to env
             thunk->cells[2].as_obj,
             thunk->cells[3].as_obj,
             thunk->cells[4].as_obj);
@@ -219,9 +230,9 @@ void funcs::parse(pickle* runner, object* args, object* env, object* cont, objec
         else goto success;
     }
     TODO;
-    // result = runner->make_error(runner->wrap_symbol("SyntaxError"), runner->cons_list(1, result), cont)
+    // result = runner->wrap_error(runner->wrap_symbol("SyntaxError"), runner->list(1, result), cont)
     success:
-    runner->set_retval(runner->cons_list(1, result), env, cont, fail_cont);
+    runner->set_retval(runner->list(1, result), env, cont, fail_cont);
     s->cells[1].as_obj = result; // Save parse for later if constantly reparsing string (i.e. a loop)
     return;
     failure:
@@ -248,7 +259,7 @@ void funcs::eval(pickle* runner, object* args, object* env, object* cont, object
             env,
             runner->make_partial(
                 runner->wrap_func(funcs::splice_match),
-                runner->cons_list(2, runner->append(ast, NULL), NULL/*matched_pattern->match_info()*/),
+                runner->list(2, runner->append(ast, NULL), NULL/*matched_pattern->match_info()*/),
                 oldenv,
                 runner->make_partial(
                     runner->wrap_func(funcs::eval),
@@ -263,7 +274,7 @@ void funcs::eval(pickle* runner, object* args, object* env, object* cont, object
         ));
     } else {
         // No matches so return unchanged
-        runner->set_retval(runner->cons_list(1, ast), env, cont, fail_cont);
+        runner->set_retval(runner->list(1, ast), env, cont, fail_cont);
     }
 }
 

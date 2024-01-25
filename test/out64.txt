@@ -1,12 +1,66 @@
 [tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a cons
+[tinobsy/tinobsy.cpp:110-init_cons] 
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a cons
+[tinobsy/tinobsy.cpp:110-init_cons] 
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a cons
+[tinobsy/tinobsy.cpp:110-init_cons] 
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
 [tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a string
-[pickle.cpp:84-init_string] init_string: thisWillCauseASyntaxError
+[pickle.cpp:81-init_string] init_string: thisWillCauseASyntaxError
 [tinobsy/tinobsy.cpp:38-allocate] Trying to intern a string
 [tinobsy/tinobsy.cpp:47-allocate] New string not interned
-[pickle.cpp:178-run_next_thunk] run_next_thunk
-hello world
-[tinobsy/tinobsy.cpp:100-~vm] vm::~vm() {
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a string
+[pickle.cpp:81-init_string] init_string: foo.pickle
+[tinobsy/tinobsy.cpp:38-allocate] Trying to intern a string
+[tinobsy/tinobsy.cpp:47-allocate] New string not interned
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a int
+[tinobsy/tinobsy.cpp:38-allocate] Trying to intern a int
+[tinobsy/tinobsy.cpp:47-allocate] New int not interned
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a int
+[tinobsy/tinobsy.cpp:38-allocate] Trying to intern a int
+[tinobsy/tinobsy.cpp:41-allocate] Interned! int
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a int begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a object_metadata
+[pickle.cpp:189-run_next_thunk] run_next_thunk
+[tinobsy/tinobsy.cpp:79-gc] vm::gc() begin, 7 objects {
+[tinobsy/tinobsy.cpp:59-mark] NULL::mark()
+[tinobsy/tinobsy.cpp:59-mark] NULL::mark()
+[tinobsy/tinobsy.cpp:82-gc] garbage collect sweeping
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a object_metadata begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:124-finalize_cons] 
+[tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a int begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:27-~object] }
 [tinobsy/tinobsy.cpp:22-~object] object::~object() for a string begin {
 [tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
 [tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a string begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a cons begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:124-finalize_cons] 
+[tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a cons begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:124-finalize_cons] 
+[tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a cons begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:124-finalize_cons] 
+[tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:95-gc] vm::gc() end, 0 objects, 7 freed }
+hello world
+[tinobsy/tinobsy.cpp:100-~vm] vm::~vm() {
 [tinobsy/tinobsy.cpp:106-~vm] }

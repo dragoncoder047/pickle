@@ -29,12 +29,15 @@ extern const object_schema string_type;
 extern const object_schema symbol_type;
 extern const object_schema stream_type;
 extern const object_schema error_type;
+extern const object_schema integer_type;
+extern const object_schema float_type;
 
 class pickle : public tinobsy::vm {
     public:
     object* queue_head = NULL;
     object* queue_tail = NULL;
-    object* cons_list(size_t len, ...);
+    object* globals = NULL;
+    object* list(size_t len, ...);
     object* append(object* l1, object* l2);
     void set_retval(object* args, object* env, object* cont, object* fail_cont);
     void set_failure(object* err, object* env, object* cont, object* fail_cont);
@@ -56,8 +59,31 @@ class pickle : public tinobsy::vm {
     inline object* cons(object* car, object* cdr) {
         return this->allocate(&cons_type, car, cdr);
     }
-    inline object* make_error(object* type, object* details, object* continuation) {
+    inline object* wrap_error(object* type, object* details, object* continuation) {
         return this->allocate(&error_type, type, details, continuation);
+    }
+    inline object* wrap_integer(int64_t x) {
+        return this->allocate(&integer_type, x);
+    }
+    inline object* wrap_float(double x) {
+        return this->allocate(&float_type, x);
+    }
+    inline object* wrap_metadata(object* line, object* col, object* file, object* prototypes) {
+        return this->allocate(&metadata_type, line, col, file, prototypes);
+    }
+    inline object* wrap_metadata(int64_t line, int64_t col, const char* file, object* prototypes) {
+        return this->allocate(&metadata_type, this->wrap_integer(line), this->wrap_integer(col), this->wrap_string(file), prototypes);
+    }
+    inline object* with_metadata(object* x, int64_t line, int64_t col, const char* file, object* prototypes) {
+        if (x->meta) {
+            x->meta->cells[0].as_obj = this->wrap_integer(line);
+            x->meta->cells[1].as_obj = this->wrap_integer(col);
+            x->meta->cells[2].as_obj = this->wrap_string(file);
+            x->meta->cells[2].as_obj = prototypes;
+        } else {
+            x->meta = this->wrap_metadata(line, col, file, prototypes);
+        }
+        return x;
     }
     private:
     void mark_globals();

@@ -21,8 +21,9 @@ void start_catch_segfault() {
 int main() {
     start_catch_segfault();
     auto vm = new pickle::pickle();
-    auto foo = vm->wrap_string("thisWillCauseASyntaxError");
+    auto foo = vm->with_metadata(vm->wrap_string("thisWillCauseASyntaxError"), 1, 1, "foo.pickle", vm->list(3, NULL, NULL, NULL));
     vm->run_next_thunk();
+    vm->gc();
     printf("hello world\n");
     delete vm;
     return 0;
