@@ -31,6 +31,7 @@ extern const object_schema stream_type;
 extern const object_schema error_type;
 extern const object_schema integer_type;
 extern const object_schema float_type;
+extern const object_schema list_type;
 
 class pickle : public tinobsy::vm {
     public:
@@ -47,11 +48,19 @@ class pickle : public tinobsy::vm {
     inline object* wrap_func(func_ptr f) {
         return this->allocate(&c_function_type, f);
     }
+    inline func_ptr unwrap_func(object* f) {
+        ASSERT(f != NULL && f->schema == &c_function_type);
+        return (func_ptr)f->as_ptr;
+    }
     inline object* make_partial(object* func, object* args, object* env, object* continuation, object* failure_continuation) {
         return this->allocate(&partial_type, func, args, env, continuation, failure_continuation);
     }
     inline object* wrap_string(const char* chs) {
         return this->allocate(&string_type, chs);
+    }
+    inline const char* const unwrap_string(object* s) {
+        ASSERT(s != NULL && s->schema == &string_type);
+        return s->cells[0].as_chars;
     }
     inline object* wrap_symbol(const char* symbol) {
         return this->allocate(&symbol_type, symbol);
@@ -91,20 +100,24 @@ class pickle : public tinobsy::vm {
 
 
 namespace funcs {
-    void parse(pickle* runner, object* args, object* env, object* cont, object* fail_cont);
-    void eval(pickle* runner, object* args, object* env, object* cont, object* fail_cont);
-    void splice_match(pickle* runner, object* args, object* env, object* cont, object* fail_cont);
+    void parse(pickle* vm, object* args, object* env, object* cont, object* fail_cont);
+    void eval(pickle* vm, object* args, object* env, object* cont, object* fail_cont);
+    void splice_match(pickle* vm, object* args, object* env, object* cont, object* fail_cont);
 }
+
+void getarg(pickle* vm, object* args, size_t nth, const object_schema* type, object* env, object* fail, object* then);
 
 }
 
 #define car(x) ((x)->cells[0].as_obj)
 #define cdr(x) ((x)->cells[1].as_obj)
+#define PICKLE_INLINE_FUNC [](::pickle::pickle* vm, ::pickle::object* args, ::pickle::object* env, ::pickle::object* cont, ::pickle::object* fail_cont) -> void
+#define GOTTEN_ARG(nm) auto nm = car(args); args = car(cdr(args))
 
 #ifdef TINOBSY_DEBUG
-#define TODO do { DBG("%s: %s", __func__, strerror(ENOSYS)); errno = ENOSYS; perror(__func__); exit(74); } while (0)
+#define TODO(nm) do { DBG("%s: %s", #nm, strerror(ENOSYS)); errno = ENOSYS; perror(#nm); exit(74); } while (0)
 #else
-#define TODO
+#define TODO(nm)
 #endif
 
 #include "pickle.cpp"

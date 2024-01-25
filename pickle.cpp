@@ -99,6 +99,9 @@ static int cmp_float(object* a, object* b) {
     return (int)(a->as_double - b->as_double);
 }
 
+// ------------------------ core types -----------------
+// these will later be swapped for actual objects
+
 // metadata = line, column, file, prototypes 
 const object_schema metadata_type("object_metadata", initmulti<4>, NULL, markmulti<4>, freemulti);
 // cons = car, cdr
@@ -107,6 +110,9 @@ const object_schema cons_type("cons", tinobsy::schema_functions::init_cons, NULL
 const object_schema partial_type("function_partial", initmulti<5>, NULL, markmulti<5>, freemulti);
 // error = type, message, detail, then
 const object_schema error_type("error", initmulti<4>, NULL, markmulti<4>, freemulti);
+// list = items
+const object_schema list_type("list", initmulti<1>, NULL, markmulti<1>, freemulti);
+// --------- primitive/ish types ---------------
 const object_schema string_type("string", init_string, cmp_string, mark_string, del_string);
 const object_schema symbol_type("symbol", tinobsy::schema_functions::init_str, tinobsy::schema_functions::cmp_str, NULL, tinobsy::schema_functions::finalize_str);
 const object_schema c_function_type("c_function", init_c_function, cmp_c_function, NULL, NULL);
@@ -146,6 +152,10 @@ object* pickle::append(object* l1, object* l2) {
 
 void pickle::set_retval(object* args, object* env, object* cont, object* fail_cont) {
     if (cont == NULL) return; // No next continuation -> drop the result
+    if (cont->schema == &c_function_type) {
+        // stupid waste of an object
+        cont = this->make_partial(cont, args, env, NULL, fail_cont);
+    }
     object* thunk = this->make_partial(cont->cells[0].as_obj, this->append(cont->cells[1].as_obj, args), env, cont->cells[3].as_obj, fail_cont);
     this->do_later(thunk);
 }
@@ -204,50 +214,71 @@ void pickle::mark_globals() {
     this->globals->mark();
 }
 
-// Can be called by the program
-void funcs::parse(pickle* runner, object* args, object* env, object* cont, object* fail_cont) {
-    DBG("parsing");
-    object* s = car(args);
-    const char* str = (const char*)(s->cells[0].as_chars);
-    object* result = s->cells[1].as_obj;
-    if (result) { // Saved preparse
-        if (result->schema == &error_type) goto failure;
-        else goto success;
+void getarg(pickle* vm, object* args, size_t nth, const object_schema* type, object* env, object* fail, object* then) {
+    auto oa = args;
+    for (size_t i = 0; i < nth; i++) {
+        if (cdr(args) == NULL) {
+            vm->set_failure(vm->wrap_error(vm->wrap_symbol("ValueError"), vm->list(2, oa, vm->wrap_integer(nth)), then), env, then, fail);
+            return;
+        }
+        args = cdr(args);
     }
-    TODO;
-    // result = runner->wrap_error(runner->wrap_symbol("SyntaxError"), runner->wrap_string(message), runner->list(1, result), cont)
-    success:
-    runner->set_retval(runner->list(1, result), env, cont, fail_cont);
-    s->cells[1].as_obj = result; // Save parse for later if constantly reparsing string (i.e. a loop)
-    return;
-    failure:
-    runner->set_failure(result, env, cont, fail_cont);
-    // TODO: copy error as cached parse result
+    auto val = car(args);
+    if (val == NULL || (val->schema != type)) 
+        vm->set_failure(vm->wrap_error(vm->wrap_symbol("TypeError"), vm->list(3, oa, vm->wrap_integer(nth), val), then), env, then, fail);
+    else 
+        vm->set_retval(vm->list(2, car(args), oa), env, then, fail);
 }
 
-static object* get_best_match(pickle* runner, object* ast, object** env) {
-    TODO;
+//--------------- PARSER --------------------------------------
+
+// Can be called by the program
+void funcs::parse(pickle* vm, object* args, object* env, object* cont, object* fail_cont) {
+    DBG("parsing");
+    getarg(vm, args, 0, &string_type, env, fail_cont, vm->wrap_func(PICKLE_INLINE_FUNC {
+        GOTTEN_ARG(s);
+        const char* str = (const char*)(s->cells[0].as_chars);
+        object* result = s->cells[1].as_obj;
+        const char* message;
+        bool success = true;
+        if (result) { // Saved preparse
+            if (result->schema == &error_type) success = false;
+            goto done;
+        }
+        result = vm->wrap_string("Hello, World! parse result i am.");
+        done:
+        if (success) vm->set_retval(vm->list(1, result), env, cont, fail_cont);
+        else {
+            result = vm->wrap_error(vm->wrap_symbol("SyntaxError"), vm->list(1, vm->wrap_string(message), result), cont);
+            vm->set_failure(result, env, cont, fail_cont);
+        }
+        s->cells[1].as_obj = result; // Save parse for later if constantly eval'ing string (i.e. a loop)
+    }));
+}
+
+static object* get_best_match(pickle* vm, object* ast, object** env) {
+    TODO(gbm);
     return NULL;
 }
 
 // Eval(list) ::= apply_first_pattern(list), then eval(remaining list), else list if no patterns match
-void funcs::eval(pickle* runner, object* args, object* env, object* cont, object* fail_cont) {
+void funcs::eval(pickle* vm, object* args, object* env, object* cont, object* fail_cont) {
     object* ast = car(args);
     // returns Match object: 0=pattern, 1=handler body, 2=match details for splice; and updates env with bindings
     object* oldenv = env;
-    object* matched_pattern = get_best_match(runner, ast, &env);
+    object* matched_pattern = get_best_match(vm, ast, &env);
     if (matched_pattern != NULL) {
         // do next is run body --> cont=apply match cont-> eval again -> original eval cont
-        runner->do_later(runner->make_partial(
+        vm->do_later(vm->make_partial(
             NULL,//matched_pattern->body(),
             NULL,
             env,
-            runner->make_partial(
-                runner->wrap_func(funcs::splice_match),
-                runner->list(2, runner->append(ast, NULL), NULL/*matched_pattern->match_info()*/),
+            vm->make_partial(
+                vm->wrap_func(funcs::splice_match),
+                vm->list(2, vm->append(ast, NULL), NULL/*matched_pattern->match_info()*/),
                 oldenv,
-                runner->make_partial(
-                    runner->wrap_func(funcs::eval),
+                vm->make_partial(
+                    vm->wrap_func(funcs::eval),
                     NULL,
                     oldenv,
                     cont,
@@ -259,12 +290,12 @@ void funcs::eval(pickle* runner, object* args, object* env, object* cont, object
         ));
     } else {
         // No matches so return unchanged
-        runner->set_retval(runner->list(1, ast), env, cont, fail_cont);
+        vm->set_retval(vm->list(1, ast), env, cont, fail_cont);
     }
 }
 
-void funcs::splice_match(pickle* runner, object* args, object* env, object* cont, object* fail_cont) {
-    TODO;
+void funcs::splice_match(pickle* vm, object* args, object* env, object* cont, object* fail_cont) {
+    TODO(sm);
 }
 
 

@@ -33,12 +33,106 @@
 [tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
 [tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a object_metadata
 [pickle.cpp:45-initmulti] creating object_metadata (4 cells)
-[pickle.cpp:173-run_next_thunk] run_next_thunk
-[tinobsy/tinobsy.cpp:79-gc] vm::gc() begin, 7 objects {
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a c_function
+[pickle.cpp:58-init_c_function] Function is eval(): false
+[pickle.cpp:59-init_c_function] Function is parse(): false
+[tinobsy/tinobsy.cpp:38-allocate] Trying to intern a c_function
+[tinobsy/tinobsy.cpp:47-allocate] New c_function not interned
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a cons
+[tinobsy/tinobsy.cpp:110-init_cons] 
+[pickle.cpp:237-parse] parsing
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a c_function
+[pickle.cpp:58-init_c_function] Function is eval(): false
+[pickle.cpp:59-init_c_function] Function is parse(): false
+[tinobsy/tinobsy.cpp:38-allocate] Trying to intern a c_function
+[tinobsy/tinobsy.cpp:47-allocate] New c_function not interned
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a cons
+[tinobsy/tinobsy.cpp:110-init_cons] 
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a cons
+[tinobsy/tinobsy.cpp:110-init_cons] 
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a function_partial
+[pickle.cpp:45-initmulti] creating function_partial (5 cells)
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a cons
+[tinobsy/tinobsy.cpp:110-init_cons] 
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a cons
+[tinobsy/tinobsy.cpp:110-init_cons] 
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a function_partial
+[pickle.cpp:45-initmulti] creating function_partial (5 cells)
+[pickle.cpp:170-do_later] do_later: Adding cons to tail
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a cons
+[tinobsy/tinobsy.cpp:110-init_cons] 
+[pickle.cpp:183-run_next_thunk] run_next_thunk
+[pickle.cpp:186-run_next_thunk] Have thunk
+[pickle.cpp:190-run_next_thunk] Have func
+[pickle.cpp:192-run_next_thunk] Native function
+[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a string
+[pickle.cpp:69-init_string] init_string: Hello, World! parse result i am.
+[tinobsy/tinobsy.cpp:38-allocate] Trying to intern a string
+[tinobsy/tinobsy.cpp:47-allocate] New string not interned
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
+[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a cons
+[tinobsy/tinobsy.cpp:110-init_cons] 
+[tinobsy/tinobsy.cpp:79-gc] vm::gc() begin, 19 objects {
 [tinobsy/tinobsy.cpp:59-mark] NULL::mark()
 [tinobsy/tinobsy.cpp:59-mark] NULL::mark()
 [tinobsy/tinobsy.cpp:59-mark] NULL::mark()
 [tinobsy/tinobsy.cpp:82-gc] garbage collect sweeping
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a cons begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:124-finalize_cons] 
+[tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a string begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a cons begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:124-finalize_cons] 
+[tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a function_partial begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:124-finalize_cons] 
+[tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a cons begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:124-finalize_cons] 
+[tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a cons begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:124-finalize_cons] 
+[tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a function_partial begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:124-finalize_cons] 
+[tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a cons begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:124-finalize_cons] 
+[tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a cons begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:124-finalize_cons] 
+[tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a c_function begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a cons begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:124-finalize_cons] 
+[tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a c_function begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:27-~object] }
 [tinobsy/tinobsy.cpp:22-~object] object::~object() for a object_metadata begin {
 [tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
 [tinobsy/tinobsy.cpp:124-finalize_cons] 
@@ -64,7 +158,7 @@
 [tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
 [tinobsy/tinobsy.cpp:124-finalize_cons] 
 [tinobsy/tinobsy.cpp:27-~object] }
-[tinobsy/tinobsy.cpp:95-gc] vm::gc() end, 0 objects, 7 freed }
-hello world
+[tinobsy/tinobsy.cpp:95-gc] vm::gc() end, 0 objects, 19 freed }
+all done
 [tinobsy/tinobsy.cpp:100-~vm] vm::~vm() {
 [tinobsy/tinobsy.cpp:106-~vm] }

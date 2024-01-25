@@ -22,9 +22,11 @@ int main() {
     start_catch_segfault();
     auto vm = new pickle::pickle();
     auto foo = vm->with_metadata(vm->wrap_string("foo\n    bar\n  syntax error"), 1, 1, "foo.pickle", vm->list(3, NULL, NULL, NULL));
-    vm->run_next_thunk();
-    vm->gc();
-    printf("hello world\n");
+    pickle::funcs::parse(vm, vm->list(1, foo), NULL, vm->wrap_func(PICKLE_INLINE_FUNC {
+            printf("Foofunc called. Args[0] should be a string, value = %s\n", car(args)->cells[0].as_chars);
+    }), NULL);
+    while (vm->queue_head) vm->run_next_thunk(), vm->gc();
+    printf("all done\n");
     delete vm;
     return 0;
 }
