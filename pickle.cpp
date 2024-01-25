@@ -40,17 +40,18 @@ bool needs_escape(char c) {
     return strchr("{}\b\t\n\v\f\r\a\\\"", c) != NULL;
 }
 
-static void init_metadata(object* self, va_list args) {
-    self->cells = new cell[4];
-    self->cells[0].as_obj = va_arg(args, object*); // line
-    self->cells[1].as_obj = va_arg(args, object*); // column
-    self->cells[2].as_obj = va_arg(args, object*); // file
-    self->cells[3].as_obj = va_arg(args, object*); // prototypes list
+template <int n> void initmulti(object* self, va_list args) {
+    self->cells = new cell[n];
+    DBG("creating %s (%i cells)", self->schema->name, n);
+    for (int i = 0; i < n; i++) self->cells[i].as_obj = va_arg(args, object*);
+
 }
 
-static void mark4(object* self) {
-    for (int i = 0; i < 3; i++) self->cells[i].as_obj->mark();
+template <int n> void markmulti(object* self) {
+    for (int i = 0; i < n; i++) self->cells[i].as_obj->mark();
 }
+
+#define freemulti tinobsy::schema_functions::finalize_cons
 
 static void init_c_function(object* self, va_list args) {
     self->as_ptr = (void*)va_arg(args, func_ptr);
@@ -60,19 +61,6 @@ static void init_c_function(object* self, va_list args) {
 
 static int cmp_c_function(object* a, object* b) {
     return (uintptr_t)a->as_ptr - (uintptr_t)b->as_ptr;
-}
-
-static void init_function_partial(object* self, va_list args) {
-    self->cells = new cell[5];
-    self->cells[0].as_obj = va_arg(args, object*); // function
-    self->cells[1].as_obj = va_arg(args, object*); // args
-    self->cells[2].as_obj = va_arg(args, object*); // env
-    self->cells[3].as_obj = va_arg(args, object*); // cont
-    self->cells[4].as_obj = va_arg(args, object*); // failcont
-}
-
-static void mark_function_partial(object* self) {
-    for (int i = 0; i < 5; i++) self->cells[i].as_obj->mark();
 }
 
 static void init_string(object* self, va_list args) {
@@ -95,14 +83,6 @@ static void del_string(object* self) {
     delete[] self->cells;
 }
 
-static void init_error(object* self, va_list args) {
-    DBG("Creating an error");
-    self->cells = new cell[3];
-    self->cells[0].as_obj = va_arg(args, object*);
-    self->cells[1].as_obj = va_arg(args, object*);
-    self->cells[2].as_obj = va_arg(args, object*);
-}
-
 static void init_int(object* self, va_list args) {
     self->as_big_int = va_arg(args, int64_t);
 }
@@ -119,13 +99,17 @@ static int cmp_float(object* a, object* b) {
     return (int)(a->as_double - b->as_double);
 }
 
-const object_schema metadata_type("object_metadata", init_metadata, NULL, mark4, tinobsy::schema_functions::finalize_cons);
-const object_schema cons_type("cons", tinobsy::schema_functions::init_cons, NULL, tinobsy::schema_functions::mark_cons, tinobsy::schema_functions::finalize_cons);
-const object_schema partial_type("function_partial", init_function_partial, NULL, NULL, tinobsy::schema_functions::finalize_cons);
+// metadata = line, column, file, prototypes 
+const object_schema metadata_type("object_metadata", initmulti<4>, NULL, markmulti<4>, freemulti);
+// cons = car, cdr
+const object_schema cons_type("cons", tinobsy::schema_functions::init_cons, NULL, tinobsy::schema_functions::mark_cons, freemulti);
+// partial = function, args, env, then, catch
+const object_schema partial_type("function_partial", initmulti<5>, NULL, markmulti<5>, freemulti);
+// error = type, message, detail, then
+const object_schema error_type("error", initmulti<4>, NULL, markmulti<4>, freemulti);
 const object_schema string_type("string", init_string, cmp_string, mark_string, del_string);
 const object_schema symbol_type("symbol", tinobsy::schema_functions::init_str, tinobsy::schema_functions::cmp_str, NULL, tinobsy::schema_functions::finalize_str);
 const object_schema c_function_type("c_function", init_c_function, cmp_c_function, NULL, NULL);
-const object_schema error_type("error", init_error, NULL, mark4, tinobsy::schema_functions::finalize_cons);
 const object_schema integer_type("int", init_int, cmp_int, NULL, NULL);
 const object_schema float_type("float", init_float, cmp_float, NULL, NULL);
 
@@ -217,6 +201,7 @@ void pickle::run_next_thunk() {
 void pickle::mark_globals() {
     this->queue_head->mark();
     this->queue_tail->mark(); // in case queue gets detached
+    this->globals->mark();
 }
 
 // Can be called by the program
@@ -225,12 +210,12 @@ void funcs::parse(pickle* runner, object* args, object* env, object* cont, objec
     object* s = car(args);
     const char* str = (const char*)(s->cells[0].as_chars);
     object* result = s->cells[1].as_obj;
-    if (result != NULL) { // Saved preparse
+    if (result) { // Saved preparse
         if (result->schema == &error_type) goto failure;
         else goto success;
     }
     TODO;
-    // result = runner->wrap_error(runner->wrap_symbol("SyntaxError"), runner->list(1, result), cont)
+    // result = runner->wrap_error(runner->wrap_symbol("SyntaxError"), runner->wrap_string(message), runner->list(1, result), cont)
     success:
     runner->set_retval(runner->list(1, result), env, cont, fail_cont);
     s->cells[1].as_obj = result; // Save parse for later if constantly reparsing string (i.e. a loop)
