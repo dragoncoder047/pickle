@@ -1,29 +1,12 @@
 [tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
 [tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a string
-[pickle.cpp:106-init_string] init_string: thisWillCauseASyntaxError
+[pickle.cpp:84-init_string] init_string: thisWillCauseASyntaxError
 [tinobsy/tinobsy.cpp:38-allocate] Trying to intern a string
 [tinobsy/tinobsy.cpp:47-allocate] New string not interned
-[pickle.cpp:225-wrap_string] Starting task to parse string thisWillCauseASyntaxError
-[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
-[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a cons
-[tinobsy/tinobsy.cpp:110-init_cons] 
-[tinobsy/tinobsy.cpp:38-allocate] Trying to intern a cons
-[tinobsy/tinobsy.cpp:47-allocate] New cons not interned
-[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
-[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a c_function
-[pickle.cpp:82-init_c_function] Function is eval(): false
-[pickle.cpp:83-init_c_function] Function is parse(): true
-[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
-[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a function_partial
-[pickle.cpp:176-do_later] do_later: Adding cons to tail
-[tinobsy/tinobsy.cpp:33-allocate] Assertion succeeded: schema != NULL
-[tinobsy/tinobsy.cpp:34-allocate] vm::allocate() a cons
-[tinobsy/tinobsy.cpp:110-init_cons] 
-[tinobsy/tinobsy.cpp:38-allocate] Trying to intern a cons
-[tinobsy/tinobsy.cpp:47-allocate] New cons not interned
-[pickle.cpp:189-run_next_thunk] run_next_thunk
-[pickle.cpp:192-run_next_thunk] Have thunk
-[pickle.cpp:196-run_next_thunk] Have func
-[pickle.cpp:198-run_next_thunk] Native function
-[pickle.cpp:239-parse] parsing
-[pickle.cpp:246-parse] parse: Function not implemented
+[pickle.cpp:178-run_next_thunk] run_next_thunk
+hello world
+[tinobsy/tinobsy.cpp:100-~vm] vm::~vm() {
+[tinobsy/tinobsy.cpp:22-~object] object::~object() for a string begin {
+[tinobsy/tinobsy.cpp:25-~object] Assertion succeeded: xt != NULL
+[tinobsy/tinobsy.cpp:27-~object] }
+[tinobsy/tinobsy.cpp:106-~vm] }

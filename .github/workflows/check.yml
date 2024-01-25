@@ -3,8 +3,10 @@ name: run test file
 on:
   push:
     branches: ["main"]
+    paths: ["**.[ch]pp"]
   pull_request:
     branches: ["main"]
+    paths: ["**.[ch]pp"]
 
 jobs:
   test:

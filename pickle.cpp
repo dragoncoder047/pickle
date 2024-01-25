@@ -40,41 +40,19 @@ bool needs_escape(char c) {
     return strchr("{}\b\t\n\v\f\r\a\\\"", c) != NULL;
 }
 
-location::location() {
-    DBG("location::location() default: <anonymous>:1:1");
-}
-
-location::location(size_t line, size_t col, const char* name)
-: line(line),
-  col(col),
-  name(name != NULL ? strdup(name) : NULL) {
-    DBG("location::location() from parameters: %s:%zu:%zu", name, line, col);
-}
-
-location::location(const location* other)
-: line(other != NULL ? other->line : 1),
-  col(other != NULL ? other->col : 1),
-  name(other != NULL && other->name != NULL ? strdup(other->name) : NULL) {
-    DBG("location::location() from existing location: %s:%zu:%zu", this->name, this->line, this->col);
-}
-
-location::~location() {
-    DBG("location::~location()");
-    free(this->name);
-}
-
 static void init_metadata(object* self, va_list args) {
-    self->cells = new cell[2];
-    self->cells[0].as_ptr = (void*)(new location(va_arg(args, location*)));
+    self->cells = new cell[4];
+    self->cells[0].as_ptr = va_arg(args, object*);
     self->cells[1].as_obj = va_arg(args, object*);
+    self->cells[2].as_obj = va_arg(args, object*);
+    self->cells[3].as_obj = va_arg(args, object*);
 }
 
 static void mark_metadata(object* self) {
+    self->cells[0].as_obj->mark();
     self->cells[1].as_obj->mark();
-}
-
-static void finalize_metadata(object* self) {
-    delete (location*)(self->cells[0].as_ptr);
+    self->cells[2].as_obj->mark();
+    self->cells[3].as_obj->mark();
 }
 
 static void init_c_function(object* self, va_list args) {
@@ -132,7 +110,7 @@ static void mark_error(object* self) {
     for (int i = 0; i < 3; i++) self->cells[i].as_obj->mark();
 }
 
-const object_schema metadata_type("object_metadata", init_metadata, NULL, mark_metadata, finalize_metadata);
+const object_schema metadata_type("object_metadata", init_metadata, NULL, mark_metadata, tinobsy::schema_functions::finalize_cons);
 const object_schema cons_type("cons", tinobsy::schema_functions::init_cons, cmp_c_function, tinobsy::schema_functions::mark_cons, tinobsy::schema_functions::finalize_cons);
 const object_schema partial_type("function_partial", init_function_partial, NULL, NULL, tinobsy::schema_functions::finalize_cons);
 const object_schema c_function_type("c_function", init_c_function, NULL, NULL, NULL);
@@ -228,21 +206,6 @@ void pickle::run_next_thunk() {
 void pickle::mark_globals() {
     this->queue_head->mark();
     this->queue_tail->mark(); // in case queue gets detached
-}
-
-object* pickle::wrap_string(const char* chs) {
-    object* s = this->allocate(&string_type, chs);
-    if (s->cells[1].as_obj == NULL) {// Interned but not already pre-parsed
-        DBG("Starting task to parse string %s", chs);
-        this->do_later(this->make_partial(
-            this->wrap_func(funcs::parse),
-            this->cons_list(1, s),
-            NULL,
-            NULL,
-            NULL
-        ));
-    }
-    return s;
 }
 
 // Can be called by the program

@@ -17,18 +17,6 @@ char escape(char c);
 char unescape(char c);
 bool needs_escape(char c);
 
-// A struct to hold the line/column information for tokens.
-class location {
-    public:
-    location();
-    location(const location* other);
-    location(size_t line, size_t col, const char* name);
-    ~location();
-    size_t line = 1;
-    size_t col = 1;
-    char* name = NULL;
-};
-
 class pickle;
 
 typedef void (*func_ptr)(pickle* runner, object* args, object* env, object* cont, object* fail_cont);
@@ -59,7 +47,9 @@ class pickle : public tinobsy::vm {
     inline object* make_partial(object* func, object* args, object* env, object* continuation, object* failure_continuation) {
         return this->allocate(&partial_type, func, args, env, continuation, failure_continuation);
     }
-    object* wrap_string(const char* chs);
+    inline object* wrap_string(const char* chs) {
+        return this->allocate(&string_type, chs);
+    }
     inline object* wrap_symbol(const char* symbol) {
         return this->allocate(&symbol_type, symbol);
     }
