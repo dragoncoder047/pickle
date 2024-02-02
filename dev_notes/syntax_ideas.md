@@ -43,11 +43,16 @@ pattern (bar (the):? [x is Foo]) precedence?
     (x)/(y)/(z) ## alternation
 
     ## capturing
-    [x is (Foo)]
-        ## --> captures x if it is an instance of Foo
-        ## or if Foo is callable and returns true when given x
+    [x (Foo)] ## captures what Foo matches
 
-    [is Space] ## --> captures but doesn't bind
+    [x is/matches (Foo)]
+        ## shorthand for [x [is/matches Foo]]
+        ## --> captures x if it is an instance of Foo (is)
+        ##             or if calling Foo with x returns true (matches)
+
+    [is (Foo)] ## --> captures but doesn't bind
+
+    [is Space] ## special because implicit spaces don't match newlines, this explicit space does
 ```
 
 ## Functions
@@ -57,22 +62,35 @@ fn functionName param param param
     ## implicit return
     nothing
 
-fn functionName (param is Foo) (param or default)
+fn functionName (param is/matches Foo) (param or default)
     ## is -> type restrictions: if the param does not match Foo it will throw a TypeError immediately
     ## or -> default value if not provided
 ```
 
-## Other built-in functions
+## Other built-in constructs
 
 ```py
 ## Import a module
 import [modname is String | Symbol] for [exports is Record] ## like Python "from foo import bar, baz"
-import [modname is String | Symbol] as [name is Symbol] ## like Python "import foo as bar"
+import [modname is String | Symbol] for [name is Symbol] ## like Python "import foo as bar"
 import [modname is String | Symbol] ## like Python "import foo"
 
 ## Control flow
+while [condition any:+][is Space][body is Block]
+if [condition any:+][is Space][body is Block]
 
-while [condition [is Object]:+][is Space][body is Block]
-if [condition [is Object]:+][is Space][body is Block]
-synchronized [mutex [is Object]:+][is Space][body is Block]
+## Dynamic-wind but like Python context manager
+with [context-manager][is Space][body is Block]
+
+## Synchronization
+synchronized [mutex][is Space][body is Block]
+
+## Coroutines
+fork[is Space][body is Block] ## returns the coroutine which can be awaited
+await [coro is Coroutine] ## waits for the coroutine to finish and gets the return value
+
+## Continuations
+callcc[is Space][body is Block]
+## interestingly enough each function callframe is implicitly wrapped in this to implement "return"
+## and every loop is wrapped in TWO of these to implement "break" and "continue"
 ```
