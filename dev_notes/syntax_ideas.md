@@ -80,7 +80,7 @@ while [condition any:+][is Space][body is Block]
 if [condition any:+][is Space][body is Block]
 
 ## Dynamic-wind but like Python context manager
-with [context-manager][is Space][body is Block]
+with [context-manager is ContextManager][is Space][body is Block]
 
 ## Synchronization
 synchronized [mutex][is Space][body is Block]
