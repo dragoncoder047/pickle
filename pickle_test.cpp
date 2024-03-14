@@ -4,6 +4,8 @@
 #include <cstdio>
 #include <csignal>
 
+char* me = NULL; // The name of this executable -- captured at the top of main()
+
 void on_segfault(int signal, siginfo_t* info, void* arg) {
     fprintf(stderr, "Segmentation fault at %p\n", info->si_addr);
     DBG("Segmentation fault at %p", info->si_addr);
@@ -18,15 +20,21 @@ void start_catch_segfault() {
     sigaction(SIGSEGV, &x, NULL);
 }
 
-int main() {
+int main(int argc, char** argv) {
+    if (argc > 0) me = argv[0];
     start_catch_segfault();
-    auto vm = new pickle::pickle();
-    auto foo = vm->with_metadata(vm->wrap_string("foo\n    bar\n  syntax error"), 1, 1, "foo.pickle", vm->list(3, NULL, NULL, NULL));
-    pickle::funcs::parse(vm, vm->list(1, foo), NULL, vm->wrap_func(PICKLE_INLINE_FUNC {
-            printf("Foofunc called. Args[0] should be a string, value = %s\n", car(args)->cells[0].as_chars);
-    }), NULL);
-    while (vm->queue_head) vm->run_next_thunk(), vm->gc();
-    printf("all done\n");
-    delete vm;
+    pickle::pickle vm;
+    vm.push_instruction(vm.make_symbol("foo"));
+    vm.push_instruction(vm.make_symbol("bar"), vm.make_symbol("error"));
+    vm.push_instruction(vm.make_symbol("baz"));
+    vm.push_instruction(vm.make_symbol("baz"), vm.make_symbol("test long symbol with spaces"));
+    vm.push_instruction(vm.make_symbol("baz"));
+    vm.push_instruction(vm.make_symbol("baz"));
+    vm.push_instruction(vm.make_symbol("baz"));
+    pickle::dump(vm.instruction_stack);
+    putchar('\n');
+    
+    vm.gc();
+    printf("all done -- cleaning up\n");
     return 0;
 }

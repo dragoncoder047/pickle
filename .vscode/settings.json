@@ -1,0 +1,10 @@
+{
+    "cSpell.words": [
+        "tinobsy"
+    ],
+    "files.associations": {
+        "*.tmpl": "jinja-html",
+        "*.html": "html",
+        "functional": "cpp"
+    }
+}
