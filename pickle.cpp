@@ -70,11 +70,11 @@ void pickle::step() {
 
 static bool is_primitive_type(object* x) {
     if (x == NULL) return true;
-    size_t i = 0; while (primitives[i] != NULL) { if (x->type == primitives[i]) break; }
+    size_t i = 0; while (primitives[i] != NULL) { if (x->type == primitives[i]) break; i++; }
     return primitives[i] != NULL;
 }
 
-int prim_cmp(object* a, object* b) {
+int eqcmp(object* a, object* b) {
     if (a == b) return 0;
     if (a == NULL) return -1;
     if (b == NULL) return 1;
@@ -88,7 +88,7 @@ int prim_cmp(object* a, object* b) {
 object* assoc(object* list, object* key) {
     for (; list; list = cdr(list)) {
         object* pair = car(list);
-        if (!prim_cmp(key, car(pair))) return pair;
+        if (!eqcmp(key, car(pair))) return pair;
     }
     return NULL;
 }
@@ -96,7 +96,7 @@ object* assoc(object* list, object* key) {
 object* delassoc(object** list, object* key) {
     for (; *list; list = &cdr(*list)) {
         object* pair = car(*list);
-        if (!prim_cmp(key, car(pair))) {
+        if (!eqcmp(key, car(pair))) {
             *list = cdr(*list);
             return pair;
         }
@@ -171,37 +171,90 @@ void splice_match(pickle* vm, object* args, object* env, object* cont, object* f
     // TODO(sm);
 }
 
-static void count_pointers() {
-
+static void make_refs_list(pickle* vm, object* obj, object** alist) {
+    again:
+    DBG();
+    if (obj == NULL || obj->type != &cons_type) return;
+    object* entry = assoc(*alist, obj);
+    if (entry) {
+        cdr(entry) = vm->make_integer(2);
+        return;
+    }
+    vm->push(vm->cons(obj, vm->make_integer(1)), *alist);
+    make_refs_list(vm, cdr(obj), alist);
+    obj = cdr(obj);
+    goto again;
 }
 
-void dump(object* x) {
-    if (x == NULL) printf("NULL");
-    else if (x->type == &cons_type) {
-        // Try to print a Scheme list
+// returns zero if the object doesn't need a #N# marker
+// otherwise returns N (negative if not first time)
+static int64_t reffed(pickle* vm, object* obj, object* alist, int64_t* counter) {
+    object* entry = assoc(alist, obj);
+    if (entry) {
+        int64_t value = vm->unwrap_integer(cdr(entry));
+        if (value < 0) {
+            // seen already
+            return value;
+        }
+        if (value == 2) {
+            // object with shared structure but no id yet
+            // assign id
+            int64_t my_id = *counter++;
+            // store entry
+            cdr(entry) = vm->make_integer(-my_id);
+            return my_id;
+        }
+    }
+    return 0;
+}
+
+static void print_with_refs(pickle* vm, object* obj, object* alist, int64_t* counter) {
+    if (obj == NULL) {
+        printf("NULL");
+        return;
+    }
+    #define PRINTTYPE(t, f, fmt) else if (obj->type == t) printf(fmt, obj->f)
+    PRINTTYPE(&string_type, as_chars, "\"%s\"");
+    PRINTTYPE(&symbol_type, as_chars, strchr(obj->as_chars, ' ') ? "#|%s|" : "%s");
+    PRINTTYPE(&integer_type, as_big_int, "%" PRId64);
+    PRINTTYPE(&float_type, as_double, "%lg");
+    PRINTTYPE(&c_function_type, as_ptr, "<function %p>");
+    PRINTTYPE(NULL, as_ptr, "<garbage %p>");
+    #undef PRINTTYPE
+    else if (obj->type != &cons_type) printf("<%s:%p>", obj->type->name, obj->as_ptr);
+    else {
+        // it's a cons
+        // test if it's in the table
+        int64_t ref = reffed(vm, obj, alist, counter);
+        if (ref < 0) {
+            printf("#%" PRId64 "#", -ref);
+            return;
+        }
+        if (ref) {
+            printf("#%" PRId64 "=", ref);
+        }
+        // now print the object
         putchar('(');
         for (;;) {
-            dump(car(x));
-            x = cdr(x);
-            if (x && x->type == &cons_type) putchar(' ');
+            print_with_refs(vm, car(obj), alist, counter);
+            obj = cdr(obj);
+            if (reffed(vm, obj, alist, counter)) break;
+            if (obj && obj->type == &cons_type) putchar(' ');
             else break;
         }
-        if (x) {
+        if (obj) {
             printf(" . ");
-            dump(x);
+            print_with_refs(vm, obj, alist, counter);
         }
         putchar(')');
     }
-    else {
-        #define PRINTTYPE(t, f, fmt) if (x->type == &t) printf(fmt, x->f)
-        PRINTTYPE(string_type, as_chars, "\"%s\"");
-        else PRINTTYPE(symbol_type, as_chars, strchr(x->as_chars, ' ') ? "#|%s|" : "%s");
-        else PRINTTYPE(integer_type, as_big_int, "%" PRId64);
-        else PRINTTYPE(float_type, as_double, "%lg");
-        else PRINTTYPE(c_function_type, as_ptr, "<function %p>");
-        else printf("<%s:%p>", x->type->name, x->as_ptr);
-        #undef PRINTTYPE
-    }
+}
+
+void pickle::dump(object* obj) {
+    object* alist = NULL;
+    int64_t counter = 0;
+    make_refs_list(this, obj, &alist);
+    print_with_refs(this, obj, alist, &counter);
 }
 
 }

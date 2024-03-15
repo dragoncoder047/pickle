@@ -21,15 +21,13 @@ void start_catch_segfault() {
 int main() {
     start_catch_segfault();
     pickle::pickle vm;
-    for (size_t i = 0; i < 100; i++) {
-        vm.push_instruction(vm.make_symbol("foo"));
-        vm.push_instruction(vm.make_symbol("bar"), vm.make_symbol("error"));
-        vm.push_instruction(vm.make_symbol("baz"));
-        vm.push_instruction(vm.make_symbol("baz"), vm.make_symbol("test long symbol with spaces"));
-        vm.push_instruction(vm.make_symbol("baz"));
-        vm.push_instruction(vm.make_symbol("baz"));
-    }
-    pickle::dump(vm.instruction_stack);
+    vm.push_instruction(vm.make_symbol("foo"));
+    vm.push_instruction(vm.make_symbol("bar"), vm.make_symbol("error"));
+    vm.push_instruction(vm.make_symbol("baz"));
+    vm.push_instruction(vm.make_symbol("baz"), vm.make_symbol("test long symbol with spaces"));
+    vm.push_instruction(vm.make_symbol("baz"));
+    vm.push_instruction(vm.make_symbol("baz"));
+    vm.dump(vm.instruction_stack);
     putchar('\n');
     vm.gc();
     printf("all done -- cleaning up\n");

@@ -21,17 +21,12 @@ class pickle;
 
 typedef object* (*func_ptr)(pickle* vm);
 
-extern const object_type metadata_type;
 extern const object_type cons_type;
-extern const object_type partial_type;
 extern const object_type c_function_type;
 extern const object_type string_type;
 extern const object_type symbol_type;
-extern const object_type stream_type;
-extern const object_type error_type;
 extern const object_type integer_type;
 extern const object_type float_type;
-extern const object_type list_type;
 
 class pickle : public tinobsy::vm {
     public:
@@ -91,15 +86,26 @@ class pickle : public tinobsy::vm {
         o->as_big_int = x;
         return o;
     }
+    inline int64_t unwrap_integer(object* x) {
+        ASSERT(x != NULL && x->type == &integer_type);
+        return x->as_big_int;
+    }
     inline object* make_float(double x) {
         INTERN(this, int64_t, &float_type, x);
         object* o = this->alloc(&float_type);
         o->as_double = x;
         return o;
     }
+    inline double unwrap_double(object* x) {
+        ASSERT(x != NULL && x->type == &float_type);
+        return x->as_double;
+    }
 
 
     void step();
+
+
+    void dump(object*);
 
 
     private:
@@ -110,7 +116,7 @@ class pickle : public tinobsy::vm {
 // Helper functions.
 
 // Returns 0 if equal, or nonzero if not equal. Doesn't work on compound or user types
-int prim_cmp(object*, object*);
+int eqcmp(object*, object*);
 // Returns the pair in the assoc list that has the same key, or NULL if not found.
 object* assoc(object*, object*);
 // Removes the key/value pair from the list and returns it, or returns NULL if the pair never existed.
@@ -121,7 +127,6 @@ void eval(pickle* vm, object* args, object* env, object* cont, object* fail_cont
 void splice_match(pickle* vm, object* args, object* env, object* cont, object* fail_cont);
 
 // Chokes on self-referential objects -- you have been warned
-void dump(object*);
 
 
 }
