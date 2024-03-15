@@ -59,6 +59,7 @@ void pickle::mark_globals() {
     this->markobject(this->queue_tail);  // in case queue gets detached
     this->markobject(this->globals);
     this->markobject(this->stack);
+    this->markobject(this->instruction_stack);
 }
 
 void pickle::step() {
