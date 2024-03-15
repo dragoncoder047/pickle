@@ -20,7 +20,7 @@ jobs:
     - name: test
       id: test
       run: |
-        unset -e
+        set +e
         make test >> .tempfile 2>&1 || true
         cat .tempfile
         cat .tempfile | grep "Error 74" >/dev/null
