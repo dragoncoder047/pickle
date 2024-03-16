@@ -171,6 +171,9 @@ void splice_match(pickle* vm, object* args, object* env, object* cont, object* f
     // TODO(sm);
 }
 
+// ------------------- Circular-reference-proof object dumper -----------------------
+// ---------- (based on https://stackoverflow.com/a/78169673/23626926) --------------
+
 static void make_refs_list(pickle* vm, object* obj, object** alist) {
     again:
     DBG();
@@ -181,7 +184,7 @@ static void make_refs_list(pickle* vm, object* obj, object** alist) {
         return;
     }
     vm->push(vm->cons(obj, vm->make_integer(1)), *alist);
-    make_refs_list(vm, cdr(obj), alist);
+    make_refs_list(vm, car(obj), alist);
     obj = cdr(obj);
     goto again;
 }
@@ -196,10 +199,10 @@ static int64_t reffed(pickle* vm, object* obj, object* alist, int64_t* counter) 
             // seen already
             return value;
         }
-        if (value == 2) {
+        if (value > 1) {
             // object with shared structure but no id yet
             // assign id
-            int64_t my_id = *counter++;
+            int64_t my_id = (*counter)++;
             // store entry
             cdr(entry) = vm->make_integer(-my_id);
             return my_id;
@@ -252,7 +255,7 @@ static void print_with_refs(pickle* vm, object* obj, object* alist, int64_t* cou
 
 void pickle::dump(object* obj) {
     object* alist = NULL;
-    int64_t counter = 0;
+    int64_t counter = 1;
     make_refs_list(this, obj, &alist);
     print_with_refs(this, obj, alist, &counter);
 }
