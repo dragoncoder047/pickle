@@ -241,7 +241,15 @@ static void print_with_refs(pickle* vm, object* obj, object* alist, int64_t* cou
         for (;;) {
             print_with_refs(vm, car(obj), alist, counter);
             obj = cdr(obj);
-            if (reffed(vm, obj, alist, counter)) break;
+            int64_t ref = reffed(vm, obj, alist, counter);
+            if (ref) {
+                if (ref > 0) {
+                    // reset the ref so it will print properly
+                    cdr(assoc(alist, obj)) = vm->integer(ref);
+                    (*counter)--;
+                }
+                break;
+            }
             if (obj && obj->type == &cons_type) putchar(' ');
             else break;
         }
