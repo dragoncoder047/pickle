@@ -55,16 +55,11 @@ const object_type float_type("float", NULL, NULL, NULL);
 const object_type* primitives[] = { &string_type, &symbol_type, &c_function_type, &integer_type, &float_type, NULL };
 
 void pickle::mark_globals() {
-    this->markobject(this->queue_head);
-    this->markobject(this->queue_tail);  // in case queue gets detached
+    this->markobject(this->queue);
     this->markobject(this->globals);
-    this->markobject(this->stack);
-    this->markobject(this->instruction_stack);
+    this->markobject(this->function_registry);
 }
 
-void pickle::step() {
-    DBG("TODO: write step stack code");
-}
 
 //--------------- HELPER FUNCTIONS ----------------------------
 
@@ -102,6 +97,51 @@ object* delassoc(object** list, object* key) {
         }
     }
     return NULL;
+}
+
+// ---------- EVAL ENGINE --------------------------------------------
+
+void pickle::start_thread()  {
+    // thread is list of (data stack, next instruction, instruction stack)
+    object* new_thread = this->cons(nil, this->cons(nil, nil));
+    if (!this->queue) {
+        this->queue = this->cons(new_thread, NULL);
+        cdr(this->queue) = this->queue;
+        return;
+    }
+    object* last = this->queue;
+    // Find last element of queue
+    while (cdr(last) != this->queue) last = cdr(last);
+    this->push(new_thread, this->queue);
+    cdr(last) = this->queue;
+}
+
+void pickle::step() {
+    next_inst:
+    if (!this->queue) return;
+    object* next_type = car(cdr(this->curr_thread()));
+    object* op = this->pop_inst();
+    if (!op) {
+        object* last = this->queue;
+        if (cdr(last) == last) {
+            // last thread: nothing to do
+            this->queue = nil;
+            return;
+        }
+        while (cdr(last) != this->queue) last = cdr(last);
+        // Drop the empty thread
+        this->queue = cdr(last) = cdr(this->queue);
+        goto next_inst;
+    }
+    object* type = car(op);
+    if (eqcmp(type, next_type) != 0) goto next_inst;
+    object* inst_name = car(cdr(op));
+    object* inst_payload = cdr(cdr(op));
+    object* pair = assoc(this->function_registry, inst_name);
+    ASSERT(pair, "Unknown instruction %s", this->stringof(inst_name));
+    next_type = this->fptr(cdr(pair))(this, inst_payload);
+    car(cdr(this->curr_thread())) = next_type;
+    this->queue = cdr(this->queue);
 }
 
 //--------------- PARSER --------------------------------------
@@ -180,10 +220,10 @@ static void make_refs_list(pickle* vm, object* obj, object** alist) {
     if (obj == NULL || obj->type != &cons_type) return;
     object* entry = assoc(*alist, obj);
     if (entry) {
-        cdr(entry) = vm->make_integer(2);
+        cdr(entry) = vm->integer(2);
         return;
     }
-    vm->push(vm->cons(obj, vm->make_integer(1)), *alist);
+    vm->push(vm->cons(obj, vm->integer(1)), *alist);
     make_refs_list(vm, car(obj), alist);
     obj = cdr(obj);
     goto again;
@@ -194,7 +234,7 @@ static void make_refs_list(pickle* vm, object* obj, object** alist) {
 static int64_t reffed(pickle* vm, object* obj, object* alist, int64_t* counter) {
     object* entry = assoc(alist, obj);
     if (entry) {
-        int64_t value = vm->unwrap_integer(cdr(entry));
+        int64_t value = vm->intof(cdr(entry));
         if (value < 0) {
             // seen already
             return value;
@@ -204,7 +244,7 @@ static int64_t reffed(pickle* vm, object* obj, object* alist, int64_t* counter) 
             // assign id
             int64_t my_id = (*counter)++;
             // store entry
-            cdr(entry) = vm->make_integer(-my_id);
+            cdr(entry) = vm->integer(-my_id);
             return my_id;
         }
     }
@@ -212,8 +252,8 @@ static int64_t reffed(pickle* vm, object* obj, object* alist, int64_t* counter) 
 }
 
 static void print_with_refs(pickle* vm, object* obj, object* alist, int64_t* counter) {
-    if (obj == NULL) {
-        printf("NULL");
+    if (obj == nil) {
+        printf("NIL");
         return;
     }
     #define PRINTTYPE(t, f, fmt) else if (obj->type == t) printf(fmt, obj->f)
