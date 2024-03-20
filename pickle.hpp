@@ -2,11 +2,10 @@
 #define PICKLE_H
 
 #include "tinobsy/tinobsy.hpp"
-#include <cstdlib>
-#include <cctype>
-#include <cstdint>
-#include <cstring>
-#include <cstdarg>
+#include <stdlib.h>
+#include <ctype.h>
+#include <stdint.h>
+#include <string.h>
 
 namespace pickle {
 
@@ -18,20 +17,20 @@ using tinobsy::object_type;
 
 char escape(char c);
 char unescape(char c);
-bool needs_escape(char c);
 
-class pickle;
+class pvm;
 
-typedef object* (*func_ptr)(pickle* vm, object* data);
+typedef object* (*func_ptr)(pvm* vm, object* cookie, object* inst_type);
 
 extern const object_type cons_type;
+extern const object_type obj_type;
 extern const object_type c_function_type;
 extern const object_type string_type;
 extern const object_type symbol_type;
 extern const object_type integer_type;
 extern const object_type float_type;
 
-class pickle : public tinobsy::vm {
+class pvm : public tinobsy::vm {
     public:
 
     // round-robin queue of threads (circular list)
@@ -63,20 +62,20 @@ class pickle : public tinobsy::vm {
     }
 
     // pushes the data to the current thread's instruction stack
-    // inst is the symbol name (to look up in function_registry), type is the kind of the function, data is optional
-    inline void push_inst(const char* inst, object* type = nil, object* data = nil) {
-        this->push_inst(this->sym(inst), type, data);
+    // inst is the symbol name (to look up in function_registry), type is the kind of the function, cookie is optional
+    inline void push_inst(const char* inst, object* type = nil, object* cookie = nil) {
+        this->push_inst(this->sym(inst), type, cookie);
     }
-    inline void push_inst(const char* inst, const char* type, object* data = nil) {
-        this->push_inst(this->sym(inst), type, data);
+    inline void push_inst(const char* inst, const char* type, object* cookie = nil) {
+        this->push_inst(this->sym(inst), type, cookie);
     }
-    inline void push_inst(object* inst, const char* type, object* data = nil) {
-        this->push_inst(inst, this->sym(type), data);
+    inline void push_inst(object* inst, const char* type, object* cookie = nil) {
+        this->push_inst(inst, this->sym(type), cookie);
     }
-    inline void push_inst(object* inst, object* type = nil, object* data = nil) {
+    inline void push_inst(object* inst, object* type = nil, object* cookie = nil) {
         object* ct = this->curr_thread();
         if (!ct) return;
-        this->push(this->cons(type, this->cons(inst, data)), cdr(cdr(ct)));
+        this->push(this->cons(type, this->cons(inst, cookie)), cdr(cdr(ct)));
     }
 
     // pops data from the current thread's data stack
@@ -185,7 +184,7 @@ class pickle : public tinobsy::vm {
         return car(this->queue);
     }
 
-    // gets the next instruction from the current thread;
+    // gets the next instruction from the current thread or nil if no thread
     inline object* pop_inst() {
         object* curr_thread = this->curr_thread();
         if (!curr_thread) return nil;
@@ -203,10 +202,9 @@ object* assoc(object*, object*);
 // Removes the key/value pair from the list and returns it, or returns NULL if the pair never existed.
 object* delassoc(object**, object*);
 
-void parse(pickle* vm, object* args, object* env, object* cont, object* fail_cont);
-void eval(pickle* vm, object* args, object* env, object* cont, object* fail_cont);
-void splice_match(pickle* vm, object* args, object* env, object* cont, object* fail_cont);
-
+object* parse(pvm* vm, object* cookie, object* inst_type);
+object* eval(pvm* vm, object* cookie, object* inst_type);
+object* splice_match(pvm* vm, object* cookie, object* inst_type);
 }
 
 #include "pickle.cpp"

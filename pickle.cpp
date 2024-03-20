@@ -35,26 +35,24 @@ char escape(char c) {
     }
 }
 
-bool needs_escape(char c) {
-    return strchr("{}\b\t\n\v\f\r\a\\\"", c) != NULL;
-}
-
-void free_payload(object* o) { free(o->as_ptr); }
+static void free_payload(object* o) { free(o->as_ptr); }
+static object* mark_car_only(tinobsy::vm* _, object* o) { return car(o); }
 
 // ------------------------ core types -----------------
 // these will later be swapped for actual objects
 
 // cons = car, cdr
 const object_type cons_type("cons", tinobsy::markcons, NULL, NULL);
+const object_type obj_type("object", tinobsy::markcons, NULL, NULL);
 // --------- primitive/ish types ---------------
-const object_type string_type("string", NULL, free_payload, NULL);
-const object_type symbol_type("symbol", NULL, free_payload, NULL);
-const object_type c_function_type("c_function", NULL, NULL, NULL);
-const object_type integer_type("int", NULL, NULL, NULL);
-const object_type float_type("float", NULL, NULL, NULL);
+const object_type string_type("string", mark_car_only, free_payload, NULL);
+const object_type symbol_type("symbol", mark_car_only, free_payload, NULL);
+const object_type c_function_type("c_function", mark_car_only, NULL, NULL);
+const object_type integer_type("int", mark_car_only, NULL, NULL);
+const object_type float_type("float", mark_car_only, NULL, NULL);
 const object_type* primitives[] = { &string_type, &symbol_type, &c_function_type, &integer_type, &float_type, NULL };
 
-void pickle::mark_globals() {
+void pvm::mark_globals() {
     this->markobject(this->queue);
     this->markobject(this->globals);
     this->markobject(this->function_registry);
@@ -99,9 +97,9 @@ object* delassoc(object** list, object* key) {
     return NULL;
 }
 
-// ---------- EVAL ENGINE --------------------------------------------
+// ---------- STACK MACHINE --------------------------------------------
 
-void pickle::start_thread()  {
+void pvm::start_thread()  {
     // thread is list of (data stack, next instruction, instruction stack)
     object* new_thread = this->cons(nil, this->cons(nil, nil));
     if (!this->queue) {
@@ -116,7 +114,7 @@ void pickle::start_thread()  {
     cdr(last) = this->queue;
 }
 
-void pickle::step() {
+void pvm::step() {
     next_inst:
     if (!this->queue) return;
     object* next_type = car(cdr(this->curr_thread()));
@@ -124,7 +122,7 @@ void pickle::step() {
     if (!op) {
         object* last = this->queue;
         if (cdr(last) == last) {
-            // last thread: nothing to do
+            // last thread and nothing to do
             this->queue = nil;
             return;
         }
@@ -136,46 +134,216 @@ void pickle::step() {
     object* type = car(op);
     if (eqcmp(type, next_type) != 0) goto next_inst;
     object* inst_name = car(cdr(op));
-    object* inst_payload = cdr(cdr(op));
+    object* cookie = cdr(cdr(op));
     object* pair = assoc(this->function_registry, inst_name);
     ASSERT(pair, "Unknown instruction %s", this->stringof(inst_name));
-    next_type = this->fptr(cdr(pair))(this, inst_payload);
+    next_type = this->fptr(cdr(pair))(this, cookie, next_type);
     car(cdr(this->curr_thread())) = next_type;
     this->queue = cdr(this->queue);
 }
 
 //--------------- PARSER --------------------------------------
 
-// Can be called by the program
-void parse(pickle* vm, object* args, object* env, object* cont, object* fail_cont) {
-    DBG("parsing");
-    // getarg(vm, args, 0, &string_type, env, fail_cont, vm->wrap_func(PICKLE_INLINE_FUNC {
-    //     GOTTEN_ARG(s);
-    //     const char* str = (const char*)(s->cells[0].as_chars);
-    //     object* result = s->cells[1].as_obj;
-    //     const char* message;
-    //     bool success = true;
-    //     if (result) { // Saved preparse
-    //         if (result->schema == &error_type) success = false;
-    //         goto done;
-    //     }
-    //     result = vm->wrap_string("Hello, World! parse result i am."); /* TODO: replace this with the actual parse code */
-    //     done:
-    //     if (success) vm->set_retval(vm->list(1, result), env, cont, fail_cont);
-    //     else {
-    //         result = vm->wrap_error(vm->wrap_symbol("SyntaxError"), vm->list(1, vm->wrap_string(message), result), cont);
-    //         vm->set_failure(result, env, cont, fail_cont);
-    //     }
-    //     s->cells[1].as_obj = result; // Save parse for later if constantly eval'ing string (i.e. a loop)
-    // }));
+typedef struct {
+    const char* data;
+    size_t i;
+    size_t len;
+} pstate;
+
+#define pos (s->i)
+#define restore pos =
+#define advance pos +=
+#define next pos++
+#define look (s->data[pos])
+#define at(z) (&s->data[z])
+#define here at(pos)
+#define eofp  (pos >= s->len)
+#define test(f) (f(look))
+#define chomp(str) (!strncmp(here, str, strlen(str)) ? advance strlen(str) : false)
+
+static void bufadd(char** b, char c) {
+    // super not memory efficient, it reallocs the buffer every time
+    char* ob = *b;
+    asprintf(b, "%s%c", *b ? *b : "", c);
+    free(ob);
+}
+static void bufcat(char** b, const char* c, int n) {
+    char* ob = *b;
+    asprintf(b, "%s%.*s", *b ? *b : "", n, c);
+    free(ob);
 }
 
-static object* get_best_match(pickle* vm, object* ast, object** env) {
+
+static object* do_parse(pvm* vm, pstate* s, bool* error, char* special) {
+    char c = look;
+    char* b = NULL;
+    char* b2 = NULL;
+    object* result = nil;
+    if (isalpha(c)) {
+        size_t p = pos;
+        while (!eofp && test(isalpha)) next;
+        bufcat(&b, at(p), pos - p);
+        result = vm->sym(b);
+    }
+    else if (isdigit(c)) {
+        double d; int64_t n;
+        int num;
+        int ok = sscanf(here, "%lg%n", &d, &num);
+        if (ok == 2) result = vm->number(d);
+        else {
+            ok = sscanf(here, "%" SCNi64 "%n", &n, &num);
+            if (ok == 2) result = vm->integer(n);
+            else {
+                *error = true;
+                result = vm->string("scanf error");
+            }
+        }
+        if (ok == 2) advance num;
+    }
+    else if (isspace(c) && c != '\n') {
+        result = vm->sym("SPACE");
+        while (test(isspace) && c != '\n') next;
+    }
+    else if (c == '#') {
+        // get comment or 1-character # operator
+        next;
+        if (look != '#') {
+            // it's a # operator
+            result = vm->sym("#");
+        } else {
+            next;
+            if (look != '#') {
+                // it's a line comment
+                do bufadd(&b, look), next; while (look != '\n');
+                result = vm->string(b);
+            } else {
+                // it's a block comment
+                bufcat(&b2, "###", 3);
+                next;
+                while (look == '#') bufadd(&b2, '#'), next;
+                do bufadd(&b, look), next; while (!eofp && !chomp(b2));
+                if (eofp) {
+                    *error = true;
+                    result = vm->string("error: unterminated block comment");
+                    goto done;
+                }
+                result = vm->string(b);
+            }
+        }
+    }
+    else if (c == '"' || c == '\'') {
+        char start = c;
+        next;
+        while (look != start && !eofp && look != '\n') {
+            char ch = look;
+            if (ch == '\\') {
+                next;
+                ch = unescape(ch);
+            }
+            if (ch) bufadd(&b, ch);
+            next;
+        }
+        if (look != start) {
+            *error = true;
+            result = vm->string("error: unclosed string");
+        }
+        else result = vm->string(b);
+    }
+    else if (c == '\n') {
+        getindent:
+        // parser block
+        next; // eat newline
+        while (test(isspace) && look != '\n') {
+            bufadd(&b2, look);
+            next;
+        }
+        if (look == '\n') {
+            free(b2);
+            b2 = NULL;
+            goto getindent;
+        }
+        // validate indent
+        for (char* c = b2; *c; c++) {
+            if (*c != *b2) {
+                *error = true;
+                result = vm->string("error: mix of spaces and tabs indenting block");
+                goto done;
+            }
+        }
+        for (;;) {
+            // get one line
+            do bufadd(&b, look), next; while (!eofp && look != '\n');
+            bufadd(&b, '\n');
+            if (eofp) break;
+            // check indent and break
+            chompindent:
+            if (!chomp(b2)) {
+                // if indent does not chomp, expect a blank line
+                bool has_indent = false;
+                while (test(isspace) && look != '\n') has_indent = true, next;
+                if (look == '\n') {
+                    next;
+                    bufadd(&b, '\n');
+                    goto chompindent;
+                }
+                // not a blank line
+                if (has_indent) {
+                    result = vm->string("error: unindent does not match previous indent");
+                    *error = true;
+                    goto done;
+                }
+                // completely unindented
+                else break;
+            }
+        }
+        result = vm->string(b);
+    }
+    else if (strchr("(){}[]", c)) {
+        *special = c;
+    }
+    else if (ispunct(c)) {
+        // must test for other punctuation last to allow other special cases to take precedence
+        bufadd(&b, c);
+        result = vm->sym(b);
+    }
+    else {
+        *error = true;
+        result = vm->string("unknown parser error");
+    }
+    done:
+    free(b);
+    free(b2);
+    return result;
+}
+
+// Can be called by the program
+object* parse(pvm* vm, object* cookie, object* inst_type) {
+    (void)cookie;
+    DBG("parsing");
+    object* string = vm->pop();
+    if (string->type != &string_type) {
+        vm->push_data(vm->string("error: non string to parse()"));
+        return vm->sym("error");
+    }
+    const char* str = vm->stringof(string);
+    pstate s = { .data = str, .i = 0, .len = strlen(str) };
+    bool error = false;
+    char special = 0;
+    object* result = do_parse(vm, &s, &error, &special);
+    if (special) {
+        result = vm->string("unknown syntax error");
+        error = true;
+    }
+    vm->push_data(result);
+    return error ? vm->sym("error") : nil;
+}
+
+static object* get_best_match(pvm* vm, object* ast, object** env) {
     return NULL;
 }
 
 // Eval(list) ::= apply_first_pattern(list), then eval(remaining list), else list if no patterns match
-void eval(pickle* vm, object* args, object* env, object* cont, object* fail_cont) {
+object* eval(pvm* vm, object* cookie, object* inst_type) {
     // object* ast = car(args);
     // // returns Match object: 0=pattern, 1=handler body, 2=match details for splice; and updates env with bindings
     // object* oldenv = env;
@@ -207,16 +375,15 @@ void eval(pickle* vm, object* args, object* env, object* cont, object* fail_cont
     // }
 }
 
-void splice_match(pickle* vm, object* args, object* env, object* cont, object* fail_cont) {
+object* splice_match(pvm* vm, object* cookie, object* inst_type) {
     // TODO(sm);
 }
 
 // ------------------- Circular-reference-proof object dumper -----------------------
 // ---------- (based on https://stackoverflow.com/a/78169673/23626926) --------------
 
-static void make_refs_list(pickle* vm, object* obj, object** alist) {
+static void make_refs_list(pvm* vm, object* obj, object** alist) {
     again:
-    DBG();
     if (obj == NULL || obj->type != &cons_type) return;
     object* entry = assoc(*alist, obj);
     if (entry) {
@@ -231,7 +398,7 @@ static void make_refs_list(pickle* vm, object* obj, object** alist) {
 
 // returns zero if the object doesn't need a #N# marker
 // otherwise returns N (negative if not first time)
-static int64_t reffed(pickle* vm, object* obj, object* alist, int64_t* counter) {
+static int64_t reffed(pvm* vm, object* obj, object* alist, int64_t* counter) {
     object* entry = assoc(alist, obj);
     if (entry) {
         int64_t value = vm->intof(cdr(entry));
@@ -251,13 +418,24 @@ static int64_t reffed(pickle* vm, object* obj, object* alist, int64_t* counter) 
     return 0;
 }
 
-static void print_with_refs(pickle* vm, object* obj, object* alist, int64_t* counter) {
+static void print_with_refs(pvm* vm, object* obj, object* alist, int64_t* counter) {
     if (obj == nil) {
         printf("NIL");
         return;
     }
     #define PRINTTYPE(t, f, fmt) else if (obj->type == t) printf(fmt, obj->f)
-    PRINTTYPE(&string_type, as_chars, "\"%s\"");
+    else if (obj->type == &string_type) {
+        putchar('"');
+        for (char* c = obj->as_chars; *c; c++) {
+            char e = escape(*c);
+            if (e != *c) {
+                putchar('\\');
+                putchar(e);
+            }
+            else putchar(*c);
+        }
+        putchar('"');
+    }
     PRINTTYPE(&symbol_type, as_chars, strchr(obj->as_chars, ' ') ? "#|%s|" : "%s");
     PRINTTYPE(&integer_type, as_big_int, "%" PRId64);
     PRINTTYPE(&float_type, as_double, "%lg");
@@ -301,7 +479,7 @@ static void print_with_refs(pickle* vm, object* obj, object* alist, int64_t* cou
     }
 }
 
-void pickle::dump(object* obj) {
+void pvm::dump(object* obj) {
     object* alist = NULL;
     int64_t counter = 1;
     make_refs_list(this, obj, &alist);

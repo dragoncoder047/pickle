@@ -1,15 +1,19 @@
 {
     "cSpell.words": [
+        "allocs",
+        "defop",
+        "eofp",
         "eqcmp",
+        "intof",
+        "numof",
+        "stringof",
         "tinobsy"
     ],
     "files.associations": {
         "*.tmpl": "jinja-html",
         "*.html": "html",
-        "functional": "cpp",
         "array": "cpp",
         "string": "cpp",
-        "string_view": "cpp",
-        "cstdio": "cpp"
+        "string_view": "cpp"
     }
 }
