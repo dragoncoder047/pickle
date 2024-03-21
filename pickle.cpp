@@ -172,35 +172,40 @@ static void bufcat(char** b, const char* c, int n) {
     asprintf(b, "%s%.*s", *b ? *b : "", n, c);
     free(ob);
 }
+static char revparen(char p) {
+    const char* a = "([{}])";
+    const char* b = ")]}{[(";
+    return b[strchr(a, p) - a];
+}
 
-
-static object* do_parse(pvm* vm, pstate* s, bool* error, char* special) {
+static object* do_parse(pvm* vm, pstate* s, object** errors, char* special) {
     char c = look;
     char* b = NULL;
     char* b2 = NULL;
     object* result = nil;
     if (isalpha(c)) {
+        DBG("symbol");
         size_t p = pos;
         while (!eofp && test(isalpha)) next;
         bufcat(&b, at(p), pos - p);
         result = vm->sym(b);
     }
     else if (isdigit(c)) {
+        DBG("number");
         double d; int64_t n;
         int num;
         int ok = sscanf(here, "%lg%n", &d, &num);
-        if (ok == 2) result = vm->number(d);
+        if (ok) result = vm->number(d);
         else {
             ok = sscanf(here, "%" SCNi64 "%n", &n, &num);
-            if (ok == 2) result = vm->integer(n);
-            else {
-                *error = true;
-                result = vm->string("scanf error");
-            }
+            if (ok) result = vm->integer(n);
+            else vm->push(vm->string("scanf error"), *errors);
         }
-        if (ok == 2) advance num;
+        DBG("ok = %i", ok);
+        if (ok) advance num;
     }
     else if (isspace(c) && c != '\n') {
+        DBG("small space");
         result = vm->sym("SPACE");
         while (test(isspace) && c != '\n') next;
     }
@@ -208,23 +213,25 @@ static object* do_parse(pvm* vm, pstate* s, bool* error, char* special) {
         // get comment or 1-character # operator
         next;
         if (look != '#') {
+            DBG("hash");
             // it's a # operator
             result = vm->sym("#");
         } else {
             next;
             if (look != '#') {
+                DBG("line comment");
                 // it's a line comment
                 do bufadd(&b, look), next; while (look != '\n');
                 result = vm->string(b);
             } else {
+                DBG("block comment");
                 // it's a block comment
                 bufcat(&b2, "###", 3);
                 next;
                 while (look == '#') bufadd(&b2, '#'), next;
                 do bufadd(&b, look), next; while (!eofp && !chomp(b2));
                 if (eofp) {
-                    *error = true;
-                    result = vm->string("error: unterminated block comment");
+                    vm->push(vm->string("unterminated block comment"), *errors);
                     goto done;
                 }
                 result = vm->string(b);
@@ -232,9 +239,11 @@ static object* do_parse(pvm* vm, pstate* s, bool* error, char* special) {
         }
     }
     else if (c == '"' || c == '\'') {
+        DBG("quote string");
         char start = c;
         next;
         while (look != start && !eofp && look != '\n') {
+            // TODO: paren stack for nested interpolations (like PEP 701)
             char ch = look;
             if (ch == '\\') {
                 next;
@@ -244,12 +253,12 @@ static object* do_parse(pvm* vm, pstate* s, bool* error, char* special) {
             next;
         }
         if (look != start) {
-            *error = true;
-            result = vm->string("error: unclosed string");
+            vm->push(vm->string("unclosed string"), *errors);
         }
         else result = vm->string(b);
     }
     else if (c == '\n') {
+        DBG("block string");
         getindent:
         // parser block
         next; // eat newline
@@ -258,19 +267,25 @@ static object* do_parse(pvm* vm, pstate* s, bool* error, char* special) {
             next;
         }
         if (look == '\n') {
+            // Blank line
             free(b2);
             b2 = NULL;
             goto getindent;
         }
+        if (!b2 || !strlen(b2)) {
+            // no indent
+            result = vm->sym("NEWLINE");
+            goto done;
+        }
         // validate indent
         for (char* c = b2; *c; c++) {
             if (*c != *b2) {
-                *error = true;
-                result = vm->string("error: mix of spaces and tabs indenting block");
+                vm->push(vm->string("mix of spaces and tabs indenting block"), *errors);
                 goto done;
             }
         }
         for (;;) {
+            // TODO: stop chomping with parens
             // get one line
             do bufadd(&b, look), next; while (!eofp && look != '\n');
             bufadd(&b, '\n');
@@ -288,8 +303,7 @@ static object* do_parse(pvm* vm, pstate* s, bool* error, char* special) {
                 }
                 // not a blank line
                 if (has_indent) {
-                    result = vm->string("error: unindent does not match previous indent");
-                    *error = true;
+                    vm->push(vm->string("unindent does not match previous indent"), *errors);
                     goto done;
                 }
                 // completely unindented
@@ -298,17 +312,74 @@ static object* do_parse(pvm* vm, pstate* s, bool* error, char* special) {
         }
         result = vm->string(b);
     }
+    else if (c == '{') {
+        DBG("curly string");
+        object* stack = vm->cons(vm->integer((int64_t)c), nil);
+        next;
+        while (!eofp) {
+            char ch = look;
+            next;
+            // Check for open parens
+            if (strchr("([{", ch)) {
+                vm->push(vm->integer((int64_t)ch), stack);
+            }
+            // Check for close parens
+            if (strchr("}])", ch)) {
+                char got_opener = revparen(ch);
+                object* top = vm->pop(stack);
+                if (!top) {
+                    vm->push(vm->string("internal parser error (curlystack empty)"), *errors);
+                } else {
+                    char expected_opener = (char)vm->intof(top);
+                    if (got_opener != expected_opener) {
+                        vm->push(vm->string("mismatched paren"), *errors);
+                    }
+                }
+                if (!stack) break;
+            }
+            bufadd(&b, ch);
+        }
+        if (eofp) {
+            vm->push(vm->string("unclosed curly string"), *errors);
+        }
+        else result = vm->string(b);
+    }
+    else if (c == '(' || c == '[') {
+        DBG("subexpression");
+        // Subexpressions and lists are treated the same right now.
+        // TODO: fix this
+        object** tail = &result;
+        next;
+        char close = revparen(c);
+        do {
+            object* item = do_parse(vm, s, errors, special);
+            if (*special) {
+                if (*special == close) goto closed;
+                vm->push(vm->string("mismatched paren"), *errors);
+            }
+            *tail = vm->cons(item, nil);
+            tail = &cdr(*tail);
+        } while (!eofp);
+        vm->push(vm->string("unclosed subexpression"), *errors);
+        closed:
+        *special = 0;
+    }
     else if (strchr("(){}[]", c)) {
+        DBG("other special");
+        next;
         *special = c;
     }
     else if (ispunct(c)) {
+        DBG("punctuation symbol");
         // must test for other punctuation last to allow other special cases to take precedence
+        next;
         bufadd(&b, c);
         result = vm->sym(b);
     }
     else {
-        *error = true;
-        result = vm->string("unknown parser error");
+        DBG("other crap");
+        next;
+        vm->push(vm->string("unexpected crap"), *errors);
     }
     done:
     free(b);
@@ -322,20 +393,19 @@ object* parse(pvm* vm, object* cookie, object* inst_type) {
     DBG("parsing");
     object* string = vm->pop();
     if (string->type != &string_type) {
-        vm->push_data(vm->string("error: non string to parse()"));
+        vm->push_data(vm->cons(vm->string("non string to parse()"), nil));
         return vm->sym("error");
     }
     const char* str = vm->stringof(string);
     pstate s = { .data = str, .i = 0, .len = strlen(str) };
-    bool error = false;
     char special = 0;
-    object* result = do_parse(vm, &s, &error, &special);
+    object* errors = nil;
+    object* result = do_parse(vm, &s, &errors, &special);
     if (special) {
-        result = vm->string("unknown syntax error");
-        error = true;
+        vm->push(vm->string("unknown syntax error"), errors);
     }
-    vm->push_data(result);
-    return error ? vm->sym("error") : nil;
+    vm->push_data(errors ? errors : result);
+    return errors ? vm->sym("error") : nil;
 }
 
 static object* get_best_match(pvm* vm, object* ast, object** env) {

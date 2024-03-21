@@ -36,7 +36,7 @@ int main() {
     vm.push_data(vm.integer(42));
     vm.push_data(st);
     vm.push_data(vm.integer(42));
-    vm.push_data(vm.string("(+ 1 2) ## #### block comment '\n\n    ######  \n\n\n foo"));
+    vm.push_data(vm.string("[(+ 1 2)\n## #### block comment '\n\n ######  \n\n\n foo]"));
     printf("\nqueue with data: ");
     vm.dump(vm.queue);
     putchar('\n');

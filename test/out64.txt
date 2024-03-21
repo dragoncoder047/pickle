@@ -1,12 +1,12 @@
 st data: #1=(1 2 1 2 . #1#)
-queue with data: #1=((("(+ 1 2) ## #### block comment '\n\n    ######  \n\n\n foo" 42 #2=(1 2 1 2 . #2#) 42) NIL (NIL parse . "normal") (NIL test_test . "output result") (error test_test . "from error handler")) (NIL NIL) . #1#)
+queue with data: #1=((("[(+ 1 2)\n## #### block comment '\n\n ######  \n\n\n foo]" 42 #2=(1 2 1 2 . #2#) 42) NIL (NIL parse . "normal") (NIL test_test . "output result") (error test_test . "from error handler")) (NIL NIL) . #1#)
 
-queue = #1=((NIL NIL) (("unknown syntax error" 42 #2=(1 2 1 2 . #2#) 42) error (NIL test_test . "output result") (error test_test . "from error handler")) . #1#)
+queue = #1=((NIL NIL) ((("unclosed subexpression") 42 #2=(1 2 1 2 . #2#) 42) error (NIL test_test . "output result") (error test_test . "from error handler")) . #1#)
 
 Hello from test_test()!
 inst_type = error
 cookie = "from error handler"
-top of stack = "unknown syntax error"
+top of stack = ("unclosed subexpression")
 
 queue = #1=(((42 #2=(1 2 1 2 . #2#) 42) debug (debug test_test . "from inside test_test()")) . #1#)
 
