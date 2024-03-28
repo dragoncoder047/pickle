@@ -1,39 +1,46 @@
 st data: #1=(1 2 1 2 . #1#)
-queue with data: #1=((("[(+ 1 2)\n## #### block comment '\n\n ######  \n\n\n foo]" 42 #2=(1 2 1 2 . #2#) 42) NIL (NIL parse . "normal") (NIL test_test . "output result") (error test_test . "from error handler")) (NIL NIL) . #1#)
+queue with data: #1=((("\n\n[(+ 1 2)\n## #### block comment '\n\n\n\n\n\n\n\n\n\n\n\nfoo123]\n\n" 42 #2=(1 2 1 2 . #2#) 42) NIL (NIL parse . "normal") (NIL test_test . "output result") (error test_test . "from error handler")) (NIL NIL) . #1#)
 
-queue = #1=((NIL NIL) ((("unclosed subexpression") 42 #2=(1 2 1 2 . #2#) 42) error (NIL test_test . "output result") (error test_test . "from error handler")) . #1#)
+queue = #1=((NIL NIL) (((#|parse NEWLINE| ((+ #|parse SPACE| 1 #|parse SPACE| 2) #|parse NEWLINE| " #### block comment '" #|parse NEWLINE| foo123) #|parse NEWLINE|) 42 #2=(1 2 1 2 . #2#) 42) NIL (NIL test_test . "output result") (error test_test . "from error handler")) . #1#)
 
 Hello from test_test()!
-inst_type = error
-cookie = "from error handler"
-top of stack = ("unclosed subexpression")
+inst_type = NIL
+cookie = "output result"
+top of stack = (#|parse NEWLINE| ((+ #|parse SPACE| 1 #|parse SPACE| 2) #|parse NEWLINE| " #### block comment '" #|parse NEWLINE| foo123) #|parse NEWLINE|)
 
-queue = #1=(((42 #2=(1 2 1 2 . #2#) 42) debug (debug test_test . "from inside test_test()")) . #1#)
+queue = #1=(((42 #2=(1 2 1 2 . #2#) 42) debug (debug test_test . "from inside test_test()") (error test_test . "from error handler")) . #1#)
 
 Hello from test_test()!
 inst_type = debug
 cookie = "from inside test_test()"
 top of stack = 42
 
-queue = #1=(((#2=(1 2 1 2 . #2#) 42) debug (debug test_test . "from inside test_test()")) . #1#)
+queue = #1=(((#2=(1 2 1 2 . #2#) 42) debug (debug test_test . "from inside test_test()") (error test_test . "from error handler")) . #1#)
 
 Hello from test_test()!
 inst_type = debug
 cookie = "from inside test_test()"
 top of stack = #1=(1 2 1 2 . #1#)
 
-queue = #1=(((42) debug (debug test_test . "from inside test_test()")) . #1#)
+queue = #1=(((42) debug (debug test_test . "from inside test_test()") (error test_test . "from error handler")) . #1#)
 
 Hello from test_test()!
 inst_type = debug
 cookie = "from inside test_test()"
 top of stack = 42
 
-queue = #1=((NIL debug (debug test_test . "from inside test_test()")) . #1#)
+queue = #1=((NIL debug (debug test_test . "from inside test_test()") (error test_test . "from error handler")) . #1#)
 
 Hello from test_test()!
 inst_type = debug
 cookie = "from inside test_test()"
+top of stack = NIL
+
+queue = #1=((NIL error (error test_test . "from error handler")) . #1#)
+
+Hello from test_test()!
+inst_type = error
+cookie = "from error handler"
 top of stack = NIL
 
 queue = #1=((NIL error) . #1#)

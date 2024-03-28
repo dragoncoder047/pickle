@@ -183,10 +183,10 @@ static object* do_parse(pvm* vm, pstate* s, object** errors, char* special) {
     char* b = NULL;
     char* b2 = NULL;
     object* result = nil;
-    if (isalpha(c)) {
+    if (isalpha(c) || c == '_') {
         DBG("symbol");
         size_t p = pos;
-        while (!eofp && test(isalpha)) next;
+        while (!eofp && (test(isalpha) || test(isdigit) || look == '_')) next;
         bufcat(&b, at(p), pos - p);
         result = vm->sym(b);
     }
@@ -206,7 +206,7 @@ static object* do_parse(pvm* vm, pstate* s, object** errors, char* special) {
     }
     else if (isspace(c) && c != '\n') {
         DBG("small space");
-        result = vm->sym("SPACE");
+        result = vm->sym("parse SPACE");
         while (test(isspace) && c != '\n') next;
     }
     else if (c == '#') {
@@ -221,7 +221,7 @@ static object* do_parse(pvm* vm, pstate* s, object** errors, char* special) {
             if (look != '#') {
                 DBG("line comment");
                 // it's a line comment
-                do bufadd(&b, look), next; while (look != '\n');
+                do bufadd(&b, look), next; while (look != '\n' && !eofp);
                 result = vm->string(b);
             } else {
                 DBG("block comment");
@@ -274,7 +274,7 @@ static object* do_parse(pvm* vm, pstate* s, object** errors, char* special) {
         }
         if (!b2 || !strlen(b2)) {
             // no indent
-            result = vm->sym("NEWLINE");
+            result = vm->sym("parse NEWLINE");
             goto done;
         }
         // validate indent
@@ -400,10 +400,16 @@ object* parse(pvm* vm, object* cookie, object* inst_type) {
     pstate s = { .data = str, .i = 0, .len = strlen(str) };
     char special = 0;
     object* errors = nil;
-    object* result = do_parse(vm, &s, &errors, &special);
-    if (special) {
-        vm->push(vm->string("unknown syntax error"), errors);
-    }
+    object* result = nil;
+    object** tail = &result;
+    do {
+        object* item = do_parse(vm, &s, &errors, &special);
+        if (special) {
+            vm->push(vm->string("unopened paren"), errors);
+        }
+        *tail = vm->cons(item, nil);
+        tail = &cdr(*tail);
+    } while (s.i < s.len);
     vm->push_data(errors ? errors : result);
     return errors ? vm->sym("error") : nil;
 }

@@ -19,6 +19,25 @@ object* test_test(pvm* vm, object* cookie, object* inst_type) {
     return vm->sym(d ? "debug" : "error");
 }
 
+const char* test = R"=(
+
+[(+ 1 2)
+## #### block comment '
+
+
+
+
+
+
+
+
+
+
+
+foo123]
+
+)=";
+
 int main() {
     pvm vm;
     vm.defop("parse", pickle::parse);
@@ -36,7 +55,7 @@ int main() {
     vm.push_data(vm.integer(42));
     vm.push_data(st);
     vm.push_data(vm.integer(42));
-    vm.push_data(vm.string("[(+ 1 2)\n## #### block comment '\n\n ######  \n\n\n foo]"));
+    vm.push_data(vm.string(test));
     printf("\nqueue with data: ");
     vm.dump(vm.queue);
     putchar('\n');
