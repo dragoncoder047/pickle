@@ -1,1182 +1,1198 @@
-==8069== Memcheck, a memory error detector
-==8069== Copyright (C) 2002-2011, and GNU GPL'd, by Julian Seward et al.
-==8069== Using Valgrind-3.7.0 and LibVEX; rerun with -h for copyright info
-==8069== Command: ./pickletest64
-==8069== 
---8069-- WARNING: Serious error when reading debug info
---8069-- When reading debug info from /usr/lib/arm-linux-gnueabihf/ld-2.31.so:
---8069-- Ignoring non-Dwarf2/3/4 block in .debug_info
---8069-- WARNING: Serious error when reading debug info
---8069-- When reading debug info from /usr/lib/arm-linux-gnueabihf/ld-2.31.so:
---8069-- Last block truncated in .debug_info; ignoring
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441BFA0: index (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441BFA4: index (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x440876C: _dl_dst_count (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x44089B8: expand_dynamic_string_token (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441C460: strlen (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441C464: strlen (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x4419810: malloc (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441981C: malloc (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CF18: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CF38: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CF48: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CF64: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CF8C: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441CF8C: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441CFB4: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CFC8: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CFCC: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CFD8: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x4419948: calloc (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x4419854: malloc (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441BB30: mmap (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Syscall param mmap2(start) contains uninitialised byte(s)
-==8069==    at 0x441BB44: mmap (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Syscall param mmap2(length) contains uninitialised byte(s)
-==8069==    at 0x441BB44: mmap (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Syscall param mmap2(offset) contains uninitialised byte(s)
-==8069==    at 0x441BB44: mmap (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x44197EC: malloc (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x440C638: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441CF60: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440C5C8: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440C5E0: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441C3EC: strdup (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CF88: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441CF88: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441CFB0: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x44094D0: _dl_map_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Syscall param openat(filename) contains uninitialised byte(s)
-==8069==    at 0x441B8C0: __open64_nocancel (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x4419988: free (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x440C3C4: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440C3D8: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440C3F0: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440C410: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440C438: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440C4C8: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440C4DC: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440C4FC: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440C518: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441C410: strlen (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441C428: strlen (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441CF58: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440C5E4: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x4407460: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4407480: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4407494: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x44074B4: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x44077DC: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x44077F0: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4407584: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4407600: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4407618: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4407628: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4407F28: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4407704: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x4412004: _dl_name_match_p (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4412018: _dl_name_match_p (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441BFF0: strcmp (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441200C: _dl_name_match_p (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x44146F0: _dl_get_origin (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441CFA8: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441CFAC: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441CFB8: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441CFBC: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441CFD8: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441CFDC: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4414704: _dl_get_origin (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x4408A60: expand_dynamic_string_token (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x4408A18: expand_dynamic_string_token (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4408848: _dl_dst_substitute (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441C04C: strcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x44088C8: _dl_dst_substitute (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x44099FC: _dl_map_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441D168: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441CFD4: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4407748: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CF94: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x441CF10: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441CF94: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x441CF10: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441D0C0: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CF70: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x441CF10: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441D210: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x44078CC: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
---8069-- WARNING: Serious error when reading debug info
---8069-- When reading debug info from /usr/lib/arm-linux-gnueabihf/libc-2.31.so:
---8069-- Ignoring non-Dwarf2/3/4 block in .debug_info
---8069-- WARNING: Serious error when reading debug info
---8069-- When reading debug info from /usr/lib/arm-linux-gnueabihf/libc-2.31.so:
---8069-- Last block truncated in .debug_info; ignoring
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x440F2E0: _dl_map_object_deps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440F2F4: _dl_map_object_deps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
---8069-- WARNING: Serious error when reading debug info
---8069-- When reading debug info from /usr/lib/arm-linux-gnueabihf/libm-2.31.so:
---8069-- Ignoring non-Dwarf2/3/4 block in .debug_info
---8069-- WARNING: Serious error when reading debug info
---8069-- When reading debug info from /usr/lib/arm-linux-gnueabihf/libm-2.31.so:
---8069-- Last block truncated in .debug_info; ignoring
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x440F6C0: _dl_map_object_deps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440F6F4: _dl_map_object_deps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440F728: _dl_map_object_deps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x44176D8: _dl_sort_maps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x44176F8: _dl_sort_maps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CB78: memmove (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4417790: _dl_sort_maps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440FAC8: _dl_map_object_deps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4403B60: dl_main (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x4403B74: dl_main (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== 
-==8069== More than 100 errors detected.  Subsequent errors
-==8069== will still be recorded, but in less detail than before.
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4403BD0: dl_main (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4403BE8: dl_main (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4412394: _dl_check_map_versions (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x44123B0: _dl_check_map_versions (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x44123C8: _dl_check_map_versions (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x44127FC: _dl_check_map_versions (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4412870: _dl_check_map_versions (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x44128EC: _dl_check_map_versions (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x4419894: malloc (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440114C: init_tls (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4401178: init_tls (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x4413B64: _dl_determine_tlsoffset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4413B68: _dl_determine_tlsoffset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4413B74: _dl_determine_tlsoffset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4413B88: _dl_determine_tlsoffset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4413C6C: _dl_determine_tlsoffset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x4413D94: _dl_allocate_tls_storage (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441D3D4: __udivsi3 (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CEA0: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CEA8: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CEC0: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441CEC0: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CEC8: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CED0: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CED8: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CEDC: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CEE8: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CEF0: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CEF8: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CF00: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CF04: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4413DCC: _dl_allocate_tls_storage (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x4413DE0: _dl_allocate_tls_storage (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4413DE0: _dl_allocate_tls_storage (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4413DE4: _dl_allocate_tls_storage (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x4413DE8: _dl_allocate_tls_storage (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x44011A8: init_tls (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x44011B0: init_tls (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Syscall param set_tls(addr) contains uninitialised byte(s)
-==8069==    at 0x44011C4: init_tls (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x44048F4: dl_main (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x44048FC: dl_main (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440D564: _dl_relocate_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x440B048: _dl_lookup_symbol_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440B060: _dl_lookup_symbol_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440A4C4: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x440A4D0: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440A4EC: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440A448: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440A454: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440A488: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440A680: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440A690: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440A6F0: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440A2A4: check_match (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x440A2A8: check_match (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440A2BC: check_match (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440A2C4: check_match (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440A2D4: check_match (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440A378: check_match (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440A37C: check_match (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440B12C: _dl_lookup_symbol_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440B13C: _dl_lookup_symbol_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440D734: _dl_relocate_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440D8C0: _dl_relocate_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440B09C: _dl_lookup_symbol_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x44144B4: _dl_add_to_slotinfo (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x44144D8: _dl_add_to_slotinfo (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440A91C: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x440ACB8: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440AB74: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440AB80: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440AB88: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x440A970: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440A9E0: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440AA10: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x440AD54: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440AD84: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x440ADF8: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440AD90: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440ADB0: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440ADD8: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440ADE4: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440D6A8: _dl_relocate_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440E688: _dl_relocate_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440A4E0: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x4413E2C: _dl_allocate_tls_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4413E34: _dl_allocate_tls_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4413E3C: _dl_allocate_tls_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4413E78: _dl_allocate_tls_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4413E94: _dl_allocate_tls_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4413EA0: _dl_allocate_tls_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4413EC4: _dl_allocate_tls_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4413F30: _dl_allocate_tls_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441CF24: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4413F50: _dl_allocate_tls_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4411414: _dl_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x4410910: _dl_fixup (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x441099C: _dl_fixup (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x441099C: _dl_fixup (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x44170A8: _dl_runtime_resolve (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB19B634: std::error_category::error_category() (in /usr/lib/arm-linux-gnueabihf/libstdc++.so.6.0.28)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB19BD30: __aeabi_atexit (in /usr/lib/arm-linux-gnueabihf/libstdc++.so.6.0.28)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB30E40C: __cxa_atexit (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0x440A2E0: check_match (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB0EF0F8: ??? (in /usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB356E2C: strdup (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB3525E4: malloc (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB3228B0: printf (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB33F260: putchar (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB3568CC: strcmp (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB356800: index (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Invalid read of size 1
-==8069==    at 0xB0EF214: ??? (in /usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so)
-==8069==  Address 0xd661d68 is 0 bytes after a block of size 56 alloc'd
-==8069==    at 0xB0D23D0: malloc (vg_replace_malloc.c:262)
-==8069==    by 0xB356E4B: strdup (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB30432C: isspace (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB352CB8: free (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB3041F8: isalpha (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB323F18: __isoc99_sscanf (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB2BC74C: __fixdfdi (in /usr/lib/arm-linux-gnueabihf/libgcc_s.so.1)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB2BC7C8: __fixunsdfdi (in /usr/lib/arm-linux-gnueabihf/libgcc_s.so.1)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB322A58: asprintf (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB19E550: operator new(unsigned int) (in /usr/lib/arm-linux-gnueabihf/libstdc++.so.6.0.28)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB33CC98: puts (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB19C0DC: operator delete(void*) (in /usr/lib/arm-linux-gnueabihf/libstdc++.so.6.0.28)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x4411610: _dl_fini (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0x4417860: _dl_sort_maps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB1C8DD8: std::_V2::error_category::~error_category() (in /usr/lib/arm-linux-gnueabihf/libstdc++.so.6.0.28)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB19B658: std::error_category::~error_category() (in /usr/lib/arm-linux-gnueabihf/libstdc++.so.6.0.28)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB3FA9A8: free_mem (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Conditional jump or move depends on uninitialised value(s)
-==8069==    at 0xB3FAA20: free_mem (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== Use of uninitialised value of size 4
-==8069==    at 0xB3FA8CC: free_slotinfo (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
-==8069==  Uninitialised value was created by a stack allocation
-==8069==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
-==8069== 
-==8069== 
-==8069== HEAP SUMMARY:
-==8069==     in use at exit: 20,224 bytes in 1 blocks
-==8069==   total heap usage: 66 allocs, 65 frees, 39,406 bytes allocated
-==8069== 
-==8069== 20,224 bytes in 1 blocks are still reachable in loss record 1 of 1
-==8069==    at 0xB0D23D0: malloc (vg_replace_malloc.c:262)
-==8069==    by 0xB199DFB: ??? (in /usr/lib/arm-linux-gnueabihf/libstdc++.so.6.0.28)
-==8069== 
-==8069== LEAK SUMMARY:
-==8069==    definitely lost: 0 bytes in 0 blocks
-==8069==    indirectly lost: 0 bytes in 0 blocks
-==8069==      possibly lost: 0 bytes in 0 blocks
-==8069==    still reachable: 20,224 bytes in 1 blocks
-==8069==         suppressed: 0 bytes in 0 blocks
-==8069== 
-==8069== For counts of detected and suppressed errors, rerun with: -v
-==8069== ERROR SUMMARY: 77111 errors from 229 contexts (suppressed: 2083 from 2)
+==15960== Memcheck, a memory error detector
+==15960== Copyright (C) 2002-2011, and GNU GPL'd, by Julian Seward et al.
+==15960== Using Valgrind-3.7.0 and LibVEX; rerun with -h for copyright info
+==15960== Command: ./pickletest64
+==15960== 
+--15960-- WARNING: Serious error when reading debug info
+--15960-- When reading debug info from /usr/lib/arm-linux-gnueabihf/ld-2.31.so:
+--15960-- Ignoring non-Dwarf2/3/4 block in .debug_info
+--15960-- WARNING: Serious error when reading debug info
+--15960-- When reading debug info from /usr/lib/arm-linux-gnueabihf/ld-2.31.so:
+--15960-- Last block truncated in .debug_info; ignoring
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441BFA0: index (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441BFA4: index (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x440876C: _dl_dst_count (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x44089B8: expand_dynamic_string_token (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441C460: strlen (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441C464: strlen (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x4419810: malloc (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441981C: malloc (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CF18: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CF38: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CF48: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CF64: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CF8C: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441CF8C: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441CFB4: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CFC8: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CFCC: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CFD8: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x4419948: calloc (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x4419854: malloc (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441BB30: mmap (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Syscall param mmap2(start) contains uninitialised byte(s)
+==15960==    at 0x441BB44: mmap (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Syscall param mmap2(length) contains uninitialised byte(s)
+==15960==    at 0x441BB44: mmap (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Syscall param mmap2(offset) contains uninitialised byte(s)
+==15960==    at 0x441BB44: mmap (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x44197EC: malloc (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x440C638: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441CF60: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440C5C8: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440C5E0: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441C3EC: strdup (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CF88: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441CF88: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441CFB0: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x44094D0: _dl_map_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Syscall param openat(filename) contains uninitialised byte(s)
+==15960==    at 0x441B8C0: __open64_nocancel (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x4419988: free (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x440C3C4: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440C3D8: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440C3F0: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440C410: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440C438: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440C4C8: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440C4DC: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440C4FC: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440C518: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441C410: strlen (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441C428: strlen (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441CF58: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440C5E4: _dl_new_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x4407460: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4407480: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4407494: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x44074B4: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x44077DC: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x44077F0: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4407584: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4407600: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4407618: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4407628: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4407F28: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4407704: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x4412004: _dl_name_match_p (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4412018: _dl_name_match_p (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441BFF0: strcmp (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441200C: _dl_name_match_p (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x44146F0: _dl_get_origin (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441CFA8: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441CFAC: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441CFB8: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441CFBC: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441CFD8: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441CFDC: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4414704: _dl_get_origin (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x4408A60: expand_dynamic_string_token (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x4408A18: expand_dynamic_string_token (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4408848: _dl_dst_substitute (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441C04C: strcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x44088C8: _dl_dst_substitute (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x44099FC: _dl_map_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441D168: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441CFD4: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4407748: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CF94: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x441CF10: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441CF94: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x441CF10: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441D0C0: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CF70: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x441CF10: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441D210: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x44078CC: _dl_map_object_from_fd (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+--15960-- WARNING: Serious error when reading debug info
+--15960-- When reading debug info from /usr/lib/arm-linux-gnueabihf/libc-2.31.so:
+--15960-- Ignoring non-Dwarf2/3/4 block in .debug_info
+--15960-- WARNING: Serious error when reading debug info
+--15960-- When reading debug info from /usr/lib/arm-linux-gnueabihf/libc-2.31.so:
+--15960-- Last block truncated in .debug_info; ignoring
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x440F2E0: _dl_map_object_deps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440F2F4: _dl_map_object_deps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+--15960-- WARNING: Serious error when reading debug info
+--15960-- When reading debug info from /usr/lib/arm-linux-gnueabihf/libm-2.31.so:
+--15960-- Ignoring non-Dwarf2/3/4 block in .debug_info
+--15960-- WARNING: Serious error when reading debug info
+--15960-- When reading debug info from /usr/lib/arm-linux-gnueabihf/libm-2.31.so:
+--15960-- Last block truncated in .debug_info; ignoring
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x440F6C0: _dl_map_object_deps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440F6F4: _dl_map_object_deps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440F728: _dl_map_object_deps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x44176D8: _dl_sort_maps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x44176F8: _dl_sort_maps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CB78: memmove (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4417790: _dl_sort_maps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440FAC8: _dl_map_object_deps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4403B60: dl_main (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x4403B74: dl_main (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== 
+==15960== More than 100 errors detected.  Subsequent errors
+==15960== will still be recorded, but in less detail than before.
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4403BD0: dl_main (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4403BE8: dl_main (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4412394: _dl_check_map_versions (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x44123B0: _dl_check_map_versions (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x44123C8: _dl_check_map_versions (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x44127FC: _dl_check_map_versions (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4412870: _dl_check_map_versions (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x44128EC: _dl_check_map_versions (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x4419894: malloc (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440114C: init_tls (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4401178: init_tls (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x4413B64: _dl_determine_tlsoffset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4413B68: _dl_determine_tlsoffset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4413B74: _dl_determine_tlsoffset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4413B88: _dl_determine_tlsoffset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4413C6C: _dl_determine_tlsoffset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x4413D94: _dl_allocate_tls_storage (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441D3D4: __udivsi3 (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CEA0: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CEA8: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CEC0: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441CEC0: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CEC8: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CED0: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CED8: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CEDC: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CEE8: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CEF0: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CEF8: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CF00: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CF04: memset (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4413DCC: _dl_allocate_tls_storage (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x4413DE0: _dl_allocate_tls_storage (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4413DE0: _dl_allocate_tls_storage (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4413DE4: _dl_allocate_tls_storage (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x4413DE8: _dl_allocate_tls_storage (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x44011A8: init_tls (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x44011B0: init_tls (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Syscall param set_tls(addr) contains uninitialised byte(s)
+==15960==    at 0x44011C4: init_tls (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x44048F4: dl_main (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x44048FC: dl_main (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440D564: _dl_relocate_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x440B048: _dl_lookup_symbol_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440B060: _dl_lookup_symbol_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440A4C4: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x440A4D0: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440A4EC: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440A448: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440A454: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440A488: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440A680: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440A690: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440A6F0: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440A2A4: check_match (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x440A2A8: check_match (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440A2BC: check_match (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440A2C4: check_match (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440A2D4: check_match (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440A378: check_match (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440A37C: check_match (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440B12C: _dl_lookup_symbol_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440B13C: _dl_lookup_symbol_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440D734: _dl_relocate_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440D8C0: _dl_relocate_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440B09C: _dl_lookup_symbol_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x44144B4: _dl_add_to_slotinfo (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x44144D8: _dl_add_to_slotinfo (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440A91C: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x440ACB8: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440AB74: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440AB80: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440AB88: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x440A970: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440A9E0: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440AA10: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x440AD54: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440AD84: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x440ADF8: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440AD90: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440ADB0: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440ADD8: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440ADE4: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440D6A8: _dl_relocate_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440E688: _dl_relocate_object (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440A4E0: do_lookup_x (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x4413E2C: _dl_allocate_tls_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4413E34: _dl_allocate_tls_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4413E3C: _dl_allocate_tls_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4413E78: _dl_allocate_tls_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4413E94: _dl_allocate_tls_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4413EA0: _dl_allocate_tls_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4413EC4: _dl_allocate_tls_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4413F30: _dl_allocate_tls_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441CF24: memcpy (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4413F50: _dl_allocate_tls_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4411414: _dl_init (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x4410910: _dl_fixup (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x441099C: _dl_fixup (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x441099C: _dl_fixup (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x44170A8: _dl_runtime_resolve (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xB19F634: std::error_category::error_category() (in /usr/lib/arm-linux-gnueabihf/libstdc++.so.6.0.28)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xB19FD30: __aeabi_atexit (in /usr/lib/arm-linux-gnueabihf/libstdc++.so.6.0.28)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xD02440C: __cxa_atexit (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0x440A2E0: check_match (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xB0EB0F8: ??? (in /usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xD06CE2C: strdup (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xD0685E4: malloc (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xD0388B0: printf (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xD055260: putchar (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xD06C8CC: strcmp (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xD06C800: index (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Invalid read of size 1
+==15960==    at 0xB0EB214: ??? (in /usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so)
+==15960==  Address 0xd14cd51 is 0 bytes after a block of size 89 alloc'd
+==15960==    at 0xB0CE3D0: malloc (vg_replace_malloc.c:262)
+==15960==    by 0xD06CE4B: strdup (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xD01A32C: isspace (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xD068CB8: free (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xD01A1F8: isalpha (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xD039F18: __isoc99_sscanf (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xB2C474C: __fixdfdi (in /usr/lib/arm-linux-gnueabihf/libgcc_s.so.1)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xB2C47C8: __fixunsdfdi (in /usr/lib/arm-linux-gnueabihf/libgcc_s.so.1)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xD038A58: asprintf (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xB0EB1C0: ??? (in /usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Invalid read of size 1
+==15960==    at 0xB0EB1DC: ??? (in /usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so)
+==15960==  Address 0xd14e615 is 0 bytes after a block of size 5 alloc'd
+==15960==    at 0xB0CE3D0: malloc (vg_replace_malloc.c:262)
+==15960==    by 0xD05A83F: __vasprintf_internal (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xD06D35C: strncmp (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xB1A2550: operator new(unsigned int) (in /usr/lib/arm-linux-gnueabihf/libstdc++.so.6.0.28)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xD052C98: puts (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xB1A00DC: operator delete(void*) (in /usr/lib/arm-linux-gnueabihf/libstdc++.so.6.0.28)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x4411610: _dl_fini (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0x4417860: _dl_sort_maps (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xB1CCDD8: std::_V2::error_category::~error_category() (in /usr/lib/arm-linux-gnueabihf/libstdc++.so.6.0.28)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xB19F658: std::error_category::~error_category() (in /usr/lib/arm-linux-gnueabihf/libstdc++.so.6.0.28)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xD1109A8: free_mem (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Conditional jump or move depends on uninitialised value(s)
+==15960==    at 0xD110A20: free_mem (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== Use of uninitialised value of size 4
+==15960==    at 0xD1108CC: free_slotinfo (in /usr/lib/arm-linux-gnueabihf/libc-2.31.so)
+==15960==  Uninitialised value was created by a stack allocation
+==15960==    at 0x44020BC: handle_preload_list (in /usr/lib/arm-linux-gnueabihf/ld-2.31.so)
+==15960== 
+==15960== 
+==15960== HEAP SUMMARY:
+==15960==     in use at exit: 20,224 bytes in 1 blocks
+==15960==   total heap usage: 124 allocs, 123 frees, 42,550 bytes allocated
+==15960== 
+==15960== 20,224 bytes in 1 blocks are still reachable in loss record 1 of 1
+==15960==    at 0xB0CE3D0: malloc (vg_replace_malloc.c:262)
+==15960==    by 0xB19DDFB: ??? (in /usr/lib/arm-linux-gnueabihf/libstdc++.so.6.0.28)
+==15960== 
+==15960== LEAK SUMMARY:
+==15960==    definitely lost: 0 bytes in 0 blocks
+==15960==    indirectly lost: 0 bytes in 0 blocks
+==15960==      possibly lost: 0 bytes in 0 blocks
+==15960==    still reachable: 20,224 bytes in 1 blocks
+==15960==         suppressed: 0 bytes in 0 blocks
+==15960== 
+==15960== For counts of detected and suppressed errors, rerun with: -v
+==15960== ERROR SUMMARY: 77622 errors from 232 contexts (suppressed: 2083 from 2)

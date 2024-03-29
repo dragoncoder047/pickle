@@ -50,7 +50,7 @@ pattern (bar (the):? [x is Foo]) precedence?
         ## --> captures x if it is an instance of Foo (is)
         ##             or if calling Foo with x returns true (matches)
 
-    [is (Foo)] ## --> captures but doesn't bind
+    [is (Foo)] ## --> matches but doesn't bind
 
     [is Space] ## special because implicit spaces don't match newlines, this explicit space does
 ```
@@ -93,4 +93,7 @@ await [coro is Coroutine] ## waits for the coroutine to finish and gets the retu
 callcc[is Space][body is Block]
 ## interestingly enough each function callframe is implicitly wrapped in this to implement "return"
 ## and every loop is wrapped in TWO of these to implement "break" and "continue"
+
+let [varname is Symbol] = [expression]
+## defines variables in the current scope
 ```

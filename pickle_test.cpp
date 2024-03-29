@@ -25,16 +25,16 @@ const char* test = R"=(
 ## #### block comment '
 
 
+lambda x
+    foo 123
+    bar 456
 
 
 
 
 
 
-
-
-
-foo123]
+123foo123]
 
 )=";
 
@@ -51,7 +51,7 @@ int main() {
     vm.start_thread();
     vm.push_inst("test_test", "error", vm.string("from error handler"));
     vm.push_inst("test_test", nil, vm.string("output result"));
-    vm.push_inst("parse", nil, vm.string("normal"));
+    vm.push_inst("parse");
     vm.push_data(vm.integer(42));
     vm.push_data(st);
     vm.push_data(vm.integer(42));

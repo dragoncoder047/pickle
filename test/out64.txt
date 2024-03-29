@@ -1,12 +1,12 @@
 st data: #1=(1 2 1 2 . #1#)
-queue with data: #1=((("\n\n[(+ 1 2)\n## #### block comment '\n\n\n\n\n\n\n\n\n\n\n\nfoo123]\n\n" 42 #2=(1 2 1 2 . #2#) 42) NIL (NIL parse . "normal") (NIL test_test . "output result") (error test_test . "from error handler")) (NIL NIL) . #1#)
+queue with data: #1=((("\n\n[(+ 1 2)\n## #### block comment '\n\n\nlambda x\n    foo 123\n    bar 456\n\n\n\n\n\n\n123foo123]\n\n" 42 #2=(1 2 1 2 . #2#) 42) NIL (NIL parse) (NIL test_test . "output result") (error test_test . "from error handler")) (NIL NIL) . #1#)
 
-queue = #1=((NIL NIL) (((#|parse NEWLINE| ((+ #|parse SPACE| 1 #|parse SPACE| 2) #|parse NEWLINE| " #### block comment '" #|parse NEWLINE| foo123) #|parse NEWLINE|) 42 #2=(1 2 1 2 . #2#) 42) NIL (NIL test_test . "output result") (error test_test . "from error handler")) . #1#)
+queue = #1=((NIL NIL) (((NEWLINE ((+ SPACE 1 SPACE 2) NEWLINE " #### block comment '" NEWLINE lambda SPACE x "foo 123\nbar 456\n\n\n\n\n\n\n" 123 foo123) NEWLINE) 42 #2=(1 2 1 2 . #2#) 42) NIL (NIL test_test . "output result") (error test_test . "from error handler")) . #1#)
 
 Hello from test_test()!
 inst_type = NIL
 cookie = "output result"
-top of stack = (#|parse NEWLINE| ((+ #|parse SPACE| 1 #|parse SPACE| 2) #|parse NEWLINE| " #### block comment '" #|parse NEWLINE| foo123) #|parse NEWLINE|)
+top of stack = (NEWLINE ((+ SPACE 1 SPACE 2) NEWLINE " #### block comment '" NEWLINE lambda SPACE x "foo 123\nbar 456\n\n\n\n\n\n\n" 123 foo123) NEWLINE)
 
 queue = #1=(((42 #2=(1 2 1 2 . #2#) 42) debug (debug test_test . "from inside test_test()") (error test_test . "from error handler")) . #1#)
 
