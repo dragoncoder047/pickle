@@ -206,7 +206,7 @@ static object* do_parse(pvm* vm, pstate* s, object** errors, char* special) {
     }
     else if (isspace(c) && c != '\n') {
         DBG("small space");
-        result = vm->sym("parse SPACE");
+        result = vm->sym("SPACE");
         while (test(isspace) && c != '\n') next;
     }
     else if (c == '#') {
@@ -274,7 +274,7 @@ static object* do_parse(pvm* vm, pstate* s, object** errors, char* special) {
         }
         if (!b2 || !strlen(b2)) {
             // no indent
-            result = vm->sym("parse NEWLINE");
+            result = vm->sym("NEWLINE");
             goto done;
         }
         // validate indent
@@ -288,7 +288,6 @@ static object* do_parse(pvm* vm, pstate* s, object** errors, char* special) {
             // TODO: stop chomping with parens
             // get one line
             do bufadd(&b, look), next; while (!eofp && look != '\n');
-            bufadd(&b, '\n');
             if (eofp) break;
             // check indent and break
             chompindent:
