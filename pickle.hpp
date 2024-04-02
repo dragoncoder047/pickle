@@ -164,6 +164,24 @@ class pvm : public tinobsy::vm {
         return x->as_double;
     }
 
+    // Returns a new empty object, of the specified prototypes (which must be a cons list)
+    inline object* newobject(object* prototypes = nil) {
+        object* o = this->alloc(&obj_type);
+        car(o) = prototypes;
+        cdr(o) = nil;
+        return o;
+    }
+
+    // Looks up the property on the object, optionally recursing into prototypes if it's not found directly.
+    // If it is not found anywhere return nil.
+    object* get_property(object* obj, uint64_t hash, bool recurse = false);
+
+    // Sets the property directly on the object. Returns true if setting succeeded.
+    bool set_property(object* obj, object* key, uint64_t hash, object* value);
+
+    // Sets the property directly on the object. Returns true if something was removed.
+    bool remove_property(object* obj, uint64_t hash);
+
     // execute one instruction on the current thread and go to the next thread
     void step();
 
@@ -172,6 +190,11 @@ class pvm : public tinobsy::vm {
 
     // write the object to stdout using srfi 38 write/ss alike formatting
     void dump(object*);
+
+
+
+    // overridden garbage collect
+    size_t gc();
 
 
     private:

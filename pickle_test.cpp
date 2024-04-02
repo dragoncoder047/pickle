@@ -1,4 +1,4 @@
-//#define TINOBSY_DEBUG
+#define TINOBSY_DEBUG
 #include "pickle.hpp"
 
 #include <stdio.h>
@@ -38,6 +38,8 @@ lambda x
 
 )=";
 
+#define SEPARATOR printf("\n\n----------------------------------------------------------------------------------------\n\n")
+
 int main() {
     pvm vm;
     vm.defop("parse", pickle::parse);
@@ -66,6 +68,27 @@ int main() {
         vm.dump(vm.queue);
         printf("\n\n");
     }
+    SEPARATOR;
+    printf("hashmap test\n");
+    auto foo = vm.newobject();
+    for (size_t i = 0; i < 10; i++) {
+        vm.set_property(foo, vm.integer(i), i, vm.integer(i));
+        printf("Dump of object: ");
+        vm.dump(foo);
+        putchar('\n');
+    }
+    for (size_t i = 0; i < 10; i++) {
+        vm.set_property(foo, vm.integer(i), i, vm.integer(i));
+        printf("Dump of object: ");
+        vm.dump(foo);
+        putchar('\n');
+    }
+    ASSERT(vm.get_property(foo, 0) != nil);
+    auto pair = vm.get_property(foo, 0);
+    ASSERT(car(foo) == pair);
+    putchar('\n');
+    vm.dump(foo);
+    SEPARATOR;
     printf("all done -- cleaning up\n");
     // implicit destruction of vm;
     return 0;
