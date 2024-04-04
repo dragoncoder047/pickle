@@ -4,7 +4,7 @@
 
 test: buildtest64 valgrind64 buildtest32 valgrind32 clean checkleaks
 
-VALGRINDOPTS = --track-origins=yes --leak-check=full --show-reachable=yes --main-stacksize=1000
+VALGRINDOPTS = -s --track-origins=yes --leak-check=full --show-reachable=yes --main-stacksize=1000
 
 ifeq (,$(findstring raspberrypi,$(shell uname -a)))
 	VALGRINDOPTS += --show-leak-kinds=all

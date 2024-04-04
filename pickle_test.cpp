@@ -1,7 +1,13 @@
-#define TINOBSY_DEBUG
-#include "pickle.hpp"
+//#define TINOBSY_DEBUG
 
+#include "pickle.hpp"
 #include <stdio.h>
+
+#ifndef TINOBSY_DEBUG
+#include <assert.h>
+#undef ASSERT
+#define ASSERT(x,...) assert(x)
+#endif
 
 using pickle::pvm;
 using pickle::object;
@@ -72,20 +78,33 @@ int main() {
     printf("hashmap test\n");
     auto foo = vm.newobject();
     for (size_t i = 0; i < 10; i++) {
+        printf("Insert %zu\n", i);
+        vm.set_property(foo, vm.integer(i), i, foo);
+        printf("Dump of object: ");
+        vm.dump(foo);
+        putchar('\n');
+    }
+    putchar('\n');
+    for (size_t i = 0; i < 10; i += 2) {
+        printf("Remove %zu\n", i);
+        vm.remove_property(foo, i);
+        printf("Dump of object: ");
+        vm.dump(foo);
+        putchar('\n');
+    }
+    putchar('\n');
+    for (size_t i = 0; i < 10; i += 2) {
+        printf("Insert %zu\n", i);
         vm.set_property(foo, vm.integer(i), i, vm.integer(i));
         printf("Dump of object: ");
         vm.dump(foo);
         putchar('\n');
     }
-    for (size_t i = 0; i < 10; i++) {
-        vm.set_property(foo, vm.integer(i), i, vm.integer(i));
-        printf("Dump of object: ");
-        vm.dump(foo);
-        putchar('\n');
-    }
-    ASSERT(vm.get_property(foo, 0) != nil);
-    auto pair = vm.get_property(foo, 0);
-    ASSERT(car(foo) == pair);
+    putchar('\n');
+    auto hash0 = vm.get_property(foo, 0);
+    printf("Get hash 0: ");
+    ASSERT(hash0 != nil);
+    vm.dump(hash0);
     putchar('\n');
     vm.dump(foo);
     SEPARATOR;

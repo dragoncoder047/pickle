@@ -129,10 +129,10 @@ class pvm : public tinobsy::vm {
     }
 
     // create a cons cell
-    inline object* cons(object* car, object* cdr) {
+    inline object* cons(object* xar, object* xdr) {
         object* o = this->alloc(&cons_type);
-        car(o) = car;
-        cdr(o) = cdr;
+        car(o) = xar;
+        cdr(o) = xdr;
         return o;
     }
 

@@ -117,7 +117,7 @@ void pvm::start_thread()  {
 void pvm::step() {
     next_inst:
     if (!this->queue) return;
-    object* next_type = car(cdr(this->curr_thread()));
+    object* next_type = cadr(this->curr_thread());
     object* op = this->pop_inst();
     if (!op) {
         object* last = this->queue;
@@ -133,12 +133,12 @@ void pvm::step() {
     }
     object* type = car(op);
     if (eqcmp(type, next_type) != 0) goto next_inst;
-    object* inst_name = car(cdr(op));
-    object* cookie = cdr(cdr(op));
+    object* inst_name = cadr(op);
+    object* cookie = cddr(op);
     object* pair = assoc(this->function_registry, inst_name);
     ASSERT(pair, "Unknown instruction %s", this->stringof(inst_name));
     next_type = this->fptr(cdr(pair))(this, cookie, next_type);
-    car(cdr(this->curr_thread())) = next_type;
+    cadr(this->curr_thread()) = next_type;
     this->queue = cdr(this->queue);
 }
 
@@ -416,8 +416,9 @@ object* parse(pvm* vm, object* cookie, object* inst_type) {
 // ------------------------- HASHMAPS (OBJECTS) -------------------------------
 
 // Returns the found node or nil if the hash is not found.
-static object* hashmap_find(pvm* vm, object* map, uint64_t hash) {
+static object* hashmap_get(pvm* vm, object* map, uint64_t hash) {
     // Each hashmap node is a 4-cons tree ((hash . (key . value)) . (left . right))
+    // but this gets printed as ((hash key . value) left . right) when the map is printed as-is
     uint64_t hh = hash;
     DBG("Searching hashmap for hash %" PRId64 " {", hash);
     recurse:
@@ -427,13 +428,10 @@ static object* hashmap_find(pvm* vm, object* map, uint64_t hash) {
     }
     object* hash_pair = car(map);
     if (hash_pair) {
-        printf("hash_pair = ");
-        vm->dump(hash_pair);
-        putchar(' ');
-        vm->dump(car(hash_pair));
         int64_t this_hash = vm->intof(car(hash_pair));
+        DBG("this_hash=%" PRId64, this_hash);
         if (this_hash == hash) {
-            DBG("Found matching key for hash %" PRId64, hash);
+            DBG("Found matching key for hash %" PRId64 " }", hash);
             return map;
         }
     }
@@ -454,6 +452,7 @@ static object* hashmap_find(pvm* vm, object* map, uint64_t hash) {
 static object* hashmap_set(pvm* vm, object** map, object* key, uint64_t hash, object* val) {
     DBG("Setting hash %" PRId64 " on hashmap. {", hash);
     uint64_t hh = hash;
+    object* newnode = nil;
     recurse:
     if (*map == nil) {
         DBG("Tree is terminated -- add new node. }");
@@ -467,6 +466,8 @@ static object* hashmap_set(pvm* vm, object** map, object* key, uint64_t hash, ob
     if (!hash_pair) {
         DBG("Found tombstoned node. Inserting key.");
         car(*map) = vm->cons(vm->integer(hash), vm->cons(key, val));
+        newnode = *map;
+        if (!children) return newnode; // No children to search and kill
         goto killshadow;
     } else {
         // Check if the hashes match
@@ -474,8 +475,8 @@ static object* hashmap_set(pvm* vm, object** map, object* key, uint64_t hash, ob
         if (z == hash) {
             DBG("Found matching node. Re-setting it. }");
             if (!cdr(hash_pair)) cdr(hash_pair) = vm->cons(nil, nil);
-            car(cdr(hash_pair)) = key;
-            cdr(cdr(hash_pair)) = val;
+            cadr(hash_pair) = key;
+            cddr(hash_pair) = val;
             return *map;
         }
     }
@@ -495,6 +496,11 @@ static object* hashmap_set(pvm* vm, object** map, object* key, uint64_t hash, ob
     else map = &cdr(children);
     hh >>= 1;
     DBG("Continuing on %s", ll ? "LEFT" : "RIGHT");
+    killagain:
+    if ((*map) == nil) {
+        DBG("Reached end of hash path. Done killing. }");
+        return newnode;
+    }
     hash_pair = car(*map);
     ll = hh & 1;
     children = cdr(*map);
@@ -505,15 +511,15 @@ static object* hashmap_set(pvm* vm, object** map, object* key, uint64_t hash, ob
             car(*map) = nil;
         }
     }
-    if (!children) {
+    if (children == nil) {
         DBG("Reached node with no children. Stopping }");
-        return *map;
+        return newnode;
     }
     if (ll) map = &car(children);
     else map = &cdr(children);
     hh >>= 1;
     DBG("Shadow recursing on %s", ll ? "LEFT" : "RIGHT");
-    goto killshadow;
+    goto killagain;
 }
 
 object* pvm::get_property(object* obj, uint64_t hash, bool recurse) {
@@ -534,17 +540,17 @@ object* pvm::get_property(object* obj, uint64_t hash, bool recurse) {
     if (obj->type != &obj_type) return nil;
     // Search the hashmap.
     object* hashmap = cdr(obj);
-    object* node = hashmap_find(this, obj, hash);
-    if (node) return cdr(car(node));
+    object* node = hashmap_get(this, hashmap, hash);
+    if (node) return cddar(node);
     return nil;
 }
 
-bool pvm::set_property(object* obj, object* val, uint64_t hash, object* value) {
+bool pvm::set_property(object* obj, object* key, uint64_t hash, object* value) {
     // Nil has no properties
     if (!obj) return false;
     // Check if it is an object-object (primitives have no own properties)
     if (obj->type != &obj_type) return false;
-    hashmap_set(this, &cdr(obj), val, hash, value);
+    hashmap_set(this, &cdr(obj), key, hash, value);
     return true;
 }
 
@@ -553,7 +559,7 @@ bool pvm::remove_property(object* obj, uint64_t hash) {
     if (!obj) return false;
     // Check if it is an object-object (primitives have no own properties)
     if (obj->type != &obj_type) return false;
-    bool had = hashmap_find(this, cdr(obj), hash) != nil;
+    bool had = hashmap_get(this, cdr(obj), hash) != nil;
     // Try to set the node to nil, which will kill the shadow references
     object* node = hashmap_set(this, &cdr(obj), nil, hash, nil);
     // Then kill this node too
@@ -619,8 +625,7 @@ static void make_refs_list(pvm* vm, object* obj, object** alist) {
         return;
     }
     vm->push(vm->cons(obj, vm->integer(1)), *alist);
-    if (obj->type == &obj_type) return; // hashmaps are guaranteed non disjoint, i guess
-    make_refs_list(vm, car(obj), alist);
+    if (obj->type != &obj_type) make_refs_list(vm, car(obj), alist); // hashmaps are guaranteed non disjoint, i guess
     obj = cdr(obj);
     goto again;
 }
@@ -652,13 +657,16 @@ static void print_with_refs(pvm*, object*, object*, int64_t*);
 static void print_hashmap(pvm* vm, object* node, object* alist, int64_t* counter) {
     recur:
     if (node) {
-        print_with_refs(vm, car(cdr(car(node))), alist, counter);
-        printf(": ");
-        print_with_refs(vm, cdr(cdr(car(node))), alist, counter);
-        printf(", ");
+        if (car(node)) {
+            object* hinfo = car(node);
+            print_with_refs(vm, cadr(hinfo), alist, counter);
+            printf(" -> ");
+            print_with_refs(vm, cddr(hinfo), alist, counter);
+            printf(" ;[hash=%" PRId64 "] ", vm->intof(car(hinfo)));
+        }
         if (!cdr(node)) return;
-        print_hashmap(vm, car(cdr(node)), alist, counter);
-        node = cdr(cdr(node));
+        print_hashmap(vm, cadr(node), alist, counter);
+        node = cddr(node);
         goto recur;
     }
 }
@@ -668,8 +676,17 @@ static void print_with_refs(pvm* vm, object* obj, object* alist, int64_t* counte
         printf("NIL");
         return;
     }
+    // test if it's in the table
+    int64_t ref = reffed(vm, obj, alist, counter);
+    if (ref < 0) {
+        printf("#%" PRId64 "#", -ref);
+        return;
+    }
+    if (ref) {
+        printf("#%" PRId64 "=", ref);
+    }
     #define PRINTTYPE(t, f, fmt) else if (obj->type == t) printf(fmt, obj->f)
-    else if (obj->type == &string_type) {
+    if (obj->type == &string_type) {
         putchar('"');
         for (char* c = obj->as_chars; *c; c++) {
             char e = escape(*c);
@@ -688,16 +705,7 @@ static void print_with_refs(pvm* vm, object* obj, object* alist, int64_t* counte
     PRINTTYPE(NULL, as_ptr, "<garbage %p>");
     #undef PRINTTYPE
     else if (obj->type == &cons_type) {
-        // it's a cons
-        // test if it's in the table
-        int64_t ref = reffed(vm, obj, alist, counter);
-        if (ref < 0) {
-            printf("#%" PRId64 "#", -ref);
-            return;
-        }
-        if (ref) {
-            printf("#%" PRId64 "=", ref);
-        }
+        // it's a cons and unreffed
         // now print the object
         putchar('(');
         for (;;) {
@@ -723,14 +731,14 @@ static void print_with_refs(pvm* vm, object* obj, object* alist, int64_t* counte
     }
     else if (obj->type == &obj_type) {
         // Try to find the class name
-        // TODO: String/symbol/int hash.
+        // TODO: String/symbol/int static hash.
         const char* nm = "object";
-        // if (car(obj) && !cdr(car(obj)) && car(car(obj))) {
+        // if (car(obj) && car(car(obj))) {
         //     object* super = car(car(obj));
-        //     object* name = vm->get_property(obj, vm->static_hash(vm->string("__name__")));
+        //     object* name = vm->get_property(super, vm->static_hash(vm->string("__name__")));
         //     if (name->type == &symbol_type) nm = vm->stringof(name);
         // }
-        printf("%s { ", nm);
+        printf("%s{ ", nm);
         print_hashmap(vm, cdr(obj), alist, counter);
         putchar('}');
     }
