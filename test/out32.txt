@@ -98,6 +98,10 @@ Dump of object: #1=object{ 0 -> 0 ;[hash=0] 1 -> #1# ;[hash=1] 3 -> #1# ;[hash=3
 
 Get hash 0: 0
 #1=object{ 0 -> 0 ;[hash=0] 1 -> #1# ;[hash=1] 3 -> #1# ;[hash=3] 7 -> #1# ;[hash=7] 5 -> #1# ;[hash=5] 9 -> #1# ;[hash=9] 2 -> 2 ;[hash=2] 6 -> 6 ;[hash=6] 4 -> 4 ;[hash=4] 8 -> 8 ;[hash=8] }
+Create child object
+object{ }
+Get property 0 with inheritance and without
+
 
 ----------------------------------------------------------------------------------------
 

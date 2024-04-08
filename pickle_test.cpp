@@ -107,6 +107,12 @@ int main() {
     vm.dump(hash0);
     putchar('\n');
     vm.dump(foo);
+    printf("\nCreate child object\n");
+    auto bar = vm.newobject(vm.cons(foo, nil));
+    vm.dump(bar);
+    printf("\nGet property 0 with inheritance and without\n");
+    ASSERT(vm.get_property(bar, 0, false) == nil);
+    ASSERT(vm.get_property(bar, 0, true) != nil);
     SEPARATOR;
     printf("all done -- cleaning up\n");
     // implicit destruction of vm;

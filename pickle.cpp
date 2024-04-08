@@ -526,14 +526,22 @@ object* pvm::get_property(object* obj, uint64_t hash, bool recurse) {
     // Nil has no properties
     if (!obj) return nil;
     if (recurse) {
+        DBG("Inheritance requested get_property() {");
         // Try to find it directly.
         object* val = this->get_property(obj, hash, false);
-        if (val) return val;
+        if (val) {
+            DBG("Own property. }");
+            return val;
+        }
         // Not found, traverse prototypes list.
         for (object* p = car(obj); p; p = cdr(p)) {
             val = this->get_property(car(p), hash, true);
-            if (val) return val;
+            if (val) {
+                DBG("Parent property. }");
+                return val;
+            }
         }
+        DBG("Property not found in inheritance tree. }");
         return nil;
     }
     // Check if it is an object-object (primitives have no own properties)
