@@ -4,37 +4,6 @@
 
 namespace pickle {
 
-char unescape(char c) {
-    switch (c) {
-        case 'b': return '\b';
-        case 't': return '\t';
-        case 'n': return '\n';
-        case 'v': return '\v';
-        case 'f': return '\f';
-        case 'r': return '\r';
-        case 'a': return '\a';
-        case 'o': return '{';
-        case 'c': return '}';
-        case '\n': return 0;
-        default: return c;
-    }
-}
-
-char escape(char c) {
-    switch (c) {
-        case '\b': return 'b';
-        case '\t': return 't';
-        case '\n': return 'n';
-        case '\v': return 'v';
-        case '\f': return 'f';
-        case '\r': return 'r';
-        case '\a': return 'a';
-        case '{': return 'o';
-        case '}': return 'c';
-        default: return c;
-    }
-}
-
 static void free_payload(object* o) { free(o->as_ptr); }
 static object* mark_car_only(tinobsy::vm* _, object* o) { return car(o); }
 
@@ -52,10 +21,18 @@ const object_type integer_type("int", mark_car_only, NULL, NULL);
 const object_type float_type("float", mark_car_only, NULL, NULL);
 const object_type* primitives[] = { &string_type, &symbol_type, &c_function_type, &integer_type, &float_type, NULL };
 
+// ----------------- misc init functions ---------------------------
+
 void pvm::mark_globals() {
     this->markobject(this->queue);
     this->markobject(this->globals);
     this->markobject(this->function_registry);
+}
+
+pvm::pvm() {
+    tinobsy::vm();
+    srand(time(NULL));
+    this->hash_seed = rand();
 }
 
 
@@ -144,6 +121,8 @@ void pvm::step() {
 
 //--------------- PARSER --------------------------------------
 
+namespace parser {
+
 typedef struct {
     const char* data;
     size_t i;
@@ -151,7 +130,6 @@ typedef struct {
 } pstate;
 
 #define pos (s->i)
-#define restore pos =
 #define advance pos +=
 #define next pos++
 #define look (s->data[pos])
@@ -159,7 +137,6 @@ typedef struct {
 #define here at(pos)
 #define eofp  (pos >= s->len)
 #define test(f) (f(look))
-#define chomp(str) (!strncmp(here, str, strlen(str)) ? advance strlen(str) : false)
 
 static void bufadd(char** b, char c) {
     // super not memory efficient, it reallocs the buffer every time
@@ -167,18 +144,51 @@ static void bufadd(char** b, char c) {
     asprintf(b, "%s%c", *b ? *b : "", c);
     free(ob);
 }
+
 static void bufcat(char** b, const char* c, int n) {
     char* ob = *b;
     asprintf(b, "%s%.*s", *b ? *b : "", n, c);
     free(ob);
 }
+
+static char unescape(char c) {
+    switch (c) {
+        case 'b': return '\b';
+        case 't': return '\t';
+        case 'n': return '\n';
+        case 'v': return '\v';
+        case 'f': return '\f';
+        case 'r': return '\r';
+        case 'a': return '\a';
+        case 'o': return '{';
+        case 'c': return '}';
+        case '\n': return 0;
+        default: return c;
+    }
+}
+
+static char escape(char c) {
+    switch (c) {
+        case '\b': return 'b';
+        case '\t': return 't';
+        case '\n': return 'n';
+        case '\v': return 'v';
+        case '\f': return 'f';
+        case '\r': return 'r';
+        case '\a': return 'a';
+        case '{': return 'o';
+        case '}': return 'c';
+        default: return c;
+    }
+}
+
 static char revparen(char p) {
     const char* a = "([{}])";
     const char* b = ")]}{[(";
     return b[strchr(a, p) - a];
 }
 
-static object* do_parse(pvm* vm, pstate* s, object** errors, char* special) {
+static object* next_token(pvm* vm, pstate* s) {
     char c = look;
     char* b = NULL;
     char* b2 = NULL;
@@ -199,174 +209,22 @@ static object* do_parse(pvm* vm, pstate* s, object** errors, char* special) {
         else {
             ok = sscanf(here, "%" SCNi64 "%n", &n, &num);
             if (ok) result = vm->integer(n);
-            else vm->push(vm->string("scanf error"), *errors);
+            else result = nil; // TODO: report error, or parse bigint?
         }
         DBG("ok = %i", ok);
         if (ok) advance num;
     }
+    else if (c == '\n' || c == '\r') {
+        DBG("newline");
+        while (look == '\n' || look == '\r') next;
+        result = vm->sym("NEWLINE");
+    }
     else if (isspace(c) && c != '\n') {
-        DBG("small space");
-        result = vm->sym("SPACE");
-        while (test(isspace) && c != '\n') next;
-    }
-    else if (c == '#') {
-        // get comment or 1-character # operator
-        next;
-        if (look != '#') {
-            DBG("hash");
-            // it's a # operator
-            result = vm->sym("#");
-        } else {
-            next;
-            if (look != '#') {
-                DBG("line comment");
-                // it's a line comment
-                do bufadd(&b, look), next; while (look != '\n' && !eofp);
-                result = vm->string(b);
-            } else {
-                DBG("block comment");
-                // it's a block comment
-                bufcat(&b2, "###", 3);
-                next;
-                while (look == '#') bufadd(&b2, '#'), next;
-                do bufadd(&b, look), next; while (!eofp && !chomp(b2));
-                if (eofp) {
-                    vm->push(vm->string("unterminated block comment"), *errors);
-                    goto done;
-                }
-                result = vm->string(b);
-            }
-        }
-    }
-    else if (c == '"' || c == '\'') {
-        DBG("quote string");
-        char start = c;
-        next;
-        while (look != start && !eofp && look != '\n') {
-            // TODO: paren stack for nested interpolations (like PEP 701)
-            char ch = look;
-            if (ch == '\\') {
-                next;
-                ch = unescape(ch);
-            }
-            if (ch) bufadd(&b, ch);
-            next;
-        }
-        if (look != start) {
-            vm->push(vm->string("unclosed string"), *errors);
-        }
-        else result = vm->string(b);
-    }
-    else if (c == '\n') {
-        DBG("block string");
-        getindent:
-        // parser block
-        next; // eat newline
-        while (test(isspace) && look != '\n') {
-            bufadd(&b2, look);
-            next;
-        }
-        if (look == '\n') {
-            // Blank line
-            free(b2);
-            b2 = NULL;
-            goto getindent;
-        }
-        if (!b2 || !strlen(b2)) {
-            // no indent
-            result = vm->sym("NEWLINE");
-            goto done;
-        }
-        // validate indent
-        for (char* c = b2; *c; c++) {
-            if (*c != *b2) {
-                vm->push(vm->string("mix of spaces and tabs indenting block"), *errors);
-                goto done;
-            }
-        }
-        for (;;) {
-            // TODO: stop chomping with parens
-            // get one line
-            do bufadd(&b, look), next; while (!eofp && look != '\n');
-            if (eofp) break;
-            // check indent and break
-            chompindent:
-            if (!chomp(b2)) {
-                // if indent does not chomp, expect a blank line
-                bool has_indent = false;
-                while (test(isspace) && look != '\n') has_indent = true, next;
-                if (look == '\n') {
-                    next;
-                    bufadd(&b, '\n');
-                    goto chompindent;
-                }
-                // not a blank line
-                if (has_indent) {
-                    vm->push(vm->string("unindent does not match previous indent"), *errors);
-                    goto done;
-                }
-                // completely unindented
-                else break;
-            }
-        }
-        result = vm->string(b);
-    }
-    else if (c == '{') {
-        DBG("curly string");
-        object* stack = vm->cons(vm->integer((int64_t)c), nil);
-        next;
-        while (!eofp) {
-            char ch = look;
-            next;
-            // Check for open parens
-            if (strchr("([{", ch)) {
-                vm->push(vm->integer((int64_t)ch), stack);
-            }
-            // Check for close parens
-            if (strchr("}])", ch)) {
-                char got_opener = revparen(ch);
-                object* top = vm->pop(stack);
-                if (!top) {
-                    vm->push(vm->string("internal parser error (curlystack empty)"), *errors);
-                } else {
-                    char expected_opener = (char)vm->intof(top);
-                    if (got_opener != expected_opener) {
-                        vm->push(vm->string("mismatched paren"), *errors);
-                    }
-                }
-                if (!stack) break;
-            }
-            bufadd(&b, ch);
-        }
-        if (eofp) {
-            vm->push(vm->string("unclosed curly string"), *errors);
-        }
-        else result = vm->string(b);
-    }
-    else if (c == '(' || c == '[') {
-        DBG("subexpression");
-        // Subexpressions and lists are treated the same right now.
-        // TODO: fix this
-        object** tail = &result;
-        next;
-        char close = revparen(c);
-        do {
-            object* item = do_parse(vm, s, errors, special);
-            if (*special) {
-                if (*special == close) goto closed;
-                vm->push(vm->string("mismatched paren"), *errors);
-            }
-            *tail = vm->cons(item, nil);
-            tail = &cdr(*tail);
-        } while (!eofp);
-        vm->push(vm->string("unclosed subexpression"), *errors);
-        closed:
-        *special = 0;
-    }
-    else if (strchr("(){}[]", c)) {
-        DBG("other special");
-        next;
-        *special = c;
+        DBG("space");
+        size_t p = pos;
+        while (!eofp && (test(isspace) && look != '\n' && look != '\r')) next;
+        bufcat(&b, at(p), pos - p);
+        result = vm->sym(b);
     }
     else if (ispunct(c)) {
         DBG("punctuation symbol");
@@ -376,9 +234,9 @@ static object* do_parse(pvm* vm, pstate* s, object** errors, char* special) {
         result = vm->sym(b);
     }
     else {
-        DBG("other crap");
+        DBG("other crap: %c (%i)", c, (int)c);
         next;
-        vm->push(vm->string("unexpected crap"), *errors);
+        result = nil;
     }
     done:
     free(b);
@@ -387,36 +245,46 @@ static object* do_parse(pvm* vm, pstate* s, object** errors, char* special) {
 }
 
 // Can be called by the program
-object* parse(pvm* vm, object* cookie, object* inst_type) {
+object* tokenize(pvm* vm, object* cookie, object* inst_type) {
     (void)cookie;
-    DBG("parsing");
+    DBG("tokenizing");
     object* string = vm->pop();
     if (string->type != &string_type) {
-        vm->push_data(vm->cons(vm->string("non string to parse()"), nil));
+        vm->push_data(vm->cons(vm->string("non string to tokenize()"), nil));
         return vm->sym("error");
     }
     const char* str = vm->stringof(string);
     pstate s = { .data = str, .i = 0, .len = strlen(str) };
-    char special = 0;
-    object* errors = nil;
     object* result = nil;
     object** tail = &result;
     do {
-        object* item = do_parse(vm, &s, &errors, &special);
-        if (special) {
-            vm->push(vm->string("unopened paren"), errors);
-        }
+        object* item = next_token(vm, &s);
+        DBG("Got token.");
         *tail = vm->cons(item, nil);
         tail = &cdr(*tail);
     } while (s.i < s.len);
-    vm->push_data(errors ? errors : result);
-    return errors ? vm->sym("error") : nil;
+    vm->push_data(result);
+    return nil;
 }
+
+#undef pos
+#undef advance
+#undef next
+#undef look
+#undef at
+#undef here
+#undef eofp
+#undef test
+
+}
+
 
 // ------------------------- HASHMAPS (OBJECTS) -------------------------------
 
+namespace hashmap {
+
 // Returns the found node or nil if the hash is not found.
-static object* hashmap_get(pvm* vm, object* map, uint64_t hash) {
+static object* get(pvm* vm, object* map, uint64_t hash) {
     // Each hashmap node is a 4-cons tree ((hash . (key . value)) . (left . right))
     // but this gets printed as ((hash key . value) left . right) when the map is printed as-is
     uint64_t hh = hash;
@@ -449,7 +317,7 @@ static object* hashmap_get(pvm* vm, object* map, uint64_t hash) {
 }
 
 // Returns the new node, *map is updated to point to the root node if it changed.
-static object* hashmap_set(pvm* vm, object** map, object* key, uint64_t hash, object* val) {
+static object* set(pvm* vm, object** map, object* key, uint64_t hash, object* val) {
     DBG("Setting hash %" PRId64 " on hashmap. {", hash);
     uint64_t hh = hash;
     object* newnode = nil;
@@ -522,6 +390,8 @@ static object* hashmap_set(pvm* vm, object** map, object* key, uint64_t hash, ob
     goto killagain;
 }
 
+}
+
 object* pvm::get_property(object* obj, uint64_t hash, bool recurse) {
     // Nil has no properties
     if (!obj) return nil;
@@ -548,7 +418,7 @@ object* pvm::get_property(object* obj, uint64_t hash, bool recurse) {
     if (obj->type != &obj_type) return nil;
     // Search the hashmap.
     object* hashmap = cdr(obj);
-    object* node = hashmap_get(this, hashmap, hash);
+    object* node = hashmap::get(this, hashmap, hash);
     if (node) return cddar(node);
     return nil;
 }
@@ -558,7 +428,7 @@ bool pvm::set_property(object* obj, object* key, uint64_t hash, object* value) {
     if (!obj) return false;
     // Check if it is an object-object (primitives have no own properties)
     if (obj->type != &obj_type) return false;
-    hashmap_set(this, &cdr(obj), key, hash, value);
+    hashmap::set(this, &cdr(obj), key, hash, value);
     return true;
 }
 
@@ -567,9 +437,9 @@ bool pvm::remove_property(object* obj, uint64_t hash) {
     if (!obj) return false;
     // Check if it is an object-object (primitives have no own properties)
     if (obj->type != &obj_type) return false;
-    bool had = hashmap_get(this, cdr(obj), hash) != nil;
+    bool had = hashmap::get(this, cdr(obj), hash) != nil;
     // Try to set the node to nil, which will kill the shadow references
-    object* node = hashmap_set(this, &cdr(obj), nil, hash, nil);
+    object* node = hashmap::set(this, &cdr(obj), nil, hash, nil);
     // Then kill this node too
     ASSERT(node, "hashmap_set() failed");
     car(node) = nil;
@@ -623,6 +493,8 @@ object* splice_match(pvm* vm, object* cookie, object* inst_type) {
 
 // ------------------- Circular-reference-proof object dumper -----------------------
 // ---------- (based on https://stackoverflow.com/a/78169673/23626926) --------------
+
+namespace dumper {
 
 static void make_refs_list(pvm* vm, object* obj, object** alist) {
     again:
@@ -697,7 +569,7 @@ static void print_with_refs(pvm* vm, object* obj, object* alist, int64_t* counte
     if (obj->type == &string_type) {
         putchar('"');
         for (char* c = obj->as_chars; *c; c++) {
-            char e = escape(*c);
+            char e = parser::escape(*c);
             if (e != *c) {
                 putchar('\\');
                 putchar(e);
@@ -706,7 +578,7 @@ static void print_with_refs(pvm* vm, object* obj, object* alist, int64_t* counte
         }
         putchar('"');
     }
-    PRINTTYPE(&symbol_type, as_chars, strchr(obj->as_chars, ' ') ? "#|%s|" : "%s");
+    PRINTTYPE(&symbol_type, as_chars, strpbrk(obj->as_chars, "(){}[] ") ? "#|%s|" : "'%s");
     PRINTTYPE(&integer_type, as_big_int, "%" PRId64);
     PRINTTYPE(&float_type, as_double, "%lg");
     PRINTTYPE(&c_function_type, as_ptr, "<function %p>");
@@ -751,19 +623,20 @@ static void print_with_refs(pvm* vm, object* obj, object* alist, int64_t* counte
         putchar('}');
     }
     else printf("<%s:%p>", obj->type->name, obj->as_ptr);
+}
 
 }
 
 void pvm::dump(object* obj) {
     object* alist = NULL;
     int64_t counter = 1;
-    make_refs_list(this, obj, &alist);
-    print_with_refs(this, obj, alist, &counter);
+    dumper::make_refs_list(this, obj, &alist);
+    dumper::print_with_refs(this, obj, alist, &counter);
 }
 
 
 size_t pvm::gc() {
-    DBG("TODO: garbage collect all of the hashmaps");
+    DBG("TODO: garbage collect all of the unused hashmap nodes");
     return tinobsy::vm::gc();
 }
 

@@ -15,9 +15,6 @@ using tinobsy::object_type;
 // used for places where NULL would be ambiguous
 #define nil ((object*)NULL)
 
-char escape(char c);
-char unescape(char c);
-
 class pvm;
 
 typedef object* (*func_ptr)(pvm* vm, object* cookie, object* inst_type);
@@ -32,6 +29,7 @@ extern const object_type float_type;
 
 class pvm : public tinobsy::vm {
     public:
+    pvm();
 
     // round-robin queue of threads (circular list)
     object* queue = NULL;
@@ -213,6 +211,8 @@ class pvm : public tinobsy::vm {
         if (!curr_thread) return nil;
         return this->pop(cdr(cdr(curr_thread)));
     }
+
+    int hash_seed;
 };
 
 
@@ -225,7 +225,10 @@ object* assoc(object*, object*);
 // Removes the key/value pair from the list and returns it, or returns NULL if the pair never existed.
 object* delassoc(object**, object*);
 
-object* parse(pvm* vm, object* cookie, object* inst_type);
+namespace parser {
+object* tokenize(pvm* vm, object* cookie, object* inst_type);
+}
+
 object* eval(pvm* vm, object* cookie, object* inst_type);
 object* splice_match(pvm* vm, object* cookie, object* inst_type);
 }

@@ -1,13 +1,16 @@
-//#define TINOBSY_DEBUG
+#define TINOBSY_DEBUG
 
 #include "pickle.hpp"
 #include <stdio.h>
 
-#ifndef TINOBSY_DEBUG
-#include <assert.h>
-#undef ASSERT
-#define ASSERT(x,...) assert(x)
-#endif
+#define CHECK(cond) do { \
+    if (!(cond)) { \
+        printf("\nFAIL: %s\nStop.\n", #cond); \
+        abort(); \
+    } else { \
+        printf("\nOK: %s\n", #cond); \
+    } \
+} while (0)
 
 using pickle::pvm;
 using pickle::object;
@@ -48,7 +51,7 @@ lambda x
 
 int main() {
     pvm vm;
-    vm.defop("parse", pickle::parse);
+    vm.defop("tokenize", pickle::parser::tokenize);
     vm.defop("test_test", test_test);
     auto last_pair = vm.cons(vm.integer(2), nil);
     auto st = vm.cons(vm.integer(1), vm.cons(vm.integer(2), vm.cons(vm.integer(1), last_pair)));
@@ -59,7 +62,7 @@ int main() {
     vm.start_thread();
     vm.push_inst("test_test", "error", vm.string("from error handler"));
     vm.push_inst("test_test", nil, vm.string("output result"));
-    vm.push_inst("parse");
+    vm.push_inst("tokenize");
     vm.push_data(vm.integer(42));
     vm.push_data(st);
     vm.push_data(vm.integer(42));
@@ -75,6 +78,7 @@ int main() {
         printf("\n\n");
     }
     SEPARATOR;
+
     printf("hashmap test\n");
     auto foo = vm.newobject();
     for (size_t i = 0; i < 10; i++) {
@@ -103,7 +107,7 @@ int main() {
     putchar('\n');
     auto hash0 = vm.get_property(foo, 0);
     printf("Get hash 0: ");
-    ASSERT(hash0 != nil);
+    CHECK(hash0 != nil);
     vm.dump(hash0);
     putchar('\n');
     vm.dump(foo);
@@ -111,9 +115,10 @@ int main() {
     auto bar = vm.newobject(vm.cons(foo, nil));
     vm.dump(bar);
     printf("\nGet property 0 with inheritance and without\n");
-    ASSERT(vm.get_property(bar, 0, false) == nil);
-    ASSERT(vm.get_property(bar, 0, true) != nil);
+    CHECK(vm.get_property(bar, 0, false) == nil);
+    CHECK(vm.get_property(bar, 0, true) != nil);
     SEPARATOR;
+
     printf("all done -- cleaning up\n");
     // implicit destruction of vm;
     return 0;
