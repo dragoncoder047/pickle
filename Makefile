@@ -10,22 +10,26 @@ ifeq (,$(findstring raspberrypi,$(shell uname -a)))
 	VALGRINDOPTS += --show-leak-kinds=all
 endif
 
+CXXFLAGS += --std=c++11 -g
+
 buildtest64:
-	g++ --std=c++11 pickle_test.cpp -g -o pickletest64
+	$(CXX) $(CXXFLAGS) pickle_test.cpp -o pickletest64
 
 valgrind64: buildtest64
 	valgrind $(VALGRINDOPTS) ./pickletest64 > test/out64.txt 2> test/valgrind64.txt
 
+
+buildtest32: CXXFLAGS += -m32
 buildtest32:
-	g++ --std=c++11 -m32 pickle_test.cpp -g -o pickletest32
+	$(CXX) $(CXXFLAGS) pickle_test.cpp -o pickletest32
 
 valgrind32: buildtest32
 	valgrind $(VALGRINDOPTS) ./pickletest32 > test/out32.txt 2> test/valgrind32.txt
 
 clean:
-	rm -f pickletest64
-	rm -f pickletest32
-	rm -f vgcore.*
+	$(RM) -f pickletest64
+	$(RM) -f pickletest32
+	$(RM) -f vgcore.*
 
 deps:
 	sudo dpkg --add-architecture i386
