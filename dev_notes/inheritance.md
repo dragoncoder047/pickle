@@ -1,10 +1,13 @@
 # Basic ABC's
 
-* Nothing
+* Singleton
+  * Nothing
+  * Undefined
   * Done (EOF signal)
 * Callable
   * Function/Closure
   * Continuation
+  * BoundMethod
 * Iterable (`for ... in ...` loops)
   * List
     * String
@@ -32,6 +35,8 @@
     * Repeat
     * Alternate
     * Match
+    * Lookahead/Lookbehind
+    * etc. 
 * Error < Continuation
   * MathError
     * DivideByZeroError
