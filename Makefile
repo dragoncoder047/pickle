@@ -1,5 +1,6 @@
 # need to set up AFL once parser is written https://medium.com/@ayushpriya10/fuzzing-applications-with-american-fuzzy-lop-afl-54facc65d102
 
+ifeq ($(OS),MacOS)
 .PHONY: test64 builtest64 valgrind64 clean test32 buildtest32 valgrind32 deps show checkleaks
 
 test: buildtest64 valgrind64 buildtest32 valgrind32 clean checkleaks
@@ -45,3 +46,29 @@ show:
 checkleaks:
 	cat test/valgrind64.txt | grep "no leaks are possible" >/dev/null
 	cat test/valgrind32.txt | grep "no leaks are possible" >/dev/null
+else
+.PHONY: test buildtest valgrind clean deps show checkleaks
+
+VALGRINDOPTS = -atExit
+
+test: buildtest valgrind clean checkleaks
+
+CXXFLAGS += --std=c++11 -g
+
+buildtest:
+	$(CXX) $(CXXFLAGS) pickle_test.cpp -o pickletest
+
+valgrind: buildtest
+	MallocStackLogging=1 leaks $(VALGRINDOPTS) -- ./pickletest > test/outMac.txt 2>&1
+
+clean:
+	$(RM) -f pickletest
+	$(RM) -rf pickletest.dSYM
+
+show:
+	cat test/outMac.txt
+	cat test/valgrindMac.txt
+
+checkleaks:
+	cat test/outMac.txt | grep "0 leaks for 0 total leaked bytes" >/dev/null
+endif

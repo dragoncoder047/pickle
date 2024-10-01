@@ -497,17 +497,17 @@ object* splice_match(pvm* vm, object* cookie, object* inst_type) {
 namespace dumper {
 
 static void make_refs_list(pvm* vm, object* obj, object** alist) {
-    again:
-    if (obj == NULL || (obj->type != &cons_type && obj->type != &obj_type)) return;
-    object* entry = assoc(*alist, obj);
-    if (entry) {
-        cdr(entry) = vm->integer(2);
-        return;
+    for (;;) {
+        if (obj == NULL || (obj->type != &cons_type && obj->type != &obj_type)) return;
+        object* entry = assoc(*alist, obj);
+        if (entry) {
+            cdr(entry) = vm->integer(2);
+            return;
+        }
+        vm->push(vm->cons(obj, vm->integer(1)), *alist);
+        if (obj->type != &obj_type) make_refs_list(vm, car(obj), alist); // hashmaps are guaranteed non disjoint, i guess
+        obj = cdr(obj);
     }
-    vm->push(vm->cons(obj, vm->integer(1)), *alist);
-    if (obj->type != &obj_type) make_refs_list(vm, car(obj), alist); // hashmaps are guaranteed non disjoint, i guess
-    obj = cdr(obj);
-    goto again;
 }
 
 // returns zero if the object doesn't need a #N# marker
@@ -535,8 +535,7 @@ static int64_t reffed(pvm* vm, object* obj, object* alist, int64_t* counter) {
 static void print_with_refs(pvm*, object*, object*, int64_t*);
 
 static void print_hashmap(pvm* vm, object* node, object* alist, int64_t* counter) {
-    recur:
-    if (node) {
+    while (node) {
         if (car(node)) {
             object* hinfo = car(node);
             print_with_refs(vm, cadr(hinfo), alist, counter);
@@ -547,7 +546,6 @@ static void print_hashmap(pvm* vm, object* node, object* alist, int64_t* counter
         if (!cdr(node)) return;
         print_hashmap(vm, cadr(node), alist, counter);
         node = cddr(node);
-        goto recur;
     }
 }
 
@@ -570,15 +568,12 @@ static void print_with_refs(pvm* vm, object* obj, object* alist, int64_t* counte
         putchar('"');
         for (char* c = obj->as_chars; *c; c++) {
             char e = parser::escape(*c);
-            if (e != *c) {
-                putchar('\\');
-                putchar(e);
-            }
-            else putchar(*c);
+            if (e != *c) putchar('\\');
+            putchar(e);
         }
         putchar('"');
     }
-    PRINTTYPE(&symbol_type, as_chars, strpbrk(obj->as_chars, "(){}[] ") ? "#|%s|" : "'%s");
+    PRINTTYPE(&symbol_type, as_chars, strpbrk(obj->as_chars, "(){}[] ") ? "#|%s|" : ":%s");
     PRINTTYPE(&integer_type, as_big_int, "%" PRId64);
     PRINTTYPE(&float_type, as_double, "%lg");
     PRINTTYPE(&c_function_type, as_ptr, "<function %p>");
@@ -622,7 +617,7 @@ static void print_with_refs(pvm* vm, object* obj, object* alist, int64_t* counte
         print_hashmap(vm, cdr(obj), alist, counter);
         putchar('}');
     }
-    else printf("<%s:%p>", obj->type->name, obj->as_ptr);
+    else printf("<%s: %p>", obj->type->name, obj->as_ptr);
 }
 
 }

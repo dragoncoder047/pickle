@@ -121,5 +121,9 @@ int main() {
 
     printf("all done -- cleaning up\n");
     // implicit destruction of vm;
+
+    #ifdef __APPLE__
+    system("leaks executablename");
+    #endif
     return 0;
 }
