@@ -1220,7 +1220,7 @@ queue = [get_existing_object ./tinobsy/tinobsy.cpp:134] found equal object
  . [intof ./pickle.hpp:147] Assertion succeeded: x != nil && x->type == &integer_type
 #2#)[intof ./pickle.hpp:147] Assertion succeeded: x != nil && x->type == &integer_type
  42)[intof ./pickle.hpp:147] Assertion succeeded: x != nil && x->type == &integer_type
- <garbage 0x12e00cac8> . <garbage 0x12e00cf88>)[intof ./pickle.hpp:147] Assertion succeeded: x != nil && x->type == &integer_type
+ <garbage 0x15c00cac8> . <garbage 0x15c00cf88>)[intof ./pickle.hpp:147] Assertion succeeded: x != nil && x->type == &integer_type
  . [intof ./pickle.hpp:147] Assertion succeeded: x != nil && x->type == &integer_type
 #1#)
 
@@ -3662,9 +3662,7 @@ OK: hash0 != nil
 [get_existing_object ./tinobsy/tinobsy.cpp:134] found equal object
 [alloc ./tinobsy/tinobsy.cpp:12] vm::alloc() a cons
 [alloc ./tinobsy/tinobsy.cpp:12] vm::alloc() a cons
-[intof ./pickle.hpp:147] Assertion succeeded: x != nil && x->type == &integerleaks[457]: leaks cannot find any existing process you have access to which has a name like 'executablename'; try running with `sudo`.
-leaks[457]: [fatal] mach port for process 0 not valid
-_type
+[intof ./pickle.hpp:147] Assertion succeeded: x != nil && x->type == &integer_type
 [get_existing_object ./tinobsy/tinobsy.cpp:134] found equal object
 #1=object{ 0 -> 0[intof ./pickle.hpp:147] Assertion succeeded: x != nil && x->type == &integer_type
  ;[hash=0] 1 -> [intof ./pickle.hpp:147] Assertion succeeded: x != nil && x->type == &integer_type
@@ -3714,29 +3712,31 @@ OK: vm.get_property(bar, 0, true) != nil
 all done -- cleaning up
 [~vm ./tinobsy/tinobsy.cpp:114] vm::~vm() {
 [~vm ./tinobsy/tinobsy.cpp:123] }
-Process 456 is not debuggable. Due to security restrictions, leaks can only show or save contents of readonly memory of restricted processes.
-
-Process:         pickletest [456]
+Process:         pickletest [2485]
 Path:            /Users/USER/Desktop/*/pickletest
-Load Address:    0x104a0c000
+Load Address:    0x100340000
 Identifier:      pickletest
 Version:         0
 Code Type:       ARM64
 Platform:        macOS
-Parent Process:  leaks [455]
+Parent Process:  leaks [2484]
 
-Date/Time:       2024-10-01 15:17:58.748 -0400
-Launch Time:     2024-10-01 15:17:58.507 -0400
+Date/Time:       2024-10-01 17:07:49.295 -0400
+Launch Time:     2024-10-01 17:07:49.068 -0400
 OS Version:      macOS 15.0 (24A335)
 Report Version:  7
 Analysis Tool:   /usr/bin/leaks
 
-Physical footprint:         2209K
-Physical footprint (peak):  2209K
+Physical footprint:         2177K
+Physical footprint (peak):  2177K
 Idle exit:                  untracked
 ----
 
 leaks Report Version: 4.0, multi-line stacks
-Process 456: 190 nodes malloced for 14 KB
-Process 456: 0 leaks for 0 total leaked bytes.
+Process 2485: 190 nodes malloced for 14 KB
+Process 2485: 0 leaks for 0 total leaked bytes.
+
+leaks[2490]: leaks cannot find any existing process you have access to which has a name like 'executablename'; try running with `sudo`.
+leaks[2490]: [fatal] mach port for process 0 not valid
+Process 2485 is not debuggable. Due to security restrictions, leaks can only show or save contents of readonly memory of restricted processes.
 

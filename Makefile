@@ -1,6 +1,6 @@
 # need to set up AFL once parser is written https://medium.com/@ayushpriya10/fuzzing-applications-with-american-fuzzy-lop-afl-54facc65d102
 
-ifeq ($(OS),MacOS)
+ifneq ($(shell uname -s),Darwin)
 .PHONY: test64 builtest64 valgrind64 clean test32 buildtest32 valgrind32 deps show checkleaks
 
 test: buildtest64 valgrind64 buildtest32 valgrind32 clean checkleaks
@@ -59,7 +59,7 @@ buildtest:
 	$(CXX) $(CXXFLAGS) pickle_test.cpp -o pickletest
 
 valgrind: buildtest
-	MallocStackLogging=1 leaks $(VALGRINDOPTS) -- ./pickletest > test/outMac.txt 2>&1
+	tmpf=`mktemp stderr.XXX`; MallocStackLogging=1 leaks $(VALGRINDOPTS) -- ./pickletest > test/outMac.txt 2>"$$tmpf"; cat "$$tmpf" >>test/outMac.txt; rm $$tmpf
 
 clean:
 	$(RM) -f pickletest
